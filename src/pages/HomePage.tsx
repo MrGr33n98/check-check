@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Hero } from '@/components/ui/hero'
-import { CompanyList } from '@/components/ui/company-list'
-import { ConversionPoints } from '@/components/ui/conversion-points'
+import Hero from '@/components/ui/hero'
+import CompanyList from '@/components/ui/company-list'
+import ConversionPoints from '@/components/ui/conversion-points'
 import { mockCompanies, mockConversionPoints } from '@/data/mockData'
 
 // Define the Company type that matches the UI components
