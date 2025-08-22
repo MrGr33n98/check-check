@@ -1,0 +1,31 @@
+{
+  "name": "@solarfinder/admin",
+  "version": "1.0.0",
+  "description": "Modular admin system for SolarFinder",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "admin",
+    "dashboard",
+    "react",
+    "typescript",
+    "solarfinder"
+  ],
+  "author": "SolarFinder Team",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-router-dom": "^6.8.0",
+    "lucide-react": "^0.294.0",
+    "axios": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-router-dom": "^5.3.0",
+    "typescript": "^4.9.0"
+  }
+}
