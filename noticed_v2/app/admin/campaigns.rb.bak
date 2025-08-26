@@ -1,0 +1,71 @@
+ActiveAdmin.register Campaign do
+  permit_params :product_id, :title, :code, :owner_member_id, :share_code, 
+                :goal, :reached, :beginners, :shares, :prize, :starts_on, :ends_on
+
+  index do
+    selectable_column
+    id_column
+    column :title
+    column :code
+    column :product
+    column :goal
+    column :reached
+    column :progress_percentage do |campaign|
+      "#{campaign.progress_percentage}%"
+    end
+    column :starts_on
+    column :ends_on
+    column :active? do |campaign|
+      status_tag(campaign.active? ? 'Active' : 'Inactive', campaign.active? ? :ok : :error)
+    end
+    actions
+  end
+
+  filter :title
+  filter :code
+  filter :product
+  filter :starts_on
+  filter :ends_on
+  filter :created_at
+
+  form do |f|
+    f.inputs do
+      f.input :product, as: :select, collection: Product.all.map { |p| [p.name, p.id] }
+      f.input :title
+      f.input :code
+      f.input :share_code
+      f.input :goal
+      f.input :reached
+      f.input :beginners
+      f.input :shares
+      f.input :prize
+      f.input :starts_on, as: :datepicker
+      f.input :ends_on, as: :datepicker
+    end
+    f.actions
+  end
+
+  show do
+    attributes_table do
+      row :title
+      row :code
+      row :product
+      row :share_code
+      row :goal
+      row :reached
+      row :progress_percentage do |campaign|
+        "#{campaign.progress_percentage}%"
+      end
+      row :beginners
+      row :shares
+      row :prize
+      row :starts_on
+      row :ends_on
+      row :active?
+      row :created_at
+      row :updated_at
+    end
+    
+    active_admin_comments
+  end
+end

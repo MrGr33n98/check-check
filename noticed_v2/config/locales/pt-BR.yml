@@ -1,0 +1,151 @@
+pt-BR:
+  active_admin:
+    pagination:
+      empty: "Nenhum %{model} encontrado"
+      one: "Exibindo <b>1</b> %{model}"
+      one_page: "Exibindo <b>todos os %{n}</b> %{model}"
+      multiple: "Exibindo %{model} <b>%{from}&nbsp;-&nbsp;%{to}</b> de <b>%{total}</b> no total"
+      multiple_without_total: "Exibindo %{model} <b>%{from}&nbsp;-&nbsp;%{to}</b>"
+      entry:
+        one: "entrada"
+        other: "entradas"
+    any: "Qualquer"
+    blank_slate:
+      content: "Ainda não há %{resource_name}."
+      link: "Criar um"
+    batch_actions:
+      button_label: "Ações em lote"
+      default_confirmation: "Tem certeza de que deseja fazer isso?"
+      delete_confirmation: "Tem certeza de que deseja excluir estes %{plural_model}?"
+      succesfully_destroyed:
+        one: "Excluído com sucesso 1 %{model}"
+        other: "Excluídos com sucesso %{count} %{plural_model}"
+      selection_toggle_explanation: "(Alternar seleção)"
+      link: "Criar um"
+      action_label: "%{title} selecionados"
+      labels:
+        destroy: "Excluir"
+    comments:
+      author_type: "Tipo de autor"
+      body: "Corpo"
+      created_at: "Criado em"
+      namespace: "Namespace"
+      resource_id: "ID do recurso"
+      resource_type: "Tipo de recurso"
+      resource: "Recurso"
+      title: "Comentário"
+      add: "Adicionar comentário"
+      resource_title: "Comentários"
+      author_missing: "Anônimo"
+      title_content: "Comentários (%{count})"
+      errors:
+        empty_text: "Comentário não foi salvo, texto estava vazio."
+    devise:
+      username:
+        title: "Nome de usuário"
+      email:
+        title: "Email"
+      subdomain:
+        title: "Subdomínio"
+      password:
+        title: "Senha"
+      sign_up:
+        title: "Inscrever-se"
+        submit: "Inscrever-se"
+      login:
+        title: "Entrar"
+        remember_me: "Lembrar de mim"
+        submit: "Entrar"
+      reset_password:
+        title: "Esqueceu sua senha?"
+        submit: "Redefinir minha senha"
+      change_password:
+        title: "Alterar sua senha"
+        submit: "Alterar minha senha"
+      unlock:
+        title: "Reenviar instruções de desbloqueio"
+        submit: "Reenviar instruções de desbloqueio"
+      resend_confirmation_instructions:
+        title: "Reenviar instruções de confirmação"
+        submit: "Reenviar instruções de confirmação"
+      links:
+        sign_in: "Entrar"
+        forgot_your_password: "Esqueceu sua senha?"
+        sign_in_with_omniauth_provider: "Entrar com %{provider}"
+        resend_unlock_instructions: "Reenviar instruções de desbloqueio"
+        resend_confirmation_instructions: "Reenviar instruções de confirmação"
+    filters:
+      buttons:
+        filter: "Filtrar"
+        clear: "Limpar filtros"
+      predicates:
+        contains: "Contém"
+        equals: "Igual a"
+        starts_with: "Começa com"
+        ends_with: "Termina com"
+        greater_than: "Maior que"
+        less_than: "Menor que"
+        from: "De"
+        to: "Para"
+    main_content: "Por favor, implemente %{model}#main_content para exibir conteúdo."
+    logout: "Sair"
+    powered_by: "Powered by %{active_admin} %{version}"
+    sidebars:
+      filters: "Filtros"
+    status_tag:
+      "yes": "Sim"
+      "no": "Não"
+    view: "Ver"
+    edit: "Editar"
+    delete: "Excluir"
+    delete_confirmation: "Tem certeza de que deseja excluir isso?"
+    new_model: "Novo %{model}"
+    edit_model: "Editar %{model}"
+    delete_model: "Excluir %{model}"
+    details: "%{model} Detalhes"
+    cancel: "Cancelar"
+    empty: "Vazio"
+    previous: "Anterior"
+    next: "Próximo"
+    download: "Baixar:"
+    has_many_new: "Adicionar Novo %{model}"
+    has_many_delete: "Excluir"
+    has_many_remove: "Remover"
+    move: "Mover"
+    contains: "Contém"
+    dashboard: "Painel"
+    dashboard_welcome:
+      welcome: "Bem-vindo ao Active Admin. Esta é a página padrão do painel."
+      call_to_action: "Para adicionar seções ao painel, confira 'app/admin/dashboard.rb'"
+    view: "Ver"
+    edit: "Editar"
+    delete: "Excluir"
+    new: "Novo"
+    actions: "Ações"
+    
+  activerecord:
+    models:
+      provider:
+        one: "Fornecedor"
+        other: "Fornecedores"
+      product:
+        one: "Produto"
+        other: "Produtos"
+      campaign:
+        one: "Campanha"
+        other: "Campanhas"
+      question:
+        one: "Pergunta"
+        other: "Perguntas"
+      reply:
+        one: "Resposta"
+        other: "Respostas"
+      article:
+        one: "Artigo"
+        other: "Artigos"
+      user:
+        one: "Usuário"
+        other: "Usuários"
+      admin_user:
+        one: "Usuário Admin"
+        other: "Usuários Admin"

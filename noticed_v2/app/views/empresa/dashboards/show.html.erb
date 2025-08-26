@@ -1,0 +1,79 @@
+<h1>Empresa Dashboard</h1>
+<p>Welcome to your company dashboard!</p>
+<p>You are logged in as: <%= current_user.email %></p>
+
+<h2>Edit Company Information</h2>
+
+<%= form_with model: @provider, url: empresa_dashboard_path, method: :patch, local: true do |f| %>
+  <% if @provider.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@provider.errors.count, "error") %> prohibited this provider from being saved:</h2>
+      <ul>
+        <% @provider.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name %><br>
+    <%= f.text_field :name %>
+  </div>
+
+  <div>
+    <%= f.label :title %><br>
+    <%= f.text_field :title %>
+  </div>
+
+  <div>
+    <%= f.label :short_description %><br>
+    <%= f.text_area :short_description %>
+  </div>
+
+  <div>
+    <%= f.label :country %><br>
+    <%= f.text_field :country %>
+  </div>
+
+  <div>
+    <%= f.label :address %><br>
+    <%= f.text_field :address %>
+  </div>
+
+  <div>
+    <%= f.label :phone %><br>
+    <%= f.text_field :phone %>
+  </div>
+
+  <div>
+    <%= f.label :members_count %><br>
+    <%= f.number_field :members_count %>
+  </div>
+
+  <div>
+    <%= f.label :foundation_year %><br>
+    <%= f.number_field :foundation_year %>
+  </div>
+
+  <div>
+    <%= f.label :revenue %><br>
+    <%= f.text_field :revenue %>
+  </div>
+
+  <div>
+    <%= f.label :social_links_list, "Social Links (comma-separated)" %><br>
+    <%= f.text_field :social_links_list %>
+  </div>
+
+  <div>
+    <%= f.label :tags_list, "Tags (comma-separated)" %><br>
+    <%= f.text_field :tags_list %>
+  </div>
+
+  <div>
+    <%= f.submit "Update Company" %>
+  </div>
+<% end %>
+
+<%= link_to "Logout", destroy_user_session_path, method: :delete %>

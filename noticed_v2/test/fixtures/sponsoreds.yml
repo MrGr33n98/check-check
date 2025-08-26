@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  title: MyString
+  description: MyText
+  image_url: MyString
+  link_url: MyString
+  position: MyString
+  status: MyString
+  starts_at: 2025-08-19 21:28:04
+  ends_at: 2025-08-19 21:28:04
+  priority: 1
+
+two:
+  title: MyString
+  description: MyText
+  image_url: MyString
+  link_url: MyString
+  position: MyString
+  status: MyString
+  starts_at: 2025-08-19 21:28:04
+  ends_at: 2025-08-19 21:28:04
+  priority: 1

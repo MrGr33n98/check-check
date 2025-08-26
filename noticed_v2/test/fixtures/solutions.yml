@@ -1,0 +1,19 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  company: MyString
+  description: MyText
+  long_description: MyText
+  rating: 9.99
+  website: MyString
+  featured: false
+
+two:
+  name: MyString
+  company: MyString
+  description: MyText
+  long_description: MyText
+  rating: 9.99
+  website: MyString
+  featured: false

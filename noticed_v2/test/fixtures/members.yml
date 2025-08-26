@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  name: MyString
+  email: MyString
+  company: MyString
+  role: MyString
+  status: MyString
+  subscription_plan: MyString
+  subscription_status: MyString
+  trial_ends_at: 2025-08-19 21:24:39
+  expires_at: 2025-08-19 21:24:39
+
+two:
+  name: MyString
+  email: MyString
+  company: MyString
+  role: MyString
+  status: MyString
+  subscription_plan: MyString
+  subscription_status: MyString
+  trial_ends_at: 2025-08-19 21:24:39
+  expires_at: 2025-08-19 21:24:39

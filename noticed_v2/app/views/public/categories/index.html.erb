@@ -1,0 +1,51 @@
+<div class="category-page-container">
+  <h1 class="main-title">Empresas de Energia Solar com Avaliações de Clientes</h1>
+
+  <div class="content-wrapper">
+    <aside class="sidebar">
+      <h2>Categorias</h2>
+      <ul class="category-list">
+        <% @all_categories.each do |category| %>
+          <li>
+            <%= link_to category.name, "#category-\#{category.slug}" %>
+            <% if category.children.any? %>
+              <ul class="subcategory-list">
+                <% category.children.each do |subcategory| %>
+                  <li><%= link_to subcategory.name, "#category-\#{subcategory.slug}" %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </aside>
+
+    <main class="main-content">
+      <% @main_categories.each do |category| %>
+        <section class="category-card" id="category-<%= category.slug %>">
+          <h2 class="category-name"><%= category.name %></h2>
+          <p class="category-description"><%= category.description.truncate(100) %></p>
+
+          <div class="company-highlights">
+            <% category.providers.first(6).each do |provider| %>
+              <div class="company-item">
+                <% if provider.logo.attached? %>
+                  <%= image_tag provider.logo.variant(resize_to_limit: [80, 80]), class: "company-logo" %>
+                <% end %>
+                <h3 class="company-name"><%= provider.name %></h3>
+                <div class="company-rating">
+                  <span class="stars"><%= "⭐" * provider.overall_average_rating.to_i %></span>
+                  <span class="review-count">(<%= provider.overall_reviews_count %> avaliações)</span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="view-all-link">
+            <%= link_to "Ver categoria completa", "#", class: "button" %>
+          </div>
+        </section>
+      <% end %>
+    </main>
+  </div>
+</div>

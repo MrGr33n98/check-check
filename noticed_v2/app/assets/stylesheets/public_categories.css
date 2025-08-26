@@ -1,0 +1,161 @@
+/* app/assets/stylesheets/public_categories.css */
+
+.category-page-container {
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.main-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.content-wrapper {
+  display: flex;
+  gap: 20px;
+}
+
+.sidebar {
+  flex: 0 0 250px; /* Fixed width for sidebar */
+  background-color: #f8f8f8;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar h2 {
+  color: #555;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.category-list {
+  list-style: none;
+  padding: 0;
+}
+
+.category-list li {
+  margin-bottom: 10px;
+}
+
+.category-list a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.category-list a:hover {
+  text-decoration: underline;
+}
+
+.subcategory-list {
+  list-style: none;
+  padding-left: 15px;
+  margin-top: 5px;
+}
+
+.subcategory-list li {
+  margin-bottom: 5px;
+}
+
+.subcategory-list a {
+  color: #666;
+  font-weight: normal;
+}
+
+.main-content {
+  flex: 1; /* Takes remaining space */
+}
+
+.category-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.category-name {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.category-description {
+  color: #777;
+  font-size: 0.9em;
+  margin-bottom: 20px;
+}
+
+.company-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.company-item {
+  text-align: center;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #fdfdfd;
+}
+
+.company-logo {
+  max-width: 80px;
+  max-height: 80px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.company-name {
+  font-size: 1em;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.company-rating {
+  font-size: 0.9em;
+  color: #f0c14b; /* Star color */
+}
+
+.review-count {
+  color: #888;
+  margin-left: 5px;
+}
+
+.view-all-link {
+  text-align: right;
+}
+
+.button {
+  display: inline-block;
+  background-color: #007bff;
+  color: #fff;
+  padding: 10px 15px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-wrapper {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    flex: none;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
