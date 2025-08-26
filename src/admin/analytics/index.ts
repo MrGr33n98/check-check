@@ -1,1 +1,0 @@
-export { Analytics, analytics, type EventType, type EventData } from './analytics';

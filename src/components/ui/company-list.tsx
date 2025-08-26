@@ -4,12 +4,12 @@ import { Badge } from '@/components/ui/badge';
 
 const CompanyList = ({ 
   companies, 
-  searchTerm, 
+  searchTerm = '', 
   onCompanySelect, 
   onRequestQuote 
 }: { 
   companies: any[]; 
-  searchTerm: string; 
+  searchTerm?: string; 
   onCompanySelect: (company: any) => void; 
   onRequestQuote: (company: any) => void; 
 }) => {
@@ -45,7 +45,7 @@ const CompanyList = ({
           <Button 
             variant="outline" 
             className="mt-4"
-            onClick={() => onCompanySelect(filteredCompanies[0])}
+            onClick={() => window.location.reload()}
           >
             Ver todas as empresas
           </Button>

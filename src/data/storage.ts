@@ -6,7 +6,9 @@
  */
 export const saveUserToLocalStorage = (user: any): void => {
   try {
-    localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
   } catch (error) {
     console.error('Error saving user to localStorage:', error);
   }
@@ -18,8 +20,11 @@ export const saveUserToLocalStorage = (user: any): void => {
  */
 export const getUserFromLocalStorage = (): any => {
   try {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const user = localStorage.getItem('user');
+      return user ? JSON.parse(user) : null;
+    }
+    return null;
   } catch (error) {
     console.error('Error getting user from localStorage:', error);
     return null;
@@ -31,7 +36,9 @@ export const getUserFromLocalStorage = (): any => {
  */
 export const removeUserFromLocalStorage = (): void => {
   try {
-    localStorage.removeItem('user');
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.removeItem('user');
+    }
   } catch (error) {
     console.error('Error removing user from localStorage:', error);
   }
@@ -43,7 +50,9 @@ export const removeUserFromLocalStorage = (): void => {
  */
 export const saveLeadsToLocalStorage = (leads: any[]): void => {
   try {
-    localStorage.setItem('leads', JSON.stringify(leads));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('leads', JSON.stringify(leads));
+    }
   } catch (error) {
     console.error('Error saving leads to localStorage:', error);
   }
@@ -55,8 +64,11 @@ export const saveLeadsToLocalStorage = (leads: any[]): void => {
  */
 export const getLeadsFromLocalStorage = (): any[] => {
   try {
-    const leads = localStorage.getItem('leads');
-    return leads ? JSON.parse(leads) : [];
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const leads = localStorage.getItem('leads');
+      return leads ? JSON.parse(leads) : [];
+    }
+    return [];
   } catch (error) {
     console.error('Error getting leads from localStorage:', error);
     return [];
@@ -69,9 +81,10 @@ export const getLeadsFromLocalStorage = (): any[] => {
  */
 export const addLeadToLocalStorage = (lead: any): void => {
   try {
-    const leads = getLeadsFromLocalStorage();
-    leads.push(lead);
-    saveLeadsToLocalStorage(leads);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const leads = getLeadsFromLocalStorage();
+      localStorage.setItem('leads', JSON.stringify([lead, ...leads]));
+    }
   } catch (error) {
     console.error('Error adding lead to localStorage:', error);
   }

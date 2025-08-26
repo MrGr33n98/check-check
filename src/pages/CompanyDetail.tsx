@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import StarRating from '@/components/ui/star-rating'
 import ReviewCard from '@/components/ui/review-card'
+import { LeadForm, type LeadFormData } from '@/components/forms/LeadForm'
+import { useLeads } from '@/hooks/useLeads'
 import { mockCompanies, mockReviews, mockContent, mockBadges } from '@/data/mockData'
 import type { Company, Review, Content, Badge as BadgeType } from '@/data/types'
 
@@ -19,6 +21,7 @@ const CompanyDetail: React.FC = () => {
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [activeTab, setActiveTab] = useState('overview')
   const [isLeadFormOpen, setIsLeadFormOpen] = useState(false)
+  const { submitLead } = useLeads()
 
   useEffect(() => {
     if (id) {
@@ -53,6 +56,16 @@ const CompanyDetail: React.FC = () => {
 
   const handleRequestQuote = () => {
     setIsLeadFormOpen(true)
+  }
+
+  const handleLeadSubmit = async (leadData: LeadFormData & { companyId: number; intentionScore: number }) => {
+    try {
+      await submitLead(leadData)
+      alert(`Obrigado ${leadData.name}! Sua solicitação foi enviada com sucesso. A ${company?.name} entrará em contato em breve.`)
+      setIsLeadFormOpen(false)
+    } catch (error) {
+      alert('Erro ao enviar solicitação. Tente novamente.')
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -449,28 +462,14 @@ const CompanyDetail: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Lead Form Modal - Placeholder for now */}
-      {isLeadFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Solicitar Orçamento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Formulário de lead será implementado na próxima tarefa.
-              </p>
-              <Button 
-                onClick={() => setIsLeadFormOpen(false)} 
-                variant="outline" 
-                className="w-full"
-              >
-                Fechar
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Lead Form Modal */}
+      <LeadForm
+        companyId={company.id}
+        companyName={company.name}
+        isOpen={isLeadFormOpen}
+        onClose={() => setIsLeadFormOpen(false)}
+        onSubmit={handleLeadSubmit}
+      />
     </div>
   )
 }

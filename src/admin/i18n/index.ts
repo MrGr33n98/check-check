@@ -1,1 +1,0 @@
-export { translations, t } from './i18n';

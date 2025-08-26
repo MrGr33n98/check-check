@@ -1,85 +1,67 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Hero from '@/components/ui/hero'
-import CompanyList from '@/components/ui/company-list'
-import ConversionPoints from '@/components/ui/conversion-points'
-import { mockCompanies, mockConversionPoints } from '@/data/mockData'
-
-// Define the Company type that matches the UI components
-interface Company {
-  id: number
-  name: string
-  location: string
-  installed_capacity_mw: number
-  rating: number
-  review_count: number
-  specialties: string[]
-  description: string
-  status: 'active' | 'pending' | 'inactive'
-}
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Hero from '@/components/ui/hero';
+import ConversionPoints from '@/components/ui/conversion-points';
+import CompanyList from '@/components/ui/company-list';
+import { mockCompanies, mockConversionPoints } from '@/data/mockData';
+import { useLeads } from '@/hooks/useLeads';
 
 const HomePage: React.FC = () => {
-  const navigate = useNavigate()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
+  const { addLead } = useLeads();
 
-  const handleSearch = () => {
-    // Scroll to company list section with better offset
-    const companyListElement = document.getElementById('company-list')
-    if (companyListElement) {
-      const headerOffset = 80 // Account for fixed header if any
-      const elementPosition = companyListElement.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+  const handleCompanySelect = (companyId: number) => {
+    navigate(`/company/${companyId}`);
+  };
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
-    }
-  }
+  const handleLeadCapture = (leadData: any) => {
+    const newLead = {
+      id: Date.now(),
+      name: leadData.name,
+      email: leadData.email,
+      phone: leadData.phone || '',
+      address: '',
+      propertyType: 'residential' as const,
+      energyBill: 0,
+      timeline: 'Em até 3 meses',
+      message: `Interesse em: ${leadData.leadMagnet}`,
+      intentionScore: 75,
+      budget: 'Até R$ 50.000',
+      purchaseIntention: 'high',
+      status: 'new' as const,
+      leadSource: 'Conversion Point',
+      companyId: 0, // General lead, not company-specific
+      created_at: new Date().toISOString()
+    };
 
-  const handleCompanySelect = (company: Company) => {
-    navigate(`/company/${company.id}`)
-  }
+    addLead(newLead);
+    
+    // Show success message (you could implement a toast notification here)
+    alert('Obrigado! Você receberá o material em seu e-mail em breve.');
+  };
 
-  const handleRequestQuote = (company: Company) => {
-    // For now, navigate to company detail page
-    // In the future, this could open a lead form modal
-    navigate(`/company/${company.id}`)
-  }
-
-  const handleLeadCapture = (_leadData: any) => {
-    // Show success message (you could use a toast notification here)
-    alert('Obrigado! Você receberá o material em seu e-mail em breve.')
-  }
+  const handleRequestQuote = (company: any) => {
+    navigate(`/company/${company.id}?openLead=true`);
+  };
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <Hero
+      <Hero 
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        onSearch={handleSearch}
       />
-
-      {/* Conversion Points Section */}
-      <ConversionPoints
+      <ConversionPoints 
         conversionPoints={mockConversionPoints}
         onLeadCapture={handleLeadCapture}
       />
-
-      {/* Company List Section */}
-      <section id="company-list" className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 max-w-7xl">
-          <CompanyList
-            companies={mockCompanies as Company[]}
-            searchTerm={searchTerm}
-            onCompanySelect={handleCompanySelect}
-            onRequestQuote={handleRequestQuote}
-          />
-        </div>
-      </section>
+      <CompanyList 
+        companies={mockCompanies.slice(0, 6)}
+        onCompanySelect={handleCompanySelect}
+        onRequestQuote={handleRequestQuote}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;

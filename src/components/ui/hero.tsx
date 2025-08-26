@@ -1,16 +1,28 @@
 import { Search, Users, Zap, Award, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = ({ 
   searchTerm, 
-  onSearchChange, 
-  onSearch 
+  onSearchChange 
 }: { 
   searchTerm: string; 
   onSearchChange: (value: string) => void; 
-  onSearch: () => void; 
 }) => {
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    if (searchTerm.trim()) {
+      navigate(`/buscar?q=${encodeURIComponent(searchTerm)}`);
+    } else {
+      navigate('/buscar');
+    }
+  };
+
+  const handleQuickSearch = (term: string) => {
+    navigate(`/buscar?q=${encodeURIComponent(term)}`);
+  };
   const stats = [
     { icon: Users, value: "500+", label: "Empresas Cadastradas", color: "text-blue-600", bgColor: "bg-blue-50" },
     { icon: Zap, value: "1.2GW", label: "Capacidade Instalada", color: "text-yellow-600", bgColor: "bg-yellow-50" },
@@ -20,7 +32,7 @@ const Hero = ({
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      onSearch();
+      handleSearch();
     }
   };
 
@@ -50,7 +62,7 @@ const Hero = ({
                   className="pl-10 border-0 focus-visible:ring-0 text-base h-12"
                 />
               </div>
-              <Button onClick={onSearch} size="lg" className="px-8 h-12">
+              <Button onClick={handleSearch} size="lg" className="px-8 h-12">
                 Buscar
               </Button>
             </div>
@@ -60,10 +72,7 @@ const Hero = ({
               {["São Paulo", "Rio de Janeiro", "Residencial", "Comercial", "Industrial"].map((item) => (
                 <button
                   key={item}
-                  onClick={() => {
-                    onSearchChange(item);
-                    onSearch();
-                  }}
+                  onClick={() => handleQuickSearch(item)}
                   className="text-sm bg-white/80 hover:bg-white text-gray-700 hover:text-primary px-3 py-1 rounded-full border border-gray-200 hover:border-primary transition-colors"
                 >
                   {item}
