@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Search, HelpCircle, MessageCircle, Mail, Phone } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, HelpCircle, MessageCircle, Mail } from 'lucide-react';
+import HelpSection from '@/components/sections/HelpSection';
 
 const FAQPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -256,60 +257,13 @@ const FAQPage = () => {
         </div>
       </div>
 
-      {/* Contact Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Não encontrou sua resposta?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Nossa equipe está pronta para ajudar você com qualquer dúvida
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="text-blue-600 w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">E-mail</h3>
-              <p className="text-gray-600 mb-4">Resposta em até 24 horas</p>
-              <a
-                href="mailto:suporte@comparesolar.com.br"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                suporte@comparesolar.com.br
-              </a>
-            </div>
-
-            <div className="text-center p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="text-green-600 w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Telefone</h3>
-              <p className="text-gray-600 mb-4">Seg-Sex: 8h às 18h</p>
-              <a
-                href="tel:+551140041234"
-                className="text-green-600 hover:text-green-700 font-medium"
-              >
-                (11) 4004-1234
-              </a>
-            </div>
-
-            <div className="text-center p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="text-purple-600 w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Chat Online</h3>
-              <p className="text-gray-600 mb-4">Resposta imediata</p>
-              <button className="text-purple-600 hover:text-purple-700 font-medium">
-                Iniciar conversa
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Help Section */}
+      <HelpSection 
+        title="Não encontrou sua resposta?"
+        subtitle="Nossa equipe está pronta para ajudar você com qualquer dúvida sobre energia solar e nossa plataforma."
+        showContactForm={true}
+        variant="default"
+      />
     </div>
   );
 };

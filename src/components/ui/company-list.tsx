@@ -1,130 +1,140 @@
-import { Star, MapPin, Zap } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { Card, CardContent, CardTitle } from './card';
+import { Button } from './button';
+import { Badge } from './badge';
+import StarRating from './star-rating';
 
-const CompanyList = ({ 
-  companies, 
-  searchTerm = '', 
-  onCompanySelect, 
-  onRequestQuote 
-}: { 
-  companies: any[]; 
-  searchTerm?: string; 
-  onCompanySelect: (company: any) => void; 
-  onRequestQuote: (company: any) => void; 
+interface Company {
+  id: number;
+  name: string;
+  description: string;
+  rating: number;
+  reviewCount: number;
+  location: string;
+  services: string[];
+  image?: string;
+  bannerImage?: string;
+  logo?: string;
+}
+
+interface CompanyListProps {
+  companies?: Company[];
+  title?: string;
+  showAll?: boolean;
+}
+
+const defaultCompanies: Company[] = [
+  {
+    id: 1,
+    name: 'Solar Pro Energia',
+    description: 'Especialistas em energia solar residencial e comercial',
+    rating: 4.8,
+    reviewCount: 127,
+    location: 'São Paulo, SP',
+    services: ['Instalação', 'Manutenção', 'Consultoria']
+  },
+  {
+    id: 2,
+    name: 'EcoSolar Solutions',
+    description: 'Soluções sustentáveis em energia renovável',
+    rating: 4.6,
+    reviewCount: 89,
+    location: 'Rio de Janeiro, RJ',
+    services: ['Instalação', 'Financiamento']
+  },
+  {
+    id: 3,
+    name: 'SunPower Brasil',
+    description: 'Tecnologia avançada em painéis solares',
+    rating: 4.9,
+    reviewCount: 203,
+    location: 'Belo Horizonte, MG',
+    services: ['Instalação', 'Manutenção', 'Garantia Estendida']
+  }
+];
+
+const CompanyList: React.FC<CompanyListProps> = ({
+  companies = defaultCompanies,
+  title = 'Empresas Recomendadas',
+  showAll = false
 }) => {
-  // Filter companies based on search term
-  const filteredCompanies = companies.filter(company => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      company.name.toLowerCase().includes(term) ||
-      company.location.toLowerCase().includes(term) ||
-      company.specialties.some((specialty: string) => 
-        specialty.toLowerCase().includes(term)
-      )
-    );
-  });
+  const displayCompanies = showAll ? companies : companies.slice(0, 3);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Empresas Encontradas
-        </h2>
-        <p className="text-gray-600">
-          {filteredCompanies.length} {filteredCompanies.length === 1 ? 'empresa' : 'empresas'}
-        </p>
-      </div>
-      
-      {filteredCompanies.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">
-            Nenhuma empresa encontrada para "{searchTerm}"
+    <section className="py-16 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">{title}</h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Conheça as melhores empresas de energia solar avaliadas pelos nossos usuários
           </p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => window.location.reload()}
-          >
-            Ver todas as empresas
-          </Button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCompanies.map((company) => (
-            <div 
-              key={company.id} 
-              className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{company.name}</h3>
-                      <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <MapPin className="w-4 h-4 mr-1" />
-                        {company.location}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {displayCompanies.map((company) => (
+            <Card key={company.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+              {/* Banner Section */}
+              <div 
+                className="relative h-32 bg-gradient-to-r from-orange-400 to-yellow-400"
+                style={{
+                  backgroundImage: company.bannerImage ? `url(${company.bannerImage})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
+                }}
+              >
+                {/* Overlay for better text readability */}
+                <div className="absolute inset-0 bg-black/20"></div>
+                
+                {/* Company Logo */}
+                <div className="absolute bottom-4 left-4 flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-lg">
+                    {company.logo ? (
+                      <img src={company.logo} alt={company.name} className="w-8 h-8 object-contain" />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-yellow-400 rounded flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">{company.name.charAt(0)}</span>
                       </div>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex items-center bg-yellow-50 px-2 py-1 rounded-full">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium text-gray-900 ml-1">
-                      {company.rating}
-                    </span>
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({company.review_count})
-                    </span>
+                  
+                  <div>
+                    <CardTitle className="text-lg text-white drop-shadow-md">{company.name}</CardTitle>
+                    <p className="text-sm text-white/90">{company.location}</p>
                   </div>
                 </div>
                 
-                <p className="text-gray-600 text-sm mt-3 line-clamp-2">
-                  {company.description}
-                </p>
-                
-                <div className="flex items-center text-sm text-gray-500 mt-3">
-                  <Zap className="w-4 h-4 mr-1" />
-                  <span>{company.installed_capacity_mw} MW instalados</span>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {company.specialties.slice(0, 3).map((specialty: string, index: number) => (
-                    <Badge key={index} variant="secondary">
-                      {specialty}
-                    </Badge>
-                  ))}
-                  {company.specialties.length > 3 && (
-                    <Badge variant="secondary">
-                      +{company.specialties.length - 3}
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="flex gap-2 mt-6">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => onCompanySelect(company)}
-                  >
-                    Ver Perfil
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => onRequestQuote(company)}
-                  >
-                    Solicitar Orçamento
-                  </Button>
+                {/* Rating Badge */}
+                <div className="absolute top-4 right-4 flex items-center space-x-1 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
+                  <StarRating rating={company.rating} size="sm" />
+                  <span className="text-xs font-semibold text-gray-900">({company.reviewCount})</span>
                 </div>
               </div>
-            </div>
+              
+              <CardContent>
+                <p className="text-gray-700 mb-4">{company.description}</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {company.services.map((service, index) => (
+                    <Badge key={index} variant="secondary">{service}</Badge>
+                  ))}
+                </div>
+                <div className="flex space-x-2">
+                  <Button className="flex-1">Ver Detalhes</Button>
+                  <Button variant="outline" className="flex-1">Solicitar Orçamento</Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      )}
-    </div>
+        
+        {!showAll && companies.length > 3 && (
+          <div className="text-center mt-8">
+            <Button variant="outline" size="lg">
+              Ver Todas as Empresas
+            </Button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 };
 

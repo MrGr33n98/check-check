@@ -23,12 +23,14 @@ class Provider < ApplicationRecord
   has_many :b2b_ads, dependent: :destroy
   has_many :company_members, dependent: :destroy
   has_many :users, through: :company_members
+  has_many :analytics, dependent: :destroy
   belongs_to :approved_by, class_name: 'AdminUser', optional: true
 
   has_and_belongs_to_many :categories
 
   has_one_attached :logo
   has_one_attached :cover_image
+  has_one_attached :banner_image
   has_many_attached :documents
   has_many_attached :licenses
   has_many_attached :portfolio_images
@@ -119,6 +121,42 @@ class Provider < ApplicationRecord
     solutions.joins(:reviews).count('reviews.id')
   end
 
+  # Analytics methods
+  def current_analytics
+    analytics.find_by(date: Date.current) || analytics.build(date: Date.current)
+  end
+
+  def total_leads
+    analytics.sum(:leads_received)
+  end
+
+  def total_page_views
+    analytics.sum(:page_views)
+  end
+
+  def current_conversion_rate
+    Analytic.average_conversion_rate_for_provider(id)
+  end
+
+  def monthly_growth
+    Analytic.monthly_growth_for_provider(id)
+  end
+
+  def analytics_summary(period = :current_month)
+    case period
+    when :current_month
+      Analytic.monthly_summary(id, Date.current.beginning_of_month)
+    when :last_month
+      Analytic.monthly_summary(id, 1.month.ago.beginning_of_month)
+    else
+      Analytic.monthly_summary(id)
+    end
+  end
+
+  # Callbacks
+  after_create :notify_admins_of_new_provider
+  after_update :send_status_notification, if: :saved_change_to_status?
+
   # Approval methods
   def approve!(admin_user, notes = nil)
     update!(
@@ -176,6 +214,28 @@ class Provider < ApplicationRecord
     when 'rejected' then 'Rejeitada'
     when 'suspended' then 'Suspensa'
     else status.humanize
+    end
+  end
+
+  private
+
+  def notify_admins_of_new_provider
+    admin_emails = AdminUser.pluck(:email)
+    return if admin_emails.empty?
+    
+    ProviderMailer.admin_new_provider_notification(self, admin_emails).deliver_later
+  end
+
+  def send_status_notification
+    return unless users.any? # Only send if provider has associated users
+    
+    case status
+    when 'active'
+      ProviderMailer.approval_notification(self).deliver_later
+    when 'rejected'
+      ProviderMailer.rejection_notification(self).deliver_later
+    when 'suspended'
+      ProviderMailer.suspension_notification(self).deliver_later
     end
   end
 end

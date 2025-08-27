@@ -1,0 +1,69 @@
+<%# Partial para renderizar um banner individual %>
+<div class="banner banner-<%= banner.banner_type %> banner-<%= banner.device_target %> priority-<%= banner.priority %> <%= local_assigns[:css_class] %>"
+     id="banner-<%= banner.id %>"
+     data-banner-id="<%= banner.id %>"
+     data-banner-type="<%= banner.banner_type %>"
+     data-priority="<%= banner.priority %>"
+     data-display-frequency="<%= banner.display_frequency %>"
+     data-tracking="<%= banner.conversion_tracking_code.present? %>">
+
+  <% if banner.custom_html.present? %>
+    <%# Banner com HTML customizado %>
+    <% if banner.custom_css.present? %>
+      <style><%= banner.custom_css.html_safe %></style>
+    <% end %>
+    
+    <% if banner.link_url.present? %>
+      <%= link_to banner.link_url, class: 'banner-link', target: '_blank', data: { banner_id: banner.id, action: 'click' } do %>
+        <%= banner.custom_html.html_safe %>
+      <% end %>
+    <% else %>
+      <%= banner.custom_html.html_safe %>
+    <% end %>
+    
+  <% else %>
+    <%# Banner com imagem %>
+    <% image = get_banner_image(banner) %>
+    <% if image %>
+      <% if banner.link_url.present? %>
+        <%= link_to banner.link_url, class: 'banner-link', target: '_blank', data: { banner_id: banner.id, action: 'click' } do %>
+          <%= image_tag image, 
+                       alt: banner.title,
+                       title: banner.description,
+                       class: 'banner-image',
+                       loading: 'lazy' %>
+        <% end %>
+      <% else %>
+        <%= image_tag image, 
+                     alt: banner.title,
+                     title: banner.description,
+                     class: 'banner-image',
+                     loading: 'lazy' %>
+      <% end %>
+      
+      <%# Overlay com texto se necessário %>
+      <% if local_assigns[:show_text] && (banner.title.present? || banner.description.present?) %>
+        <div class="banner-overlay">
+          <% if banner.title.present? %>
+            <h3 class="banner-title"><%= banner.title %></h3>
+          <% end %>
+          <% if banner.description.present? %>
+            <p class="banner-description"><%= banner.description %></p>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+  
+  <%# Botão de fechar se configurado %>
+  <% if banner.show_close_button? %>
+    <button class="banner-close" data-banner-id="<%= banner.id %>" data-action="close">
+      ×
+    </button>
+  <% end %>
+  
+  <%# Código de rastreamento se presente %>
+  <% if banner.conversion_tracking_code.present? %>
+    <%= banner.conversion_tracking_code.html_safe %>
+  <% end %>
+</div>

@@ -1,0 +1,75 @@
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "title": "Pronto para começar seu projeto solar?",
+    "subtitle": "Conecte-se com as melhores empresas de energia solar da sua região e receba orçamentos personalizados em minutos.",
+    "button1_text": "Encontrar Empresas",
+    "button1_url": "/buscar",
+    "button2_text": "Cadastrar Minha Empresa",
+    "button2_url": "/cadastrar",
+    "background_type": "solid",
+    "background_color": "#f97316",
+    "background_image_url": null,
+    "enabled": true,
+    "position": "homepage"
+  }
+}
+
+// Exemplo com imagem de fundo:
+{
+  "success": true,
+  "data": {
+    "id": 2,
+    "title": "Transforme sua casa com energia solar",
+    "subtitle": "Economize até 95% na conta de luz com painéis solares de alta qualidade.",
+    "button1_text": "Ver Preços",
+    "button1_url": "/orcamento",
+    "button2_text": "Falar com Especialista",
+    "button2_url": "https://wa.me/5511999999999",
+    "background_type": "image",
+    "background_color": null,
+    "background_image_url": "https://example.com/rails/active_storage/blobs/redirect/solar-panels-bg.jpg",
+    "enabled": true,
+    "position": "homepage"
+  }
+}
+
+// Exemplo de resposta quando não há banner ativo (fallback):
+{
+  "success": true,
+  "data": {
+    "id": null,
+    "title": "Pronto para começar seu projeto solar?",
+    "subtitle": "Conecte-se com as melhores empresas de energia solar da sua região e receba orçamentos personalizados em minutos.",
+    "button1_text": "Encontrar Empresas",
+    "button1_url": "/buscar",
+    "button2_text": "Cadastrar Minha Empresa",
+    "button2_url": "/cadastrar",
+    "background_type": "solid",
+    "background_color": "#f97316",
+    "background_image_url": null,
+    "enabled": true,
+    "position": "homepage"
+  }
+}
+
+// Exemplo de resposta de erro:
+{
+  "success": false,
+  "error": "Erro interno do servidor",
+  "data": {
+    "id": null,
+    "title": "Pronto para começar seu projeto solar?",
+    "subtitle": "Conecte-se com as melhores empresas de energia solar da sua região e receba orçamentos personalizados em minutos.",
+    "button1_text": "Encontrar Empresas",
+    "button1_url": "/buscar",
+    "button2_text": "Cadastrar Minha Empresa",
+    "button2_url": "/cadastrar",
+    "background_type": "solid",
+    "background_color": "#f97316",
+    "background_image_url": null,
+    "enabled": true,
+    "position": "homepage"
+  }
+}

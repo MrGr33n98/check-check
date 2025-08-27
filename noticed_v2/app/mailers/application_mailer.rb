@@ -1,4 +1,10 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
+  default from: "noreply@checkcheck.com"
   layout "mailer"
+  
+  private
+  
+  def admin_emails
+    AdminUser.pluck(:email)
+  end
 end

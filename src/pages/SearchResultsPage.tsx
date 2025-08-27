@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
+import CityBanner from '@/components/banners/CityBanner';
+import HelpSection from '@/components/sections/HelpSection';
 import { useSearch } from '@/hooks/useSearch';
 import { Star, MapPin, Phone, Mail, Award, Clock, ArrowRight } from 'lucide-react';
 
@@ -8,23 +10,28 @@ const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
   const { results, isLoading, totalResults, searchCompanies, clearSearch } = useSearch();
   const [sortBy, setSortBy] = useState('relevance');
+  const [currentLocation, setCurrentLocation] = useState('');
 
   useEffect(() => {
     // Executar busca inicial baseada nos parâmetros da URL
     const initialQuery = searchParams.get('q') || '';
     const initialLocation = searchParams.get('location') || '';
     
+    setCurrentLocation(initialLocation);
+    
     if (initialQuery || initialLocation) {
       searchCompanies({
         query: initialQuery,
         location: initialLocation,
         radius: 50,
-        priceRange: [0, 200000],
+        priceRange: [0, 100000],
         rating: 0,
+        ratings: [],
         certifications: [],
         services: [],
-        experience: '',
-        availability: ''
+        experience: [],
+        availability: '',
+        deviceTarget: ''
       });
     }
   }, [searchParams]);
@@ -55,9 +62,28 @@ const SearchResultsPage = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Busca Avançada */}
         <AdvancedSearch 
-          onSearch={searchCompanies}
+          onSearch={(filters) => {
+            searchCompanies(filters);
+            setCurrentLocation(filters.location);
+          }}
           onClear={clearSearch}
           isLoading={isLoading}
+        />
+
+        {/* Banner Customizável por Cidade */}
+        <CityBanner 
+          city={currentLocation}
+          onBannerClick={(bannerId: string) => {
+            console.log('Banner clicado:', bannerId);
+            // Aqui você pode implementar ações específicas como:
+            // - Redirecionar para página da empresa
+            // - Aplicar filtros específicos
+            // - Abrir modal de contato
+          }}
+          onBannerClose={(bannerId: string) => {
+            console.log('Banner fechado:', bannerId);
+            // Aqui você pode implementar tracking de fechamento
+          }}
         />
 
         {/* Resultados */}
@@ -201,24 +227,33 @@ const SearchResultsPage = () => {
           </div>
         )}
 
-        {/* Estado Vazio */}
+        {/* Estado Vazio - Seção de Ajuda */}
         {!isLoading && totalResults === 0 && (
-          <div className="text-center py-16">
-            <div className="text-gray-400 mb-4">
-              <MapPin className="w-16 h-16 mx-auto" />
+          <div>
+            <div className="text-center py-8 mb-8">
+              <div className="text-gray-400 mb-4">
+                <MapPin className="w-16 h-16 mx-auto" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                Nenhuma empresa encontrada
+              </h3>
+              <p className="text-gray-500 mb-6">
+                Tente ajustar os filtros ou expandir a área de busca
+              </p>
+              <button
+                onClick={clearSearch}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Limpar filtros
+              </button>
             </div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              Nenhuma empresa encontrada
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Tente ajustar os filtros ou expandir a área de busca
-            </p>
-            <button
-              onClick={clearSearch}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Limpar filtros
-            </button>
+            
+            <HelpSection 
+              title="Não encontrou o que procura?"
+              subtitle="Nossa equipe pode ajudar você a encontrar a empresa perfeita para seu projeto específico de energia solar."
+              showContactForm={true}
+              variant="default"
+            />
           </div>
         )}
       </div>

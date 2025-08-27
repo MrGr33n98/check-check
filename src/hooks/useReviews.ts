@@ -75,7 +75,7 @@ export const useReviews = (companyId?: number) => {
       
       // Aplicar filtros
       if (filters.rating) {
-        filteredReviews = filteredReviews.filter(review => review.rating === filters.rating);
+        filteredReviews = filteredReviews.filter(review => review.rating === parseInt(filters.rating || '0'));
       }
       if (filters.projectType) {
         filteredReviews = filteredReviews.filter(review => review.projectType === filters.projectType);

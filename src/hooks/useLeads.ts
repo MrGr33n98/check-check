@@ -17,7 +17,7 @@ export const useLeads = (): UseLeadsReturn => {
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [initialized, setInitialized] = useState(false)
+
 
   // Load leads from localStorage on initial load
   useEffect(() => {
@@ -28,10 +28,8 @@ export const useLeads = (): UseLeadsReturn => {
           setLeads(existingLeads)
         }
       } catch (err) {
-        console.error('Error loading leads from localStorage:', err)
-      } finally {
-        setInitialized(true)
-      }
+          console.error('Error loading leads from localStorage:', err)
+        }
     }
     
     loadLeads()

@@ -18,10 +18,44 @@ class Lead < ApplicationRecord
   end
   
   after_initialize :set_default_status, if: :new_record?
+  after_create :track_lead_creation
+  after_update :track_lead_conversion, if: :saved_change_to_status?
   
   private
   
   def set_default_status
     self.status ||= :new_lead
+  end
+  
+  # Rastreia criação de lead para analytics
+  def track_lead_creation
+    return unless solution&.user
+    
+    # Buscar provedor associado ao usuário da solução
+    provider = Provider.joins(:company_members)
+                      .where(company_members: { user: solution.user })
+                      .first
+    
+    if provider
+      AnalyticsService.track_lead(provider, self)
+    end
+  rescue => e
+    Rails.logger.error "Error tracking lead creation: #{e.message}"
+  end
+  
+  # Rastreia conversão de lead
+  def track_lead_conversion
+    return unless converted? && solution&.user
+    
+    # Buscar provedor associado ao usuário da solução
+    provider = Provider.joins(:company_members)
+                      .where(company_members: { user: solution.user })
+                      .first
+    
+    if provider
+      AnalyticsService.track_conversion(provider, self)
+    end
+  rescue => e
+    Rails.logger.error "Error tracking lead conversion: #{e.message}"
   end
 end

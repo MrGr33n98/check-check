@@ -2,9 +2,14 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'admin' | 'moderator' | 'user';
+  role: 'admin' | 'moderator' | 'user' | 'empresa';
   created_at: string;
   companyId?: number;
+  corporate_email?: boolean;
+  company_name?: string;
+  position?: string;
+  approved?: boolean;
+  company?: Company;
 }
 
 export interface Company {
@@ -28,6 +33,7 @@ export interface Company {
   employeeCount?: string;
   logo?: string;
   coverImage?: string;
+  bannerImage?: string;
   socialMedia?: {
     facebook?: string;
     instagram?: string;
@@ -200,5 +206,63 @@ export interface CompanyProfile extends Company {
     friday: string;
     saturday: string;
     sunday: string;
+  };
+}
+
+// Interface for form data in CompanyRegistrationPage
+export interface CompanyRegistrationFormData {
+  companyName: string;
+  cnpj: string;
+  foundedYear: string;
+  employeeCount: string;
+  businessType: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  email: string;
+  phone: string;
+  website: string;
+  location: string;
+  country: string;
+  serviceAreas: string[];
+  servicesOffered: string[];
+  specialties: string[];
+  certifications: string[];
+  experienceYears: string;
+  projectsCompleted: string;
+  installedCapacityMW: string;
+  socialMedia: {
+    facebook: string;
+    instagram: string;
+    linkedin: string;
+  };
+  businessHours: {
+    monday: string;
+    tuesday: string;
+    wednesday: string;
+    thursday: string;
+    friday: string;
+    saturday: string;
+    sunday: string;
+  };
+  logo: File | null;
+  coverImage: File | null;
+  documents: File[];
+  licenses: File[];
+  portfolioImages: File[];
+}
+
+// Interface for select options
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+// Interface for file input change event
+export interface FileInputEvent extends React.ChangeEvent<HTMLInputElement> {
+  target: HTMLInputElement & {
+    files: FileList | null;
   };
 }

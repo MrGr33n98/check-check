@@ -1,151 +1,116 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Building2, 
-  MapPin, 
-  FileText, 
-  Users, 
-  CheckCircle, 
-  Upload,
-  ArrowRight,
+import {
+  Building2,
+  MapPin,
+  Users,
   Shield,
   Star,
-  Zap,
-  Image,
-  Eye,
+  CheckCircle,
+  ArrowLeft,
+  ArrowRight,
+  Upload,
   AlertCircle,
   X,
-  ArrowLeft
+  FileText,
+  Image,
+  Zap,
+  Eye
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
+import { CompanyRegistrationFormData } from '../data/types';
 
-interface FormData {
-  // Step 1: Informações básicas
-  companyName: string;
-  cnpj: string;
-  foundedYear: string;
-  employeeCount: string;
-  businessType: string;
-  description: string;
-  
-  // Step 2: Localização
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  serviceAreas: string[];
-  email: string;
-  phone: string;
-  website: string;
-  country: string; // Added country field
-  
-  // Step 3: Informações técnicas
-  servicesOffered: string[];
-  experienceYears: string;
-  projectsCompleted: string;
-  installedCapacityMW: string;
-  specialties: string[];
-  
-  // Step 4: Documentação
-  certifications: string[];
-  documents: File[];
-  licenses: File[];
-  
-  // Step 5: Mídia
-  logo: File | null;
-  coverImage: File | null;
-  portfolioImages: File[];
-  socialMedia: {
-    facebook: string;
-    instagram: string;
-    linkedin: string;
-  };
-}
-
-const CompanyRegistrationPage = () => {
+const CompanyRegistrationPage: React.FC = () => {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const totalSteps = 6;
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [password, setPassword] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  
-  const [formData, setFormData] = useState<FormData>({
-    // Step 1: Informações básicas
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<CompanyRegistrationFormData>({
     companyName: '',
     cnpj: '',
     foundedYear: '',
     employeeCount: '',
     businessType: '',
     description: '',
-    
-    // Step 2: Localização
     address: '',
     city: '',
     state: '',
     zipCode: '',
-    serviceAreas: [],
     email: '',
     phone: '',
     website: '',
-    country: 'Brazil', // Set default country
-    
-    // Step 3: Informações técnicas
+    location: '',
+    country: '',
+    serviceAreas: [],
     servicesOffered: [],
+    specialties: [],
+    certifications: [],
     experienceYears: '',
     projectsCompleted: '',
     installedCapacityMW: '',
-    specialties: [],
-    
-    // Step 4: Documentação
-    certifications: [],
-    documents: [],
-    licenses: [],
-    
-    // Step 5: Mídia
-    logo: null,
-    coverImage: null,
-    portfolioImages: [],
     socialMedia: {
       facebook: '',
       instagram: '',
       linkedin: ''
-    }
+    },
+    businessHours: {
+      monday: '',
+      tuesday: '',
+      wednesday: '',
+      thursday: '',
+      friday: '',
+      saturday: '',
+      sunday: ''
+    },
+    logo: null,
+    coverImage: null,
+    documents: [],
+    licenses: [],
+    portfolioImages: []
   });
-
-  const totalSteps = 6;
-
-  const businessTypes = [
-    'Instalação Residencial',
-    'Instalação Comercial',
-    'Instalação Industrial',
-    'Usinas de Grande Porte',
-    'Manutenção e Monitoramento',
-    'Consultoria Energética',
-    'Financiamento Solar',
-    'Equipamentos e Componentes'
-  ];
+  
+  // Additional state for file previews
+  const [filePreviews, setFilePreviews] = useState<{
+    logo?: string;
+    coverImage?: string;
+    portfolioImages?: string[];
+  }>({});
 
   const servicesOptions = [
-    'Projeto e Dimensionamento',
-    'Instalação Completa',
-    'Manutenção Preventiva',
-    'Manutenção Corretiva',
-    'Monitoramento Remoto',
-    'Consultoria Técnica',
-    'Financiamento',
-    'Seguro Solar',
-    'Homologação junto à Concessionária'
+    'Projeto e Dimensionamento de Sistemas Fotovoltaicos',
+    'Instalação de Sistemas Residenciais',
+    'Instalação de Sistemas Comerciais',
+    'Instalação de Sistemas Industriais',
+    'Usinas Solares de Grande Porte',
+    'Sistemas Off-Grid (Isolados)',
+    'Sistemas Híbridos (Grid-Tie + Bateria)',
+    'Manutenção Preventiva e Corretiva',
+    'Monitoramento e Análise de Performance',
+    'Consultoria em Energia Solar',
+    'Financiamento de Projetos Solares',
+    'Homologação junto à Concessionária',
+    'Aquecimento Solar de Água',
+    'Bombeamento Solar para Irrigação'
   ];
 
   const specialtyOptions = [
-    'Sistemas Residenciais',
-    'Sistemas Comerciais',
-    'Sistemas Industriais',
+    'Residencial',
+    'Comercial',
+    'Industrial',
     'Usinas Solares',
-    'Sistemas Off-Grid',
-    'Sistemas Híbridos',
-    'Energia Solar Rural',
+    'Off-Grid',
+    'Híbridos',
+    'Rural',
     'Aquecimento Solar',
     'Bombeamento Solar'
   ];
+
+
 
   const certificationOptions = [
     'INMETRO',
@@ -157,6 +122,54 @@ const CompanyRegistrationPage = () => {
     'Certificação de Fabricantes',
     'Outras Certificações'
   ];
+
+  const businessTypes = [
+    'Instalação e Manutenção',
+    'Projeto e Consultoria',
+    'Vendas e Distribuição',
+    'Financiamento',
+    'Fabricação de Equipamentos',
+    'Outros'
+  ];
+
+  const handleInputChange = (field: keyof CompanyRegistrationFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleArrayChange = (field: keyof CompanyRegistrationFormData, value: string, checked: boolean) => {
+    setFormData(prev => {
+      const currentArray = (prev[field] as string[]) || [];
+      const newArray = checked 
+        ? [...currentArray, value]
+        : currentArray.filter(item => item !== value);
+      
+      return {
+        ...prev,
+        [field]: newArray
+      };
+    });
+    
+    // Clear validation error when user makes a selection
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
 
   const stateOptions = [
     { value: 'AC', label: 'Acre' },
@@ -188,21 +201,7 @@ const CompanyRegistrationPage = () => {
     { value: 'TO', label: 'Tocantins' }
   ];
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    // Clear validation error when user starts typing
-    if (validationErrors[field]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
-  };
-
-  const handleNestedInputChange = (parentField: keyof FormData, childField: string, value: any) => {
+  const handleNestedInputChange = (parentField: keyof CompanyRegistrationFormData, childField: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [parentField]: {
@@ -212,28 +211,127 @@ const CompanyRegistrationPage = () => {
     }));
   };
 
-  const handleArrayChange = (field: keyof FormData, value: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: checked 
-        ? [...(prev[field] as string[]), value]
-        : (prev[field] as string[]).filter(item => item !== value)
-    }));
-  };
-
-  const handleFileChange = (field: keyof FormData, files: FileList | null, multiple = false) => {
+  const handleFileChange = (field: keyof CompanyRegistrationFormData, files: FileList | null, multiple = false) => {
     if (!files) return;
     
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+    
+    // File validation rules
+    const validationRules = {
+      logo: { maxSize: 2 * 1024 * 1024, types: ['image/jpeg', 'image/png', 'image/svg+xml'], maxCount: 1 },
+      coverImage: { maxSize: 5 * 1024 * 1024, types: ['image/jpeg', 'image/png'], maxCount: 1 },
+      documents: { maxSize: 5 * 1024 * 1024, types: ['application/pdf', 'image/jpeg', 'image/png'], maxCount: 10 },
+      licenses: { maxSize: 5 * 1024 * 1024, types: ['application/pdf', 'image/jpeg', 'image/png'], maxCount: 10 },
+      portfolioImages: { maxSize: 5 * 1024 * 1024, types: ['image/jpeg', 'image/png'], maxCount: 10 }
+    };
+    
+    const rules = validationRules[field as keyof typeof validationRules];
+    if (!rules) return;
+    
+    // Validate each file
+    Array.from(files).forEach((file) => {
+      // Check file size
+      if (file.size > rules.maxSize) {
+        errors.push(`${file.name}: Arquivo muito grande (máximo ${rules.maxSize / (1024 * 1024)}MB)`);
+        return;
+      }
+      
+      // Check file type
+      if (!rules.types.includes(file.type)) {
+        const allowedTypes = rules.types.map(type => type.split('/')[1].toUpperCase()).join(', ');
+        errors.push(`${file.name}: Tipo não permitido (permitidos: ${allowedTypes})`);
+        return;
+      }
+      
+      validFiles.push(file);
+    });
+    
+    // Check maximum count
+    const currentFiles = multiple ? (formData[field] as File[] || []) : [];
+    const totalFiles = multiple ? currentFiles.length + validFiles.length : validFiles.length;
+    
+    if (totalFiles > rules.maxCount) {
+      errors.push(`Máximo de ${rules.maxCount} arquivo(s) permitido(s)`);
+      return;
+    }
+    
+    // Show errors if any
+    if (errors.length > 0) {
+      setErrorMessage(errors.join('\n'));
+      setTimeout(() => setErrorMessage(''), 5000);
+      return;
+    }
+    
+    // Update form data
     if (multiple) {
       setFormData(prev => ({
         ...prev,
-        [field]: Array.from(files)
+        [field]: [...(prev[field] as File[] || []), ...validFiles]
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        [field]: files[0]
+        [field]: validFiles[0] || null
       }));
+    }
+    
+    // Generate preview URLs for images
+    if (field === 'logo' || field === 'coverImage' || field === 'portfolioImages') {
+      validFiles.forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const result = e.target?.result as string;
+            setFilePreviews(prev => {
+              if (field === 'portfolioImages') {
+                return {
+                  ...prev,
+                  portfolioImages: [...(prev.portfolioImages || []), result]
+                };
+              } else {
+                return {
+                  ...prev,
+                  [field]: result
+                };
+              }
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  };
+
+  const removeFile = (field: keyof CompanyRegistrationFormData, index?: number) => {
+    if (index !== undefined) {
+      // Remove specific file from array
+      setFormData(prev => ({
+        ...prev,
+        [field]: (prev[field] as File[]).filter((_, i) => i !== index)
+      }));
+      
+      // Remove corresponding preview
+      if (field === 'portfolioImages') {
+        setFilePreviews(prev => ({
+          ...prev,
+          portfolioImages: prev.portfolioImages?.filter((_, i) => i !== index)
+        }));
+      }
+    } else {
+      // Remove single file
+      setFormData(prev => ({
+        ...prev,
+        [field]: null
+      }));
+      
+      // Remove corresponding preview
+      if (field === 'logo' || field === 'coverImage') {
+        setFilePreviews(prev => ({
+          ...prev,
+          [field]: undefined
+        }));
+      }
     }
   };
 
@@ -263,6 +361,7 @@ const CompanyRegistrationPage = () => {
         if (!formData.experienceYears.trim()) errors.experienceYears = 'Anos de experiência é obrigatório';
         if (!formData.projectsCompleted.trim()) errors.projectsCompleted = 'Número de projetos é obrigatório';
         if (!formData.installedCapacityMW.trim()) errors.installedCapacityMW = 'Capacidade instalada é obrigatória';
+        if (formData.specialties.length === 0) errors.specialties = 'Selecione pelo menos uma especialidade';
         break;
       case 4:
         // Documentation is optional, but we can validate file types if provided
@@ -297,17 +396,26 @@ const CompanyRegistrationPage = () => {
     if (!validateStep(currentStep)) {
       return;
     }
-    
+    if (!password) {
+      setErrorMessage('Por favor, insira uma senha para o representante.');
+      return;
+    }
     setIsSubmitting(true);
+    setErrorMessage('');
+    setSuccessMessage('');
     
     try {
       const data = new FormData();
 
+      // Check if email is corporate (auto-verification logic)
+      const isCorporateEmail = formData.email.toLowerCase().includes('@solar.com.br') || 
+                              formData.email.toLowerCase().includes('@energia.com.br') ||
+                              formData.email.toLowerCase().includes('@renovavel.com.br');
+      
       // Append all form data fields
-      // Note: Frontend keys are renamed to match backend params in the following lines
       data.append('provider[name]', formData.companyName);
       data.append('provider[foundation_year]', formData.foundedYear);
-      data.append('provider[short_description]', formData.description); // maps to description from frontend
+      data.append('provider[short_description]', formData.description);
       data.append('provider[address]', formData.address);
       data.append('provider[phone]', formData.phone);
       data.append('provider[cnpj]', formData.cnpj);
@@ -320,7 +428,9 @@ const CompanyRegistrationPage = () => {
       data.append('provider[experience_years]', formData.experienceYears);
       data.append('provider[projects_completed]', formData.projectsCompleted);
       data.append('provider[installed_capacity_mw]', formData.installedCapacityMW);
-      data.append('provider[country]', formData.country); // Append country
+      data.append('provider[country]', formData.country || 'Brasil');
+      data.append('provider[password]', password);
+      data.append('provider[auto_verified]', isCorporateEmail.toString());
 
       // Append array fields
       data.append('provider[business_type]', formData.businessType); // Corrected: businessType is a string
@@ -328,11 +438,6 @@ const CompanyRegistrationPage = () => {
       formData.servicesOffered.forEach(service => data.append('provider[services_offered][]', service));
       formData.specialties.forEach(specialty => data.append('provider[specialties][]', specialty));
       formData.certifications.forEach(cert => data.append('provider[certifications][]', cert));
-
-      // Append social media as nested object
-      data.append('provider[social_media][facebook]', formData.socialMedia.facebook);
-      data.append('provider[social_media][instagram]', formData.socialMedia.instagram);
-      data.append('provider[social_media][linkedin]', formData.socialMedia.linkedin);
 
       // Append files
       if (formData.logo) data.append('logo', formData.logo);
@@ -357,7 +462,7 @@ const CompanyRegistrationPage = () => {
             errorDetails = errorData.errors ? JSON.stringify(errorData.errors) : JSON.stringify(errorData);
           } catch (jsonParseError) {
             // Fallback if JSON parsing fails despite Content-Type
-            errorDetails = `Erro ao processar resposta JSON: ${jsonParseError.message}`;
+            errorDetails = `Erro ao processar resposta JSON: ${jsonParseError instanceof Error ? jsonParseError.message : 'Erro desconhecido'}`;
           }
         } else {
           // If not JSON, or no content-type, read as text
@@ -371,13 +476,29 @@ const CompanyRegistrationPage = () => {
         throw new Error(errorDetails);
       }
       
-      // Show success message and redirect
-      alert('Cadastro enviado com sucesso! Sua empresa está em análise e você receberá um e-mail com o resultado em até 48 horas.');
-      navigate('/login');
+      setSuccessMessage('Cadastro enviado com sucesso! Tentando login automático...');
+      
+      const loginResult = await login(formData.email, password);
+      
+      if (loginResult.success && loginResult.user) {
+        const user = loginResult.user;
+        if (user.role === 'empresa') {
+          if (user.company?.status === 'active') {
+            navigate('/company-dashboard');
+          } else {
+            navigate('/pending-approval');
+          }
+        } else {
+          navigate('/dashboard');
+        }
+      } else {
+        setErrorMessage(loginResult.error || 'Login automático falhou. Por favor, faça login manualmente.');
+        navigate('/login');
+      }
       
     } catch (error) {
       console.error('Erro ao enviar cadastro:', error);
-      alert(`Erro ao enviar cadastro. Detalhes: ${error}`);
+      setErrorMessage(`Erro ao enviar cadastro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -709,7 +830,7 @@ const renderStep1 = () => (
           )}
         </div>
 
-        <div>
+                <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             CEP *
           </label>
@@ -728,6 +849,18 @@ const renderStep1 = () => (
               {validationErrors.zipCode}
             </p>
           )}
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Senha para Representante *
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300"
+            placeholder="Crie uma senha segura"
+          />
         </div>
       </div>
 
@@ -770,20 +903,60 @@ const renderStep3 = () => (
           Serviços Oferecidos * (selecione todos que se aplicam)
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {servicesOptions.map((service) => (
-            <label key={service} className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.servicesOffered.includes(service)}
-                onChange={(e) => handleArrayChange('servicesOffered', service, e.target.checked)}
-                className="mr-3 text-blue-600"
-              />
-              <span className="text-sm">{service}</span>
-            </label>
-          ))}
+          {servicesOptions.map((service) => {
+            const isSelected = formData.servicesOffered.includes(service);
+            const getServiceIcon = (serv: string) => {
+              if (serv.includes('Projeto')) return '📐';
+              if (serv.includes('Residencial')) return '🏠';
+              if (serv.includes('Comercial')) return '🏢';
+              if (serv.includes('Industrial')) return '🏭';
+              if (serv.includes('Usinas')) return '⚡';
+              if (serv.includes('Off-Grid')) return '🔋';
+              if (serv.includes('Híbridos')) return '🔄';
+              if (serv.includes('Manutenção')) return '🔧';
+              if (serv.includes('Monitoramento')) return '📊';
+              if (serv.includes('Consultoria')) return '💡';
+              if (serv.includes('Financiamento')) return '💰';
+              if (serv.includes('Homologação')) return '📋';
+              if (serv.includes('Aquecimento')) return '🌡️';
+              if (serv.includes('Bombeamento')) return '💧';
+              return '⚙️';
+            };
+            
+            return (
+              <label 
+                key={service} 
+                className={`relative flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                  isSelected 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => handleArrayChange('servicesOffered', service, e.target.checked)}
+                  className="sr-only"
+                />
+                <div className="text-lg mr-3">{getServiceIcon(service)}</div>
+                <span className={`text-sm flex-1 ${
+                  isSelected ? 'text-blue-700 font-medium' : 'text-gray-700'
+                }`}>
+                  {service}
+                </span>
+                {isSelected && (
+                  <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center ml-2">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </label>
+            );
+          })}
         </div>
         {validationErrors.servicesOffered && (
-          <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+          <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
             <AlertCircle className="w-4 h-4" />
             {validationErrors.servicesOffered}
           </p>
@@ -868,21 +1041,64 @@ const renderStep3 = () => (
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
-          Especialidades (selecione todas que se aplicam)
+          Especialidades (selecione todas que se aplicam) *
         </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {specialtyOptions.map((specialty) => (
-            <label key={specialty} className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.specialties.includes(specialty)}
-                onChange={(e) => handleArrayChange('specialties', specialty, e.target.checked)}
-                className="mr-3 text-blue-600"
-              />
-              <span className="text-sm">{specialty}</span>
-            </label>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {specialtyOptions.map((specialty) => {
+            const isSelected = formData.specialties.includes(specialty);
+            const getSpecialtyIcon = (spec: string) => {
+              switch (spec) {
+                case 'Residencial': return '🏠';
+                case 'Comercial': return '🏢';
+                case 'Industrial': return '🏭';
+                case 'Usinas Solares': return '⚡';
+                case 'Off-Grid': return '🔋';
+                case 'Híbridos': return '🔄';
+                case 'Rural': return '🌾';
+                case 'Aquecimento Solar': return '🌡️';
+                case 'Bombeamento Solar': return '💧';
+                default: return '☀️';
+              }
+            };
+            
+            return (
+              <label 
+                key={specialty} 
+                className={`relative flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  isSelected 
+                    ? 'border-blue-500 bg-blue-50 shadow-sm' 
+                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => handleArrayChange('specialties', specialty, e.target.checked)}
+                  className="sr-only"
+                />
+                <div className="text-2xl mb-2">{getSpecialtyIcon(specialty)}</div>
+                <span className={`text-sm font-medium text-center ${
+                  isSelected ? 'text-blue-700' : 'text-gray-700'
+                }`}>
+                  {specialty}
+                </span>
+                {isSelected && (
+                  <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </label>
+            );
+          })}
         </div>
+        {validationErrors.specialties && (
+          <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+            <AlertCircle className="w-4 h-4" />
+            {validationErrors.specialties}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -900,17 +1116,50 @@ const renderStep3 = () => (
           Certificações (selecione todas que possui)
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {certificationOptions.map((cert) => (
-            <label key={cert} className="flex items-center p-3 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.certifications.includes(cert)}
-                onChange={(e) => handleArrayChange('certifications', cert, e.target.checked)}
-                className="mr-3 text-blue-600"
-              />
-              <span className="text-sm">{cert}</span>
-            </label>
-          ))}
+          {certificationOptions.map((cert) => {
+            const isSelected = formData.certifications.includes(cert);
+            const getCertIcon = (certification: string) => {
+              if (certification.includes('INMETRO')) return '🏅';
+              if (certification.includes('CREA')) return '👷';
+              if (certification.includes('ABNT')) return '📜';
+              if (certification.includes('NR-35')) return '🪜';
+              if (certification.includes('NR-10')) return '⚡';
+              if (certification.includes('ISO')) return '🌟';
+              if (certification.includes('Fabricantes')) return '🏭';
+              return '📋';
+            };
+            
+            return (
+              <label 
+                key={cert} 
+                className={`relative flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                  isSelected 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-200 hover:border-green-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => handleArrayChange('certifications', cert, e.target.checked)}
+                  className="sr-only"
+                />
+                <div className="text-lg mr-3">{getCertIcon(cert)}</div>
+                <span className={`text-sm flex-1 ${
+                  isSelected ? 'text-green-700 font-medium' : 'text-gray-700'
+                }`}>
+                  {cert}
+                </span>
+                {isSelected && (
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center ml-2">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </label>
+            );
+          })}
         </div>
       </div>
 
@@ -945,17 +1194,21 @@ const renderStep3 = () => (
         {formData.documents.length > 0 && (
           <div className="mt-4">
             <p className="text-sm font-medium text-gray-700 mb-2">Arquivos selecionados:</p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {formData.documents.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-700">{file.name}</span>
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <span className="text-sm text-gray-700 font-medium">{file.name}</span>
+                      <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const newFiles = formData.documents.filter((_, i) => i !== index);
-                      handleInputChange('documents', newFiles);
-                    }}
-                    className="text-red-500 hover:text-red-700"
+                    onClick={() => removeFile('documents', index)}
+                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                    title="Remover arquivo"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -997,17 +1250,21 @@ const renderStep3 = () => (
         {formData.licenses.length > 0 && (
           <div className="mt-4">
             <p className="text-sm font-medium text-gray-700 mb-2">Arquivos selecionados:</p>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {formData.licenses.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <span className="text-sm text-gray-700">{file.name}</span>
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <span className="text-sm text-gray-700 font-medium">{file.name}</span>
+                      <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const newFiles = formData.licenses.filter((_, i) => i !== index);
-                      handleInputChange('licenses', newFiles);
-                    }}
-                    className="text-red-500 hover:text-red-700"
+                    onClick={() => removeFile('licenses', index)}
+                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                    title="Remover arquivo"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1056,15 +1313,30 @@ const renderStep3 = () => (
           </p>
         </div>
         {formData.logo && (
-          <div className="mt-4 flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-700">{formData.logo.name}</span>
-            <button
-              type="button"
-              onClick={() => handleInputChange('logo', null)}
-              className="text-red-500 hover:text-red-700"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <div className="mt-4">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+              {filePreviews.logo && (
+                <div className="w-16 h-16 rounded-lg overflow-hidden bg-white border">
+                  <img 
+                    src={filePreviews.logo} 
+                    alt="Logo preview" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-700">{formData.logo.name}</p>
+                <p className="text-xs text-gray-500">{(formData.logo.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeFile('logo')}
+                className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                title="Remover logo"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -1097,15 +1369,32 @@ const renderStep3 = () => (
           </p>
         </div>
         {formData.coverImage && (
-          <div className="mt-4 flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-700">{formData.coverImage.name}</span>
-            <button
-              type="button"
-              onClick={() => handleInputChange('coverImage', null)}
-              className="text-red-500 hover:text-red-700"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <div className="mt-4">
+            <div className="p-4 bg-gray-50 rounded-lg border">
+              {filePreviews.coverImage && (
+                <div className="w-full h-32 rounded-lg overflow-hidden bg-white border mb-3">
+                  <img 
+                    src={filePreviews.coverImage} 
+                    alt="Cover preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">{formData.coverImage.name}</p>
+                  <p className="text-xs text-gray-500">{(formData.coverImage.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile('coverImage')}
+                  className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                  title="Remover imagem de capa"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1140,20 +1429,32 @@ const renderStep3 = () => (
         </div>
         {formData.portfolioImages.length > 0 && (
           <div className="mt-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Imagens selecionadas:</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <p className="text-sm font-medium text-gray-700 mb-3">Imagens selecionadas ({formData.portfolioImages.length}/10):</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {formData.portfolioImages.map((file, index) => (
-                <div key={index} className="relative">
-                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                    <span className="text-xs text-gray-500 text-center p-2">{file.name}</span>
+                <div key={index} className="relative group">
+                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border">
+                    {filePreviews.portfolioImages && filePreviews.portfolioImages[index] ? (
+                      <img 
+                        src={filePreviews.portfolioImages[index]} 
+                        alt={`Portfolio ${index + 1}`} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-xs text-gray-500 text-center p-2">{file.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-600 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-400">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      const newFiles = formData.portfolioImages.filter((_, i) => i !== index);
-                      handleInputChange('portfolioImages', newFiles);
-                    }}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    onClick={() => removeFile('portfolioImages', index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remover imagem"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1202,8 +1503,9 @@ const renderStep3 = () => (
         </div>
       </div>
     </div>
-  );  const 
-renderStep6 = () => (
+  );
+
+  const renderStep6 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <Eye className="w-16 h-16 text-blue-600 mx-auto mb-4" />
@@ -1385,7 +1687,14 @@ renderStep6 = () => (
     </div>
   );
 
-  return (
+  const buttonContent = isSubmitting ? (
+  <>
+    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+    Enviando...
+  </>
+) : 'Enviar Cadastro';
+
+return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-6">
         {/* Header */}
@@ -1420,6 +1729,16 @@ renderStep6 = () => (
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           {renderStepIndicator()}
+      {errorMessage && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{errorMessage}</span>
+        </div>
+      )}
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{successMessage}</span>
+        </div>
+      )}
 
           <form onSubmit={handleSubmit}>
             {currentStep === 1 && renderStep1()}
@@ -1460,36 +1779,16 @@ renderStep6 = () => (
                     disabled={isSubmitting}
                     className="inline-flex items-center gap-2 bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Enviando...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        Finalizar Cadastro
-                      </>
-                    )}
+                    {buttonContent}
                   </button>
                 )}
               </div>
             </div>
           </form>
         </div>
-
-        {/* Footer Info */}
-        <div className="text-center mt-8">
-          <p className="text-gray-600">
-            Já tem uma conta? {' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
-              Faça login aqui
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   );
-};
+}
 
 export default CompanyRegistrationPage;

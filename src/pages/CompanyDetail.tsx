@@ -58,10 +58,17 @@ const CompanyDetail: React.FC = () => {
     setIsLeadFormOpen(true)
   }
 
-  const handleLeadSubmit = async (leadData: LeadFormData & { companyId: number; intentionScore: number }) => {
+  const handleLeadSubmit = async (leadData: LeadFormData) => {
+    if (!company) return
+    
     try {
-      await submitLead(leadData)
-      alert(`Obrigado ${leadData.name}! Sua solicitação foi enviada com sucesso. A ${company?.name} entrará em contato em breve.`)
+      const leadDataWithCompany = {
+        ...leadData,
+        companyId: company.id,
+        intentionScore: 8 // Default intention score
+      }
+      await submitLead(leadDataWithCompany)
+      alert(`Obrigado ${leadData.name}! Sua solicitação foi enviada com sucesso. A ${company.name} entrará em contato em breve.`)
       setIsLeadFormOpen(false)
     } catch (error) {
       alert('Erro ao enviar solicitação. Tente novamente.')
@@ -134,7 +141,7 @@ const CompanyDetail: React.FC = () => {
 
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-2">
-                        <StarRating rating={company.rating} showValue size="sm" />
+                        <StarRating rating={company.rating} size="sm" />
                         <span className="text-sm text-muted-foreground">
                           ({company.review_count} avaliações)
                         </span>
@@ -287,7 +294,13 @@ const CompanyDetail: React.FC = () => {
               {reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
+                    <ReviewCard 
+                      key={review.id} 
+                      author={review.user_name || 'Usuário Anônimo'}
+                      rating={review.rating}
+                      comment={review.comment}
+                      date={formatDate(review.created_at)}
+                    />
                   ))}
                 </div>
               ) : (
@@ -463,13 +476,22 @@ const CompanyDetail: React.FC = () => {
       </Tabs>
 
       {/* Lead Form Modal */}
-      <LeadForm
-        companyId={company.id}
-        companyName={company.name}
-        isOpen={isLeadFormOpen}
-        onClose={() => setIsLeadFormOpen(false)}
-        onSubmit={handleLeadSubmit}
-      />
+      {isLeadFormOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Solicitar Orçamento - {company?.name}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setIsLeadFormOpen(false)}>
+                ×
+              </Button>
+            </div>
+            <LeadForm
+              onSubmit={handleLeadSubmit}
+              className="space-y-4"
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -36,11 +36,29 @@ class User < ApplicationRecord
   has_many :solutions, dependent: :destroy
   has_many :reviews, dependent: :destroy
 
+  # Scopes for Active Admin
+  scope :corporate_users, -> { where(corporate_email: true) }
+  scope :pending_approval, -> { where(approved: false) }
+  scope :approved_users, -> { where(approved: true) }
+
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name email] # Allow searching by name and email
+    %w[name email corporate_email company_name position approved] # Allow searching by these fields
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    [] # We don't have any searchable associations in this case
+    %w[provider company_member] # Allow searching by associations
+  end
+
+  # Methods for corporate users
+  def corporate_email?
+    corporate_email == true
+  end
+
+  def has_company?
+    provider.present?
+  end
+
+  def company_approved?
+    provider&.active?
   end
 end

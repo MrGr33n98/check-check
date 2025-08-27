@@ -1,0 +1,184 @@
+<%# Partial para renderizar banners por posição %>
+<%# 
+  Uso: <%= render 'banners/banners_by_position', position: 'header', limit: 3, category_id: @category&.id %>
+  
+  Parâmetros:
+  - position: obrigatório (header, sidebar, footer, hero, etc.)
+  - limit: opcional (número máximo de banners)
+  - category_id: opcional (filtrar por categoria)
+  - provider_id: opcional (filtrar por provedor)
+  - css_class: opcional (classe CSS adicional)
+  - show_text: opcional (mostrar overlay com texto)
+%>
+
+<% 
+  # Configurações padrão
+  position = local_assigns[:position] || 'header'
+  limit = local_assigns[:limit]
+  category_id = local_assigns[:category_id]
+  provider_id = local_assigns[:provider_id]
+  css_class = local_assigns[:css_class]
+  show_text = local_assigns[:show_text] || false
+  
+  # Buscar banners
+  banners = Banner.active
+                 .current
+                 .by_position(position)
+                 .by_device(detect_device_type)
+                 .ordered
+  
+  # Aplicar filtros
+  if category_id.present?
+    banners = banners.joins(:categories).where(categories: { id: category_id })
+  end
+  
+  if provider_id.present?
+    banners = banners.where(provider_id: provider_id)
+  end
+  
+  if limit.present?
+    banners = banners.limit(limit)
+  end
+  
+  # Aplicar regras de frequência (simplificado para a view)
+  # A lógica completa está no controller
+  banners = banners.to_a
+%>
+
+<% if banners.any? %>
+  <div class="banners-container banners-<%= position %> <%= css_class %>" 
+       data-position="<%= position %>"
+       data-count="<%= banners.count %>">
+    
+    <% banners.each do |banner| %>
+      <%= render 'banners/banner', 
+                 banner: banner, 
+                 css_class: "banner-position-#{position}",
+                 show_text: show_text %>
+    <% end %>
+    
+  </div>
+  
+  <%# JavaScript para tracking de impressões %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const bannerIds = <%= banners.map(&:id).to_json.html_safe %>;
+      
+      bannerIds.forEach(function(bannerId) {
+        const banner = document.getElementById('banner-' + bannerId);
+        if (banner) {
+          // Registrar impressão quando o banner estiver visível
+          const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+              if (entry.isIntersecting) {
+                fetch('/banners/' + bannerId + '/impression', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                  }
+                }).catch(function(error) {
+                  console.log('Erro ao registrar impressão:', error);
+                });
+                observer.unobserve(entry.target);
+              }
+            });
+          }, { threshold: 0.5 });
+          
+          observer.observe(banner);
+        }
+      });
+      
+      // Handler para cliques em banners
+      document.addEventListener('click', function(e) {
+        const clickElement = e.target.closest('[data-action="click"]');
+        if (clickElement) {
+          const bannerId = clickElement.closest('[data-banner-id]').dataset.bannerId;
+          fetch('/banners/' + bannerId + '/click', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            }
+          }).catch(function(error) {
+            console.log('Erro ao registrar clique:', error);
+          });
+        }
+        
+        // Handler para botão de fechar
+        const closeElement = e.target.closest('[data-action="close"]');
+        if (closeElement) {
+          const banner = closeElement.closest('.banner');
+          banner.style.display = 'none';
+          
+          // Salvar no localStorage para não mostrar novamente na sessão
+          const bannerId = closeElement.dataset.bannerId;
+          const closedBanners = JSON.parse(localStorage.getItem('closedBanners') || '[]');
+          if (!closedBanners.includes(bannerId)) {
+            closedBanners.push(bannerId);
+            localStorage.setItem('closedBanners', JSON.stringify(closedBanners));
+          }
+        }
+      });
+      
+      // Ocultar banners que foram fechados anteriormente
+      const closedBanners = JSON.parse(localStorage.getItem('closedBanners') || '[]');
+      closedBanners.forEach(function(bannerId) {
+        const banner = document.getElementById('banner-' + bannerId);
+        if (banner && banner.querySelector('[data-action="close"]')) {
+          banner.style.display = 'none';
+        }
+      });
+    });
+  </script>
+  
+  <%# CSS específico para a posição %>
+  <style>
+    .banners-<%= position %> {
+      <% case position %>
+      <% when 'header' %>
+        margin-bottom: 20px;
+      <% when 'footer' %>
+        margin-top: 20px;
+      <% when 'sidebar' %>
+        margin: 10px 0;
+      <% when 'hero' %>
+        margin: 0;
+      <% when 'popup' %>
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        background: white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        border-radius: 8px;
+        overflow: hidden;
+      <% when 'mobile_sticky' %>
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+      <% end %>
+    }
+    
+    .banner-position-<%= position %> {
+      <% case position %>
+      <% when 'popup' %>
+        max-width: 90vw;
+        max-height: 90vh;
+      <% when 'mobile_sticky' %>
+        width: 100%;
+      <% end %>
+    }
+    
+    @media (max-width: 768px) {
+      .banners-<%= position %> {
+        <% if position == 'sidebar' %>
+          margin: 5px 0;
+        <% end %>
+      }
+    }
+  </style>
+<% end %>

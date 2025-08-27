@@ -1,0 +1,65 @@
+<% content_for(:title) { "Importar Providers via CSV" } %>
+
+<div class="panel">
+  <h3>Importar Providers via CSV</h3>
+  
+  <div class="panel_contents">
+    <p>Use este formulário para importar múltiplos providers de uma só vez através de um arquivo CSV.</p>
+    
+    <div class="attributes_table">
+      <table>
+        <tr>
+          <th>Instruções:</th>
+          <td>
+            <ol>
+              <li>Baixe o template CSV clicando no botão "Baixar Template CSV" na página de providers</li>
+              <li>Preencha o arquivo com os dados dos providers</li>
+              <li>Certifique-se de que todas as colunas obrigatórias estão preenchidas</li>
+              <li>Para campos com múltiplos valores (social_links, tags), separe com ponto e vírgula (;)</li>
+              <li>Faça upload do arquivo preenchido usando o formulário abaixo</li>
+            </ol>
+          </td>
+        </tr>
+        <tr>
+          <th>Campos obrigatórios:</th>
+          <td>name, country, foundation_year, members_count</td>
+        </tr>
+        <tr>
+          <th>Status válidos:</th>
+          <td>pending, active, rejected, suspended (padrão: pending)</td>
+        </tr>
+      </table>
+    </div>
+    
+    <%= form_with url: process_csv_import_admin_providers_path, method: :post, multipart: true, local: true do |form| %>
+      <fieldset class="inputs">
+        <ol>
+          <li class="file input required">
+            <%= form.label :csv_file, "Arquivo CSV", class: "label" %>
+            <%= form.file_field :csv_file, accept: ".csv", required: true, class: "file_input" %>
+            <p class="inline-hints">Selecione um arquivo CSV com os dados dos providers</p>
+          </li>
+        </ol>
+      </fieldset>
+      
+      <fieldset class="actions">
+        <ol>
+          <li class="action input_action">
+            <%= form.submit "Importar CSV", class: "btn btn-primary" %>
+            <%= link_to "Cancelar", admin_providers_path, class: "btn btn-secondary" %>
+          </li>
+        </ol>
+      </fieldset>
+    <% end %>
+    
+    <div class="panel" style="margin-top: 20px;">
+      <h4>Exemplo de formato CSV:</h4>
+      <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">
+name,title,short_description,country,address,phone,foundation_year,members_count,revenue,social_links,tags,status
+"Exemplo Empresa Ltda","Empresa de Energia Solar","Especializada em soluções solares","Brasil","Rua das Flores, 123","(11) 99999-9999",2020,50,"R$ 1.000.000","https://facebook.com/exemplo;https://linkedin.com/exemplo","energia solar;sustentabilidade","pending"
+      </pre>
+    </div>
+  </div>
+</div>
+
+<%= link_to "← Voltar para Providers", admin_providers_path, class: "btn" %>

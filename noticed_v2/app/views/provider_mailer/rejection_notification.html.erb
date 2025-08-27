@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+      .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { background-color: #f44336; color: white; padding: 20px; text-align: center; }
+      .content { padding: 20px; background-color: #f9f9f9; }
+      .footer { padding: 20px; text-align: center; color: #666; }
+      .button { display: inline-block; padding: 10px 20px; background-color: #2196F3; color: white; text-decoration: none; border-radius: 5px; }
+      .warning-box { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>❌ Empresa Rejeitada</h1>
+      </div>
+      
+      <div class="content">
+        <h2>Informação sobre sua solicitação</h2>
+        <p>Infelizmente, sua empresa <strong><%= @provider.name %></strong> não foi aprovada para participar da plataforma Check Check Solar.</p>
+        
+        <p><strong>Detalhes da rejeição:</strong></p>
+        <ul>
+          <li><strong>Empresa:</strong> <%= @provider.name %></li>
+          <li><strong>Status:</strong> <%= @provider.status_label %></li>
+          <li><strong>Rejeitado em:</strong> <%= @provider.approved_at.strftime('%d/%m/%Y às %H:%M') %></li>
+          <li><strong>Analisado por:</strong> <%= @admin_user.email if @admin_user %></li>
+        </ul>
+        
+        <% if @rejection_notes.present? %>
+          <div class="warning-box">
+            <h3>📝 Motivo da rejeição:</h3>
+            <p><%= @rejection_notes %></p>
+          </div>
+        <% end %>
+        
+        <h3>O que fazer agora?</h3>
+        <p>Você pode:</p>
+        <ul>
+          <li>Revisar as informações da sua empresa</li>
+          <li>Corrigir os pontos mencionados nas observações</li>
+          <li>Reenviar sua solicitação com as correções necessárias</li>
+          <li>Entrar em contato conosco para esclarecimentos</li>
+        </ul>
+        
+        <p style="text-align: center; margin: 30px 0;">
+          <a href="mailto:suporte@checkcheck.com" class="button">Entrar em Contato</a>
+        </p>
+      </div>
+      
+      <div class="footer">
+        <p>Atenciosamente,<br>Equipe Check Check Solar</p>
+        <p><small>Este é um email automático, não responda a esta mensagem.</small></p>
+      </div>
+    </div>
+  </body>
+</html>

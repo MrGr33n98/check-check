@@ -24,6 +24,12 @@ ActiveAdmin.register_page "Dashboard" do
         li class: "nav-item" do
           link_to "Atividade", "#activity", class: "nav-link", "data-bs-toggle": "tab"
         end
+        li class: "nav-item" do
+          link_to "Analytics", "#analytics", class: "nav-link", "data-bs-toggle": "tab"
+        end
+        li class: "nav-item" do
+          link_to "Banners Dinâmicos", "#dynamic-banners", class: "nav-link", "data-bs-toggle": "tab"
+        end
       end
     end
 
@@ -415,6 +421,232 @@ ActiveAdmin.register_page "Dashboard" do
               end
             end
           end
+          
+      # Analytics Tab
+      div class: "tab-pane fade", id: "analytics" do
+            panel "Métricas de Analytics" do
+              begin
+                # Estatísticas gerais de analytics
+                div class: "stats-grid" do
+                  total_analytics = Analytic.count
+                  total_leads = Analytic.sum(:leads_received)
+                  total_views = Analytic.sum(:page_views)
+                  avg_conversion = Analytic.average(:conversion_rate) || 0
+                  
+                  div class: "stat-card total" do
+                    h3 "Total de Registros"
+                    div class: "stat-number" do
+                      total_analytics
+                    end
+                  end
+                  
+                  div class: "stat-card" do
+                    h3 "Total de Leads"
+                    div class: "stat-number" do
+                      total_leads
+                    end
+                  end
+                  
+                  div class: "stat-card" do
+                    h3 "Total de Visualizações"
+                    div class: "stat-number" do
+                      number_with_delimiter(total_views)
+                    end
+                  end
+                  
+                  div class: "stat-card" do
+                    h3 "Taxa de Conversão Média"
+                    div class: "stat-number" do
+                      "#{avg_conversion.round(2)}%"
+                    end
+                  end
+                end
+                
+                h4 "Top 10 Provedores por Leads"
+                if Provider.joins(:analytics).any?
+                  table_for Provider.joins(:analytics)
+                                  .select("providers.*, SUM(analytics.leads_received) as total_leads")
+                                  .group("providers.id")
+                                  .order("total_leads DESC")
+                                  .limit(10) do
+                    column "Provedor" do |provider|
+                      link_to provider.company_name, admin_provider_path(provider)
+                    end
+                    column "Total de Leads" do |provider|
+                      provider.total_leads || 0
+                    end
+                    column "Status" do |provider|
+                      status_tag(provider.status.humanize, 
+                                class: (provider.status == 'approved' ? 'ok' : 
+                                       provider.status == 'pending' ? 'warning' : 'error'))
+                    end
+                    column "Última Atualização" do |provider|
+                      last_analytic = provider.analytics.order(:date).last
+                      last_analytic ? time_ago_in_words(last_analytic.date) : "N/A"
+                    end
+                  end
+                else
+                  para "Nenhum dado de analytics disponível ainda."
+                end
+                
+                h4 "Métricas Recentes (Últimos 30 dias)"
+                recent_analytics = Analytic.where("date >= ?", 30.days.ago).order(:date)
+                if recent_analytics.any?
+                  table_for recent_analytics.limit(20) do
+                    column "Data" do |analytic|
+                      analytic.date.strftime("%d/%m/%Y")
+                    end
+                    column "Provedor" do |analytic|
+                      link_to analytic.provider.company_name, admin_provider_path(analytic.provider)
+                    end
+                    column "Leads" do |analytic|
+                      analytic.leads_received
+                    end
+                    column "Visualizações" do |analytic|
+                      number_with_delimiter(analytic.page_views)
+                    end
+                    column "Conversões" do |analytic|
+                      analytic.conversions
+                    end
+                    column "Taxa Conversão" do |analytic|
+                      "#{analytic.conversion_rate}%"
+                    end
+                    column "Crescimento" do |analytic|
+                      growth = analytic.monthly_growth
+                      span class: (growth >= 0 ? "status_tag ok" : "status_tag error") do
+                        "#{growth >= 0 ? '+' : ''}#{growth}%"
+                      end
+                    end
+                  end
+                else
+                  para "Nenhuma métrica recente disponível."
+                end
+                
+                # Ações rápidas para analytics
+                div class: "quick-actions", style: "margin-top: 20px;" do
+                  h4 "Ações Rápidas"
+                  link_to "Ver Todos os Analytics", admin_analytics_path, class: "button primary"
+                  text_node " "
+                  link_to "Gerar Relatório", admin_analytics_path(format: :csv), class: "button success"
+                  text_node " "
+                  link_to "Configurar Métricas", "#", class: "button", onclick: "alert('Funcionalidade em desenvolvimento')"
+                end
+                
+              rescue => e
+                para "Erro ao carregar dados de analytics: #{e.message}"
+              end
+            end
+          end
+        end
+      end
+
+      # Dynamic Banners Tab
+      div class: "tab-pane fade", id: "dynamic-banners" do
+        columns do
+          column do
+            panel "Banners Dinâmicos Ativos" do
+              begin
+                active_banners = DynamicBanner.active.ordered
+                if active_banners.any?
+                  div class: "banners-grid" do
+                    active_banners.each do |banner|
+                      div class: "banner-card" do
+                        if banner.image.attached?
+                          div class: "banner-image" do
+                            image_tag banner.image, style: "width: 100%; height: 120px; object-fit: cover; border-radius: 4px;"
+                          end
+                        end
+                        div class: "banner-content" do
+                          h4 banner.title
+                          p truncate(banner.description, length: 80)
+                          div class: "banner-meta" do
+                            span "Ordem: #{banner.display_order}", class: "badge"
+                            span "Ativo", class: "status-tag ok"
+                          end
+                          div class: "banner-actions" do
+                            link_to "Editar", edit_admin_dynamic_banner_path(banner), class: "button small"
+                            link_to "Ver", admin_dynamic_banner_path(banner), class: "button small secondary"
+                          end
+                        end
+                      end
+                    end
+                  end
+                else
+                  div class: "empty-state" do
+                    h3 "Nenhum banner ativo"
+                    p "Crie seu primeiro banner dinâmico para começar a exibir conteúdo promocional na homepage."
+                    link_to "Criar Primeiro Banner", new_admin_dynamic_banner_path, class: "button primary"
+                  end
+                end
+              rescue => e
+                para "Erro ao carregar banners: #{e.message}"
+              end
+            end
+          end
+
+          column do
+            panel "Estatísticas dos Banners" do
+              begin
+                total_banners = DynamicBanner.count
+                active_banners = DynamicBanner.active.count
+                inactive_banners = DynamicBanner.inactive.count
+
+                div class: "stats-grid" do
+                  div class: "stat-card total" do
+                    h3 "Total de Banners"
+                    span total_banners, class: "stat-number"
+                  end
+                  div class: "stat-card approved" do
+                    h3 "Banners Ativos"
+                    span active_banners, class: "stat-number approved"
+                  end
+                  div class: "stat-card pending" do
+                    h3 "Banners Inativos"
+                    span inactive_banners, class: "stat-number pending"
+                  end
+                end
+
+                h4 "Ações Rápidas"
+                div class: "quick-actions" do
+                  para do
+                    link_to "Criar Novo Banner", new_admin_dynamic_banner_path, class: "button primary"
+                  end
+                  para do
+                    link_to "Gerenciar Todos", admin_dynamic_banners_path, class: "button"
+                  end
+                  para do
+                    link_to "Ver no Site", root_path, target: "_blank", class: "button secondary"
+                  end
+                end
+              rescue => e
+                para "Erro ao carregar estatísticas: #{e.message}"
+              end
+            end
+
+            panel "Banners Recentes" do
+              begin
+                recent_banners = DynamicBanner.order("created_at desc").limit(5)
+                if recent_banners.any?
+                  table_for recent_banners do
+                    column "Título" do |banner|
+                      link_to truncate(banner.title, length: 30), admin_dynamic_banner_path(banner)
+                    end
+                    column "Status" do |banner|
+                      status_tag(banner.active? ? "Ativo" : "Inativo", banner.active? ? :ok : :error)
+                    end
+                    column "Ordem", :display_order
+                    column "Criado" do |banner|
+                      time_ago_in_words(banner.created_at) + " atrás"
+                    end
+                  end
+                else
+                  para "Nenhum banner criado ainda."
+                end
+              rescue => e
+                para "Erro ao carregar banners recentes: #{e.message}"
+              end
+            end
+          end
         end
       end
     end
@@ -531,6 +763,110 @@ ActiveAdmin.register_page "Dashboard" do
           line-height: 20px;
         }
         
+        .banners-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .banner-card {
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          transition: transform 0.2s ease;
+        }
+        
+        .banner-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .banner-image {
+          width: 100%;
+          height: 120px;
+          overflow: hidden;
+        }
+        
+        .banner-content {
+          padding: 15px;
+        }
+        
+        .banner-content h4 {
+          margin: 0 0 8px 0;
+          font-size: 16px;
+          color: #333;
+          font-weight: 600;
+        }
+        
+        .banner-content p {
+          margin: 0 0 12px 0;
+          color: #666;
+          font-size: 14px;
+          line-height: 1.4;
+        }
+        
+        .banner-meta {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        
+        .banner-meta .badge {
+          background: #e9ecef;
+          color: #495057;
+          padding: 2px 8px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        
+        .banner-actions {
+          display: flex;
+          gap: 8px;
+        }
+        
+        .banner-actions .button {
+          padding: 6px 12px;
+          font-size: 12px;
+          text-decoration: none;
+          border-radius: 4px;
+          border: 1px solid #007cba;
+          background: #007cba;
+          color: white;
+          cursor: pointer;
+        }
+        
+        .banner-actions .button.secondary {
+          background: transparent;
+          color: #007cba;
+        }
+        
+        .banner-actions .button:hover {
+          opacity: 0.9;
+        }
+        
+        .empty-state {
+          text-align: center;
+          padding: 60px 20px;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border: 2px dashed #dee2e6;
+        }
+        
+        .empty-state h3 {
+          margin: 0 0 10px 0;
+          color: #6c757d;
+          font-weight: 500;
+        }
+        
+        .empty-state p {
+          margin: 0 0 20px 0;
+          color: #6c757d;
+        }
+        
         @media (max-width: 768px) {
           .stats-grid {
             grid-template-columns: 1fr;
@@ -543,6 +879,10 @@ ActiveAdmin.register_page "Dashboard" do
           .tabs-container .nav-tabs .nav-item {
             width: 100%;
             text-align: center;
+          }
+          
+          .banners-grid {
+            grid-template-columns: 1fr;
           }
         }
       </style>

@@ -1,107 +1,90 @@
-import { Search, Users, Zap, Award, TrendingUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Button } from './button';
+import { Input } from './input';
 
-const Hero = ({ 
-  searchTerm, 
-  onSearchChange 
-}: { 
-  searchTerm: string; 
-  onSearchChange: (value: string) => void; 
+interface HeroProps {
+  title?: string;
+  subtitle?: string;
+  backgroundImage?: string;
+  showSearch?: boolean;
+}
+
+const Hero: React.FC<HeroProps> = ({
+  title = 'Encontre as Melhores Empresas de Energia Solar',
+  subtitle = 'Compare preços, avaliações e serviços das principais empresas de energia solar do Brasil',
+  backgroundImage = '/hero-solar-compare.jpg',
+  showSearch = true
 }) => {
-  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = React.useState('');
 
-  const handleSearch = () => {
-    if (searchTerm.trim()) {
-      navigate(`/buscar?q=${encodeURIComponent(searchTerm)}`);
-    } else {
-      navigate('/buscar');
-    }
-  };
-
-  const handleQuickSearch = (term: string) => {
-    navigate(`/buscar?q=${encodeURIComponent(term)}`);
-  };
-  const stats = [
-    { icon: Users, value: "500+", label: "Empresas Cadastradas", color: "text-blue-600", bgColor: "bg-blue-50" },
-    { icon: Zap, value: "1.2GW", label: "Capacidade Instalada", color: "text-yellow-600", bgColor: "bg-yellow-50" },
-    { icon: Award, value: "15k+", label: "Projetos Concluídos", color: "text-green-600", bgColor: "bg-green-50" },
-    { icon: TrendingUp, value: "98%", label: "Satisfação dos Clientes", color: "text-purple-600", bgColor: "bg-purple-50" }
-  ];
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Implementar lógica de busca
+    console.log('Searching for:', searchTerm);
   };
 
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-green-50 py-16 px-4">
-      <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
-            Encontre as Melhores
-            <span className="text-primary block">Empresas de Energia Solar</span>
+    <section className="relative bg-gradient-to-r from-blue-600 to-green-600 text-white">
+      {backgroundImage && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+          style={{ backgroundImage: `url(${backgroundImage})` }}
+        />
+      )}
+      <div className="relative container mx-auto px-4 py-20 lg:py-32">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            {title}
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Compare, avalie e conecte-se com empresas qualificadas de energia solar no Brasil. 
-            Encontre a solução perfeita para seu projeto.
+          <p className="text-xl md:text-2xl mb-8 text-blue-100">
+            {subtitle}
           </p>
           
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="flex gap-2 p-2 bg-white rounded-lg shadow-lg">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          {showSearch && (
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <Input
                   type="text"
-                  placeholder="Buscar por empresa, localização ou especialidade..."
+                  placeholder="Digite sua cidade ou região..."
                   value={searchTerm}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="pl-10 border-0 focus-visible:ring-0 text-base h-12"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 text-gray-900"
                 />
-              </div>
-              <Button onClick={handleSearch} size="lg" className="px-8 h-12">
-                Buscar
-              </Button>
-            </div>
-            
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
-              <span className="text-sm text-gray-600 mr-2">Buscar por:</span>
-              {["São Paulo", "Rio de Janeiro", "Residencial", "Comercial", "Industrial"].map((item) => (
-                <button
-                  key={item}
-                  onClick={() => handleQuickSearch(item)}
-                  className="text-sm bg-white/80 hover:bg-white text-gray-700 hover:text-primary px-3 py-1 rounded-full border border-gray-200 hover:border-primary transition-colors"
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-8"
                 >
-                  {item}
-                </button>
-              ))}
-            </div>
+                  Buscar Empresas
+                </Button>
+              </div>
+            </form>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600">
+              Como Funciona
+            </Button>
+            <Button size="lg" className="bg-green-500 hover:bg-green-600">
+              Cadastrar Empresa
+            </Button>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
-          {stats.map((stat, index) => {
-            const Icon = stat.icon;
-            return (
-              <div 
-                key={index} 
-                className="bg-white rounded-xl p-4 md:p-6 text-center shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border border-gray-100"
-              >
-                <div className={`${stat.bgColor} w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4`}>
-                  <Icon className={`${stat.color} w-6 h-6 md:w-8 md:h-8`} />
-                </div>
-                <div className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-xs md:text-sm text-gray-600 font-medium">
-                  {stat.label}
-                </div>
-              </div>
-            );
-          })}
+        {/* Stats Section */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <div className="text-center">
+            <div className="text-3xl font-bold mb-2">500+</div>
+            <div className="text-blue-100">Empresas Cadastradas</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold mb-2">10k+</div>
+            <div className="text-blue-100">Avaliações Verificadas</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold mb-2">50k+</div>
+            <div className="text-blue-100">Orçamentos Realizados</div>
+          </div>
         </div>
       </div>
     </section>

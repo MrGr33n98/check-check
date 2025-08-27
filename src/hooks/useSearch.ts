@@ -6,10 +6,12 @@ interface SearchFilters {
   radius: number;
   priceRange: [number, number];
   rating: number;
+  ratings: number[];
   certifications: string[];
   services: string[];
-  experience: string;
+  experience: string[];
   availability: string;
+  deviceTarget?: string;
 }
 
 interface Company {
@@ -20,7 +22,7 @@ interface Company {
   price: number;
   certifications: string[];
   services: string[];
-  experience: string;
+  experience: string[];
   availability: string;
 }
 
@@ -75,7 +77,7 @@ const generateMockResults = (filters: SearchFilters): Company[] => {
       price: 45000,
       certifications: ['INMETRO', 'CREA'],
       services: ['Instalação Residencial', 'Manutenção'],
-      experience: '5-10 anos',
+      experience: ['5-10 anos'],
       availability: 'Até 1 semana'
     }
     // Mais empresas mock...

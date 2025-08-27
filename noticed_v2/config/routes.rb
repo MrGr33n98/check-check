@@ -23,6 +23,17 @@ Rails.application.routes.draw do
     patch 'dashboard', to: 'dashboards#update'
   end
   
+  # Banner routes
+  resources :banners, only: [:index, :show] do
+    member do
+      post :click
+      post :impression
+    end
+    collection do
+      get 'by_position/:position', to: 'banners#by_position', as: :by_position
+    end
+  end
+
   # API routes
   namespace :api do
     namespace :v1 do
@@ -36,7 +47,54 @@ Rails.application.routes.draw do
       resources :product_accesses
       resources :sponsoreds
       resources :articles, param: :id
-      resources :providers
+      resources :providers do
+        resources :analytics, only: [:index, :create, :update]
+      end
+      
+      # Banner API routes
+      resources :banners, only: [:index, :show] do
+        member do
+          post :click
+          post :impression
+        end
+        collection do
+          get 'by_position/:position', to: 'banners#by_position'
+        end
+      end
+      
+      # CTA Banner API routes
+      get 'cta_banner', to: 'cta_banners#show'
+      
+      # Promotional Banners API routes
+      resources :promotional_banners, only: [:index, :show] do
+        member do
+          post :click
+          post :impression
+        end
+        collection do
+          get 'active', to: 'promotional_banners#active'
+          get 'by_position/:position', to: 'promotional_banners#by_position'
+        end
+      end
+      
+      # Dynamic Banners API routes
+      resources :dynamic_banners, only: [:index] do
+        member do
+          post :click
+          post :impression
+        end
+        collection do
+          get :active
+        end
+      end
+      
+      # Analytics routes
+      resources :analytics, only: [:index, :create, :update] do
+        collection do
+          get :summary
+          get :dashboard
+        end
+      end
     end
   end
 

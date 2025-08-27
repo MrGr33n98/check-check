@@ -1,0 +1,4 @@
+Mês,Leads,Conversões,Taxa de Conversão (%),Visualizações de Página
+<% @trends_data.each do |trend| -%>
+<%= trend[:month_name] %>,<%= trend[:leads] %>,<%= trend[:conversions] %>,<%= trend[:conversion_rate] %>,<%= trend[:page_views] %>
+<% end -%>

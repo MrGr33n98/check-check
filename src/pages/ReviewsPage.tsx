@@ -70,13 +70,17 @@ const ReviewsPage = () => {
         </div>
 
         {/* Estatísticas */}
-        {stats && <ReviewStats stats={stats} />}
+        {stats && (
+          <ReviewStats 
+            averageRating={stats.averageRating}
+            totalReviews={stats.totalReviews}
+            ratingDistribution={[stats.ratingDistribution[5], stats.ratingDistribution[4], stats.ratingDistribution[3], stats.ratingDistribution[2], stats.ratingDistribution[1]]}
+          />
+        )}
 
         {/* Filtros */}
         <ReviewFilters
-          filters={filters}
           onFiltersChange={setFilters}
-          totalReviews={reviews.length}
         />
 
         {/* Loading State */}
@@ -106,7 +110,16 @@ const ReviewsPage = () => {
             {reviews.map((review) => (
               <ReviewCard
                 key={review.id}
-                review={review}
+                id={review.id.toString()}
+                author={review.userName}
+                rating={review.rating}
+                title={review.title}
+                comment={review.comment}
+                date={review.createdAt}
+                avatar={review.userAvatar}
+                helpfulCount={review.helpful}
+                notHelpfulCount={review.notHelpful}
+                verified={review.verified}
                 onMarkHelpful={markHelpful}
               />
             ))}

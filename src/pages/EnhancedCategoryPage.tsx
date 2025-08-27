@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, BatteryCharging, Users, BookOpen, Zap, Leaf, Globe, Rocket, Lightbulb, DollarSign, TrendingUp, Shield } from 'lucide-react';
+import { ChevronLeft, Users, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import EducationalContent from '@/components/ui/educational-content';
@@ -8,31 +8,11 @@ import PopularCategories from '@/components/ui/popular-categories';
 import CategoryHero from '@/components/ui/category-hero';
 import apiService, { Category } from '@/services/api';
 
-interface Solution {
-  id: number;
-  name: string;
-  company: string;
-  description?: string;
-  rating?: number;
-  slug?: string;
-  provider?: Provider;
-}
 
-interface Provider {
-  id: number;
-  name: string;
-  short_description?: string;
-  country?: string;
-  status?: string;
-}
 
-// Mock data for popular categories (in case API is not available)
-const popularCategories = [
-  { id: 1, name: 'Geração Distribuída', slug: 'geracao-distribuida', icon: Zap },
-  { id: 2, name: 'Eficiência Energética', slug: 'eficiencia', icon: Leaf },
-  { id: 3, name: 'Sistemas Off-Grid', slug: 'off-grid', icon: Globe },
-  { id: 4, name: 'Inovação Tecnológica', slug: 'inovacao', icon: Rocket },
-];
+
+
+
 
 function EnhancedCategoryPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -101,132 +81,7 @@ function EnhancedCategoryPage() {
     };
   }, [slug]);
 
-  // Get educational content based on category
-  const getEducationalContent = () => {
-    if (!category) return null;
-    
-    switch (category.slug) {
-      case 'geracao-distribuida':
-        return {
-          title: "O que é Geração Distribuída?",
-          description: "Entenda os benefícios e funcionamento dos sistemas de geração distribuída",
-          content: (
-            <>
-              <p>
-                A geração distribuída refere-se à produção de eletricidade próxima ao local de consumo, 
-                diferentemente das grandes usinas centralizadas. Em sistemas solares, isso geralmente 
-                significa painéis instalados em telhados residenciais ou comerciais.
-              </p>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Benefícios principais:</h3>
-              <ul className="space-y-2">
-                <li>✅ Redução da conta de luz</li>
-                <li>✅ Menos perdas na transmissão</li>
-                <li>✅ Maior resiliência do sistema elétrico</li>
-                <li>✅ Valorização imobiliária</li>
-                <li>✅ Contribuição para a matriz energética limpa</li>
-              </ul>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Tecnologias disponíveis:</h3>
-              <p>
-                Os sistemas de geração distribuída incluem painéis fotovoltaicos monocristalinos, 
-                policristalinos e bifaciais, inversores string e microinversores, além de sistemas 
-                de monitoramento inteligente.
-              </p>
-            </>
-          )
-        };
-      
-      case 'armazenamento':
-        return {
-          title: "O que é Armazenamento de Energia?",
-          description: "Entenda a importância dos sistemas de armazenamento na transição energética",
-          content: (
-            <>
-              <p>
-                Os sistemas de armazenamento de energia solar permitem acumular a eletricidade 
-                gerada pelos painéis fotovoltaicos durante o dia para uso posterior, especialmente 
-                à noite ou em períodos de baixa geração.
-              </p>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Benefícios principais:</h3>
-              <ul className="space-y-2">
-                <li>✅ Maior independência energética</li>
-                <li>✅ Redução da conta de luz</li>
-                <li>✅ Energia disponível 24 horas por dia</li>
-                <li>✅ Aumento do valor do imóvel</li>
-                <li>✅ Contribuição para a sustentabilidade</li>
-              </ul>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Tecnologias disponíveis:</h3>
-              <p>
-                As principais tecnologias de armazenamento incluem baterias de íon-lítio, estações 
-                de armazenamento modular e sistemas híbridos que combinam diferentes fontes de energia.
-              </p>
-            </>
-          )
-        };
-      
-      case 'off-grid':
-        return {
-          title: "O que é Energia Off-Grid?",
-          description: "Soluções energéticas independentes para áreas remotas",
-          content: (
-            <>
-              <p>
-                Sistemas off-grid são soluções energéticas independentes que não se conectam à 
-                rede elétrica convencional. Ideais para áreas remotas, propriedades rurais ou 
-                aplicações específicas onde o acesso à rede é difícil ou economicamente inviável.
-              </p>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Benefícios principais:</h3>
-              <ul className="space-y-2">
-                <li>✅ Independência total da rede elétrica</li>
-                <li>✅ Solução para áreas remotas</li>
-                <li>✅ Menor impacto ambiental</li>
-                <li>✅ Controle total sobre a geração</li>
-                <li>✅ Segurança energética</li>
-              </ul>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Componentes essenciais:</h3>
-              <p>
-                Os sistemas off-grid incluem painéis solares, baterias de armazenamento, controladores 
-                de carga, inversores e, em alguns casos, geradores auxiliares para backup.
-              </p>
-            </>
-          )
-        };
-      
-      default:
-        return {
-          title: `Sobre ${category.name}`,
-          description: `Entenda mais sobre ${category.name}`,
-          content: (
-            <>
-              <p>
-                {category.description}
-              </p>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Importância do setor:</h3>
-              <ul className="space-y-2">
-                <li>✅ Tecnologia em constante evolução</li>
-                <li>✅ Redução significativa de custos</li>
-                <li>✅ Impacto positivo no meio ambiente</li>
-                <li>✅ Geração de empregos qualificados</li>
-                <li>✅ Contribuição para a matriz energética nacional</li>
-              </ul>
-              
-              <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-3">Considerações importantes:</h3>
-              <p>
-                O setor de energia solar está em constante evolução, com novas tecnologias e 
-                soluções surgindo regularmente. É importante trabalhar com empresas qualificadas 
-                e certificadas para garantir a segurança e eficiência do sistema.
-              </p>
-            </>
-          )
-        };
-    }
-  };
+
 
   if (loading) {
     return (
@@ -273,39 +128,9 @@ function EnhancedCategoryPage() {
     );
   }
 
-  const educationalContent = getEducationalContent();
 
-  // Get appropriate icon for the hero section
-  const getHeroIcon = () => {
-    switch (category.slug) {
-      case 'geracao-distribuida': return <Zap className="h-32 w-32 text-white" />;
-      case 'usinas-solares': return <Lightbulb className="h-32 w-32 text-white" />;
-      case 'armazenamento': return <BatteryCharging className="h-32 w-32 text-white" />;
-      case 'off-grid': return <Globe className="h-32 w-32 text-white" />;
-      case 'eficiencia': return <TrendingUp className="h-32 w-32 text-white" />;
-      case 'financiamento': return <DollarSign className="h-32 w-32 text-white" />;
-      case 'comunidades': return <Users className="h-32 w-32 text-white" />;
-      case 'sustentabilidade': return <Shield className="h-32 w-32 text-white" />;
-      case 'inovacao': return <Rocket className="h-32 w-32 text-white" />;
-      default: return <Zap className="h-32 w-32 text-white" />;
-    }
-  };
 
-  // Get appropriate corner icon for the hero section
-  const getCornerIcon = () => {
-    switch (category.slug) {
-      case 'geracao-distribuida': return <Zap className="h-8 w-8 text-yellow-800" />;
-      case 'usinas-solares': return <Lightbulb className="h-8 w-8 text-yellow-800" />;
-      case 'armazenamento': return <BatteryCharging className="h-8 w-8 text-yellow-800" />;
-      case 'off-grid': return <Globe className="h-8 w-8 text-yellow-800" />;
-      case 'eficiencia': return <TrendingUp className="h-8 w-8 text-yellow-800" />;
-      case 'financiamento': return <DollarSign className="h-8 w-8 text-yellow-800" />;
-      case 'comunidades': return <Users className="h-8 w-8 text-yellow-800" />;
-      case 'sustentabilidade': return <Shield className="h-8 w-8 text-yellow-800" />;
-      case 'inovacao': return <Rocket className="h-8 w-8 text-yellow-800" />;
-      default: return <Zap className="h-8 w-8 text-yellow-800" />;
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50">
@@ -322,15 +147,9 @@ function EnhancedCategoryPage() {
 
       {/* Hero Section */}
       <CategoryHero
-        title={category.name}
-        subtitle="Categoria em destaque"
-        description={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
-        primaryButtonText="Saiba mais sobre essa tecnologia"
-        secondaryButtonText="Cadastrar minha empresa"
-        onPrimaryClick={() => console.log('Learn more clicked')}
-        onSecondaryClick={() => navigate('/empresa/cadastro')}
-        icon={getHeroIcon()}
-        cornerIcon={getCornerIcon()}
+        categoryName={category.name}
+        categoryDescription={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
+        companyCount={0}
       />
 
       {/* Status Section */}
@@ -373,18 +192,10 @@ function EnhancedCategoryPage() {
       </section>
 
       {/* Educational Content */}
-      {educationalContent && (
-        <EducationalContent
-          title={educationalContent.title}
-          description={educationalContent.description}
-          content={educationalContent.content}
-          ctaText="Leia mais sobre essa tecnologia"
-          onCtaClick={() => console.log('Navigate to full article')}
-        />
-      )}
+      <EducationalContent />
 
       {/* Popular Categories Section */}
-      <PopularCategories categories={popularCategories} />
+      <PopularCategories />
 
       {/* CTA Section */}
       <section className="py-16 bg-blue-700 text-white">

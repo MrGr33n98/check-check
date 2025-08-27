@@ -1,25 +1,44 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Review } from '@/data/types';
+import React from 'react';
+import { Card, CardContent, CardHeader } from './card';
+import StarRating from './star-rating';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 
 interface ReviewCardProps {
-  review: Review;
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
+  avatar?: string;
+  className?: string;
 }
 
-const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({
+  author,
+  rating,
+  comment,
+  date,
+  avatar,
+  className
+}) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm">{review.user_name}</CardTitle>
+    <Card className={className}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center space-x-3">
+          <Avatar>
+            <AvatarImage src={avatar} />
+            <AvatarFallback>{author.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <h4 className="font-semibold">{author}</h4>
+            <div className="flex items-center space-x-2">
+              <StarRating rating={rating} size="sm" />
+              <span className="text-sm text-muted-foreground">{date}</span>
+            </div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center mb-2">
-          <span className="text-yellow-500">★</span>
-          <span className="ml-1">{review.rating}</span>
-        </div>
-        <p className="text-sm text-gray-600">{review.comment}</p>
-        <p className="text-xs text-gray-400 mt-2">
-          {new Date(review.created_at).toLocaleDateString()}
-        </p>
+        <p className="text-sm text-muted-foreground">{comment}</p>
       </CardContent>
     </Card>
   );

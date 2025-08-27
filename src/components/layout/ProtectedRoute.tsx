@@ -1,24 +1,36 @@
-import { ReactNode } from 'react';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
-const ProtectedRoute = ({ 
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  isAuthenticated?: boolean;
+  requiredRole?: 'admin' | 'moderator' | 'user' | 'empresa';
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
+  isAuthenticated, 
   requiredRole 
-}: { 
-  children: ReactNode; 
-  requiredRole: string;
 }) => {
-  // Simple placeholder - in a real app, you would check authentication
-  const isAuthenticated = true;
-  const userRole = 'admin';
+  const { user } = useAuth();
   
-  if (!isAuthenticated) {
-    return <div>Please log in to access this page.</div>;
+  // Use auth context user if isAuthenticated is not provided
+  const authenticated = isAuthenticated !== undefined ? isAuthenticated : !!user;
+  
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
   }
   
-  if (requiredRole && userRole !== requiredRole) {
-    return <div>You don't have permission to access this page.</div>;
+  // Check role requirement if specified
+  if (requiredRole && user && user.role !== requiredRole) {
+    // Redirect based on user role
+    if (user.role === 'empresa') {
+      return <Navigate to="/dashboard" replace />;
+    }
+    return <Navigate to="/" replace />;
   }
-  
+
   return <>{children}</>;
 };
 

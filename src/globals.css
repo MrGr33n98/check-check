@@ -79,3 +79,54 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Animações personalizadas */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+.animate-scroll-left:hover {
+  animation-play-state: paused;
+}
+
+/* Sponsored Banner Animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll linear infinite;
+}
+
+/* Pause animation on hover */
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Pause class for manual control */
+.animate-scroll.pause {
+  animation-play-state: paused;
+}
+
+/* Smooth transitions for banner items */
+.animate-scroll > * {
+  transition: transform 0.2s ease-in-out;
+}
+
+.animate-scroll:hover > * {
+  transform: scale(1.02);
+}

@@ -1,0 +1,363 @@
+<% content_for :title, "Dashboard Avançado de Analytics" %>
+
+<div class="analytics-advanced-dashboard">
+  <!-- Métricas Principais -->
+  <div class="metrics-overview">
+    <div class="metric-card">
+      <div class="metric-icon leads-icon">📊</div>
+      <div class="metric-content">
+        <h3>Total de Leads</h3>
+        <span class="metric-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:leads]) %></span>
+      </div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-icon conversions-icon">🎯</div>
+      <div class="metric-content">
+        <h3>Total de Conversões</h3>
+        <span class="metric-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:conversions]) %></span>
+      </div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-icon views-icon">👁️</div>
+      <div class="metric-content">
+        <h3>Visualizações</h3>
+        <span class="metric-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:page_views]) %></span>
+      </div>
+    </div>
+    
+    <div class="metric-card">
+      <div class="metric-icon rate-icon">📈</div>
+      <div class="metric-content">
+        <h3>Taxa Média de Conversão</h3>
+        <span class="metric-value"><%= @dashboard_data[:total_metrics][:avg_conversion_rate] %>%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparação Mensal -->
+  <div class="dashboard-section">
+    <h2>Comparação Mensal</h2>
+    <div class="comparison-cards">
+      <div class="comparison-card">
+        <h4>Mês Atual</h4>
+        <div class="comparison-metrics">
+          <div class="comparison-metric">
+            <span class="label">Leads:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:current][:leads]) %></span>
+          </div>
+          <div class="comparison-metric">
+            <span class="label">Conversões:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:current][:conversions]) %></span>
+          </div>
+          <div class="comparison-metric">
+            <span class="label">Visualizações:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:current][:page_views]) %></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="comparison-card">
+        <h4>Mês Anterior</h4>
+        <div class="comparison-metrics">
+          <div class="comparison-metric">
+            <span class="label">Leads:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:previous][:leads]) %></span>
+          </div>
+          <div class="comparison-metric">
+            <span class="label">Conversões:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:previous][:conversions]) %></span>
+          </div>
+          <div class="comparison-metric">
+            <span class="label">Visualizações:</span>
+            <span class="value"><%= number_with_delimiter(@dashboard_data[:monthly_comparison][:previous][:page_views]) %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Tendências -->
+  <div class="dashboard-section">
+    <h2>Tendências de Conversão (12 meses)</h2>
+    <div class="chart-container">
+      <canvas id="trendsChart" width="800" height="400"></canvas>
+    </div>
+  </div>
+
+  <!-- Performance dos Provedores -->
+  <div class="dashboard-section">
+    <h2>Top 10 Provedores por Performance</h2>
+    <div class="providers-table">
+      <table class="performance-table">
+        <thead>
+          <tr>
+            <th>Provedor</th>
+            <th>Total de Leads</th>
+            <th>Total de Conversões</th>
+            <th>Taxa de Conversão</th>
+            <th>Avaliação Média</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @dashboard_data[:provider_performance].each do |provider| %>
+            <tr>
+              <td><%= provider.name %></td>
+              <td><%= number_with_delimiter(provider.total_leads) %></td>
+              <td><%= number_with_delimiter(provider.total_conversions) %></td>
+              <td>
+                <span class="conversion-rate <%= provider.avg_conversion_rate > 5 ? 'high' : provider.avg_conversion_rate > 2 ? 'medium' : 'low' %>">
+                  <%= provider.avg_conversion_rate.round(2) %>%
+                </span>
+              </td>
+              <td>
+                <span class="rating">
+                  <%= '⭐' * provider.avg_rating.round %> (<%= provider.avg_rating.round(2) %>)
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Funil de Conversão -->
+  <div class="dashboard-section">
+    <h2>Funil de Conversão</h2>
+    <div class="conversion-funnel">
+      <div class="funnel-stage">
+        <div class="funnel-bar" style="width: 100%">
+          <span class="funnel-label">Visualizações</span>
+          <span class="funnel-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:page_views]) %></span>
+        </div>
+      </div>
+      <div class="funnel-stage">
+        <% leads_percentage = (@dashboard_data[:total_metrics][:leads].to_f / @dashboard_data[:total_metrics][:page_views] * 100).round(1) if @dashboard_data[:total_metrics][:page_views] > 0 %>
+        <div class="funnel-bar" style="width: <%= leads_percentage || 0 %>%">
+          <span class="funnel-label">Leads (<%= leads_percentage || 0 %>%)</span>
+          <span class="funnel-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:leads]) %></span>
+        </div>
+      </div>
+      <div class="funnel-stage">
+        <% conversions_percentage = (@dashboard_data[:total_metrics][:conversions].to_f / @dashboard_data[:total_metrics][:leads] * 100).round(1) if @dashboard_data[:total_metrics][:leads] > 0 %>
+        <div class="funnel-bar" style="width: <%= conversions_percentage || 0 %>%">
+          <span class="funnel-label">Conversões (<%= conversions_percentage || 0 %>%)</span>
+          <span class="funnel-value"><%= number_with_delimiter(@dashboard_data[:total_metrics][:conversions]) %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('trendsChart').getContext('2d');
+    const trendsData = <%= @dashboard_data[:conversion_trends].to_json.html_safe %>;
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: trendsData.map(d => d.month_name),
+        datasets: [{
+          label: 'Leads',
+          data: trendsData.map(d => d.leads),
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.1
+        }, {
+          label: 'Conversões',
+          data: trendsData.map(d => d.conversions),
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.2)',
+          tension: 0.1
+        }, {
+          label: 'Taxa de Conversão (%)',
+          data: trendsData.map(d => d.conversion_rate),
+          borderColor: 'rgb(54, 162, 235)',
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          tension: 0.1,
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Tendências de Performance - Últimos 12 Meses'
+          }
+        },
+        scales: {
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            grid: {
+              drawOnChartArea: false,
+            },
+          }
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .analytics-advanced-dashboard {
+    padding: 20px;
+    background: #f8f9fa;
+  }
+  
+  .metrics-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+  
+  .metric-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .metric-icon {
+    font-size: 2em;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e3f2fd;
+  }
+  
+  .metric-content h3 {
+    margin: 0 0 5px 0;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .metric-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .dashboard-section {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .dashboard-section h2 {
+    margin: 0 0 20px 0;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+  }
+  
+  .comparison-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .comparison-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px;
+  }
+  
+  .comparison-card h4 {
+    margin: 0 0 15px 0;
+    color: #555;
+  }
+  
+  .comparison-metric {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .comparison-metric .label {
+    color: #666;
+  }
+  
+  .comparison-metric .value {
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .chart-container {
+    position: relative;
+    height: 400px;
+  }
+  
+  .performance-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .performance-table th,
+  .performance-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .performance-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .conversion-rate.high { color: #4caf50; font-weight: bold; }
+  .conversion-rate.medium { color: #ff9800; font-weight: bold; }
+  .conversion-rate.low { color: #f44336; font-weight: bold; }
+  
+  .conversion-funnel {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .funnel-stage {
+    margin-bottom: 15px;
+  }
+  
+  .funnel-bar {
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    color: white;
+    padding: 15px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    min-width: 200px;
+  }
+  
+  .funnel-stage:nth-child(2) .funnel-bar {
+    background: linear-gradient(90deg, #2196f3, #64b5f6);
+  }
+  
+  .funnel-stage:nth-child(3) .funnel-bar {
+    background: linear-gradient(90deg, #ff9800, #ffb74d);
+  }
+</style>

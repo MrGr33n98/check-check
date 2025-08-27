@@ -41,10 +41,11 @@ export interface ReviewStats {
 }
 
 export interface ReviewFilters {
-  rating?: number;
+  rating?: string;
   projectType?: string;
   verified?: boolean;
   sortBy: 'newest' | 'oldest' | 'highest' | 'lowest' | 'helpful';
+  dateRange?: string;
 }
 
 export interface CreateReviewData {

@@ -1,7 +1,9 @@
+require 'csv'
+
 ActiveAdmin.register Provider do
   permit_params :name, :seo_url, :title, :short_description, :country, :address, 
                 :phone, :members_count, :foundation_year, :premium_until, :revenue,
-                :status, :approval_notes,
+                :status, :approval_notes, :logo, :cover_image, :banner_image,
                 social_links: [], tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
@@ -57,6 +59,15 @@ ActiveAdmin.register Provider do
     end
   end
 
+  # Add action items for CSV import
+  action_item :import_csv, only: :index do
+    link_to 'Importar CSV', import_csv_admin_providers_path, class: 'button'
+  end
+
+  action_item :download_template, only: :index do
+    link_to 'Baixar Template CSV', download_csv_template_admin_providers_path, class: 'button'
+  end
+
   filter :name
   filter :country
   filter :foundation_year
@@ -92,6 +103,35 @@ ActiveAdmin.register Provider do
 
     f.inputs "Categorias Principais" do
       f.input :categories, as: :check_boxes, collection: Category.all.map { |c| [c.name, c.id] }
+    end
+
+    f.inputs "Personalização Visual" do
+      f.input :logo, as: :file, label: "Logo da Empresa", hint: "Formato recomendado: PNG ou JPG, tamanho máximo: 2MB"
+      if f.object.logo.attached?
+        div class: "current-image" do
+          h4 "Logo Atual:"
+          image_tag f.object.logo, style: "max-width: 200px; max-height: 100px; margin: 10px 0;"
+        end
+      end
+      
+      f.input :cover_image, as: :file, label: "Imagem de Capa", hint: "Formato recomendado: JPG, tamanho máximo: 5MB"
+      if f.object.cover_image.attached?
+        div class: "current-image" do
+          h4 "Imagem de Capa Atual:"
+          image_tag f.object.cover_image, style: "max-width: 300px; max-height: 150px; margin: 10px 0;"
+        end
+      end
+      
+      f.input :banner_image, as: :file, label: "Banner do Card", hint: "Imagem de fundo para o card da empresa na busca. Formato recomendado: JPG, tamanho máximo: 3MB"
+      if f.object.banner_image.attached?
+        div class: "current-image" do
+          h4 "Banner Atual:"
+          image_tag f.object.banner_image, style: "max-width: 300px; max-height: 150px; margin: 10px 0; border-radius: 8px;"
+          p style: "font-style: italic; color: #666; margin-top: 5px;" do
+            "Esta imagem aparecerá como fundo do card da empresa na página de busca, com o logo sobreposto."
+          end
+        end
+      end
     end
 
     f.actions
@@ -185,5 +225,171 @@ ActiveAdmin.register Provider do
       provider.reject!(current_admin_user, "Rejeição em lote") if provider.can_be_rejected?
     end
     redirect_to collection_path, notice: "#{ids.count} empresas foram rejeitadas."
+  end
+
+  # Collection actions
+  collection_action :import_csv, method: :get do
+    render 'admin/providers/import_csv'
+  end
+
+  collection_action :process_csv_import, method: :post do
+    if params[:csv_file].present?
+      begin
+        imported_count = 0
+        errors = []
+        skipped_count = 0
+        line_number = 1 # Start from 1 (header)
+        
+        # Validate file extension
+        unless params[:csv_file].original_filename.downcase.end_with?('.csv')
+          redirect_to admin_providers_path, alert: "Por favor, selecione um arquivo CSV válido."
+          return
+        end
+        
+        # Validate file size (max 5MB)
+        if params[:csv_file].size > 5.megabytes
+          redirect_to admin_providers_path, alert: "Arquivo muito grande. Tamanho máximo: 5MB."
+          return
+        end
+        
+        CSV.foreach(params[:csv_file].path, headers: true, encoding: 'UTF-8') do |row|
+          line_number += 1
+          
+          # Skip empty rows
+          if row.to_hash.values.all?(&:blank?)
+            skipped_count += 1
+            next
+          end
+          
+          # Validate required fields
+          required_fields = ['name', 'country', 'foundation_year', 'members_count']
+          missing_fields = required_fields.select { |field| row[field].blank? }
+          
+          if missing_fields.any?
+            errors << "Linha #{line_number}: Campos obrigatórios em branco: #{missing_fields.join(', ')}"
+            next
+          end
+          
+          # Validate foundation_year
+          foundation_year = row['foundation_year']&.to_i
+          if foundation_year && (foundation_year < 1800 || foundation_year > Date.current.year)
+            errors << "Linha #{line_number}: Ano de fundação inválido (#{foundation_year})"
+            next
+          end
+          
+          # Validate members_count
+          members_count = row['members_count']&.to_i
+          if members_count && members_count < 0
+            errors << "Linha #{line_number}: Número de membros não pode ser negativo"
+            next
+          end
+          
+          # Validate status
+          valid_statuses = ['pending', 'active', 'rejected', 'suspended']
+          status = row['status']&.downcase || 'pending'
+          unless valid_statuses.include?(status)
+            errors << "Linha #{line_number}: Status inválido (#{row['status']}). Valores válidos: #{valid_statuses.join(', ')}"
+            next
+          end
+          
+          provider_params = {
+            name: row['name']&.strip,
+            title: row['title']&.strip,
+            short_description: row['short_description']&.strip,
+            country: row['country']&.strip,
+            address: row['address']&.strip,
+            phone: row['phone']&.strip,
+            foundation_year: foundation_year,
+            members_count: members_count || 0,
+            revenue: row['revenue']&.strip,
+            status: status
+          }
+          
+          # Handle array fields with validation
+          if row['social_links'].present?
+            social_links = row['social_links'].split(';').map(&:strip).reject(&:blank?)
+            # Basic URL validation
+            invalid_urls = social_links.reject { |url| url.match?(/\Ahttps?:\/\/.+/) }
+            if invalid_urls.any?
+              errors << "Linha #{line_number}: URLs inválidas em social_links: #{invalid_urls.join(', ')}"
+              next
+            end
+            provider_params[:social_links] = social_links
+          else
+            provider_params[:social_links] = []
+          end
+          
+          if row['tags'].present?
+            provider_params[:tags] = row['tags'].split(';').map(&:strip).reject(&:blank?)
+          else
+            provider_params[:tags] = []
+          end
+          
+          # Check for duplicate name
+          if Provider.exists?(name: provider_params[:name])
+            errors << "Linha #{line_number}: Provider com nome '#{provider_params[:name]}' já existe"
+            next
+          end
+          
+          provider = Provider.new(provider_params)
+          
+          if provider.save
+            imported_count += 1
+            # Log the import
+            Rails.logger.info "CSV Import: Provider '#{provider.name}' imported successfully by admin #{current_admin_user.email}"
+          else
+            errors << "Linha #{line_number}: #{provider.errors.full_messages.join(', ')}"
+          end
+        end
+        
+        # Generate summary message
+        summary_parts = []
+        summary_parts << "#{imported_count} provider(s) importado(s) com sucesso" if imported_count > 0
+        summary_parts << "#{skipped_count} linha(s) em branco ignorada(s)" if skipped_count > 0
+        summary_parts << "#{errors.count} erro(s) encontrado(s)" if errors.any?
+        
+        if errors.empty?
+          redirect_to admin_providers_path, notice: summary_parts.join(', ') + '!'
+        else
+          # Limit error display to first 10 errors
+          displayed_errors = errors.first(10)
+          error_message = summary_parts.join(', ')
+          error_message += ". Primeiros erros: #{displayed_errors.join('; ')}"
+          error_message += " (e mais #{errors.count - 10} erros...)" if errors.count > 10
+          
+          flash[:alert] = error_message
+          redirect_to admin_providers_path
+        end
+        
+      rescue CSV::MalformedCSVError => e
+        Rails.logger.error "CSV Import Error: Malformed CSV - #{e.message}"
+        redirect_to admin_providers_path, alert: "Erro no formato do CSV: #{e.message}"
+      rescue Encoding::InvalidByteSequenceError => e
+        Rails.logger.error "CSV Import Error: Invalid encoding - #{e.message}"
+        redirect_to admin_providers_path, alert: "Erro de codificação do arquivo. Certifique-se de que o arquivo está em UTF-8."
+      rescue => e
+        Rails.logger.error "CSV Import Error: #{e.class} - #{e.message}"
+        redirect_to admin_providers_path, alert: "Erro na importação: #{e.message}"
+      end
+    else
+      redirect_to admin_providers_path, alert: "Por favor, selecione um arquivo CSV."
+    end
+  end
+
+  collection_action :download_csv_template, method: :get do
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << [
+        'name', 'title', 'short_description', 'country', 'address', 'phone',
+        'foundation_year', 'members_count', 'revenue', 'social_links', 'tags', 'status'
+      ]
+      csv << [
+        'Exemplo Empresa Ltda', 'Empresa de Energia Solar', 'Especializada em soluções solares',
+        'Brasil', 'Rua das Flores, 123', '(11) 99999-9999', '2020', '50',
+        'R$ 1.000.000', 'https://facebook.com/exemplo;https://linkedin.com/exemplo',
+        'energia solar;sustentabilidade', 'pending'
+      ]
+    end
+    
+    send_data csv_data, filename: "template_providers_#{Date.current.strftime('%Y%m%d')}.csv", type: 'text/csv'
   end
 end

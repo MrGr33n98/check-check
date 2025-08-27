@@ -1,63 +1,38 @@
-import React from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-  errorInfo?: React.ErrorInfo;
+interface Props {
+  children: ReactNode;
 }
 
-class ErrorBoundary extends React.Component<
-  { children: React.ReactNode },
-  ErrorBoundaryState
-> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false };
+interface State {
+  hasError: boolean;
+}
+
+class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false
+  };
+
+  public static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error:', error, errorInfo);
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    this.setState({ errorInfo });
-  }
-
-  render() {
+  public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
-          <div className="bg-white p-8 rounded-lg shadow-md max-w-2xl w-full">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">
-              Algo deu errado!
-            </h1>
-            <p className="text-gray-700 mb-4">
-              Ocorreu um erro na aplicação. Verifique o console para mais detalhes.
-            </p>
-            {this.state.error && (
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Erro:</h2>
-                <pre className="text-sm bg-gray-100 p-3 rounded overflow-auto max-h-40">
-                  {this.state.error.toString()}
-                </pre>
-              </div>
-            )}
-            {this.state.errorInfo && (
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-gray-800 mb-2">Detalhes do componente:</h2>
-                <pre className="text-sm bg-gray-100 p-3 rounded overflow-auto max-h-40">
-                  {this.state.errorInfo.componentStack}
-                </pre>
-              </div>
-            )}
-            <button
-              onClick={() => {
-                this.setState({ hasError: false, error: undefined, errorInfo: undefined });
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Oops! Something went wrong</h1>
+            <p className="text-gray-600 mb-4">We're sorry, but something unexpected happened.</p>
+            <button 
+              onClick={() => this.setState({ hasError: false })}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             >
-              Tentar novamente
+              Try again
             </button>
           </div>
         </div>

@@ -1,30 +1,48 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '@/contexts/AuthContext'; // Adjust path if necessary
+import { useAuth } from '@/contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { login } = useContext(AuthContext);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
+  
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/empresa/dashboard'); // Redirect to dashboard on success
+      const result = await login(email, password);
+      if (result.success) {
+        const loggedInUser = result.user!;
+        
+        // Handle corporate users
+        if (loggedInUser.corporate_email) {
+          if (loggedInUser.approved) {
+            navigate('/empresa/analytics');
+          } else {
+            navigate('/empresa/pending');
+          }
+        } else if (loggedInUser.role === 'empresa') {
+          // Legacy empresa role handling
+          if (loggedInUser.company?.status === 'active') {
+            navigate('/empresa/dashboard');
+          } else {
+            navigate('/empresa/pending');
+          }
+        } else {
+          navigate('/'); // Redirect to home for regular users
+        }
       } else {
-        setError('Credenciais inválidas. Por favor, tente novamente.');
+        setError(result.error || 'Erro desconhecido.');
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Ocorreu um erro ao tentar fazer login. Por favor, tente novamente mais tarde.');
+      setError('Ocorreu um erro inesperado ao tentar fazer login.');
     } finally {
       setLoading(false);
     }
@@ -91,6 +109,18 @@ const LoginPage: React.FC = () => {
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
+          </div>
+
+          {/* Demo credentials */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-700 mb-2">Credenciais de demonstração:</p>
+            <div className="text-xs text-gray-600 space-y-1">
+              <p><strong>Admin:</strong> admin@solarenergy.com / password</p>
+              <p><strong>Moderador:</strong> moderator@solarenergy.com / password</p>
+              <p><strong>Usuário:</strong> user@solarenergy.com / password</p>
+              <p><strong>Empresa (Aprovada):</strong> empresa@solarpro.com / password</p>
+              <p><strong>Empresa (Pendente):</strong> pending@solartech.com / password</p>
+            </div>
           </div>
         </form>
       </div>

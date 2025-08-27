@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Zap, Leaf, BatteryCharging, Lightbulb, DollarSign, Users, Globe, Rocket, TrendingUp, Shield } from 'lucide-react'; // Example icons
+import { Search, Zap, BatteryCharging, Lightbulb, DollarSign, Users, Globe, Rocket, TrendingUp, Shield } from 'lucide-react'; // Example icons
 
 // Definindo um tipo para os objetos de categoria
 interface Category {
@@ -95,9 +95,8 @@ const getCategoryIcon = (slug: string) => {
 };
 
 function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [categories] = useState<Category[]>(mockCategories);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
@@ -126,11 +125,6 @@ function CategoriesPage() {
   if (loading) {
     console.log('CategoriesPage: Still loading, showing loading indicator');
     return <div className="container mx-auto px-4 py-16 text-center text-lg">Carregando categorias...</div>;
-  }
-
-  if (error) {
-    console.log('CategoriesPage: Error occurred:', error);
-    return <div className="container mx-auto px-4 py-16 text-center text-lg text-red-600">Ocorreu um erro: {error}</div>;
   }
 
   console.log('CategoriesPage: Rendering categories:', categories);

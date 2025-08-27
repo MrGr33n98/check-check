@@ -9,6 +9,39 @@ export interface Category {
   image_url?: string;
 }
 
+export interface Provider {
+  id: number;
+  name: string;
+  slug: string;
+  short_description?: string;
+  description?: string;
+  country?: string;
+  address?: string;
+  phone?: string;
+  foundation_year?: number;
+  members_count?: number;
+  status: string;
+  premium: boolean;
+  tags: string[];
+  social_links?: any;
+  categories: Category[];
+  logo_url?: string;
+  cover_image_url?: string;
+  rating: number;
+  review_count: number;
+  installed_capacity_mw: number;
+  location: string;
+  specialties: string[];
+}
+
+export interface ProvidersResponse {
+  providers: Provider[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
 export interface ApiResponse<T> {
   data: T;
   message?: string;
@@ -52,6 +85,69 @@ class ApiService {
       // Se falhar, tenta encontrar nos dados mockados
       const mockCategories = this.getMockCategories();
       return mockCategories.find(category => category.slug === slug) || null;
+    }
+  }
+
+  async getProviders(params?: {
+    category_id?: number;
+    category_slug?: string;
+    sort_by?: 'rating' | 'capacity' | 'reviews';
+    limit?: number;
+    page?: number;
+  }): Promise<ProvidersResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      
+      if (params?.category_id) {
+        queryParams.append('category_id', params.category_id.toString());
+      }
+      if (params?.category_slug) {
+        queryParams.append('category_slug', params.category_slug);
+      }
+      if (params?.sort_by) {
+        queryParams.append('sort_by', params.sort_by);
+      }
+      if (params?.limit) {
+        queryParams.append('limit', params.limit.toString());
+      }
+      if (params?.page) {
+        queryParams.append('page', params.page.toString());
+      }
+
+      const url = `${API_BASE_URL}/providers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch providers: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching providers from API, using mock data:', error);
+      // Se falhar, retorna os dados mockados
+      return this.getMockProviders(params);
+    }
+  }
+
+  async getProviderBySlug(slug: string): Promise<Provider | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/providers/${slug}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`Failed to fetch provider: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`Error fetching provider ${slug} from API:`, error);
+      // Se falhar, tenta encontrar nos dados mockados
+      const mockProviders = this.getMockProviders();
+      return mockProviders.providers.find(provider => provider.slug === slug) || null;
     }
   }
 
@@ -121,6 +217,180 @@ class ApiService {
         featured: true
       }
     ];
+  }
+
+  private getMockProviders(params?: {
+    category_id?: number;
+    category_slug?: string;
+    sort_by?: 'rating' | 'capacity' | 'reviews';
+    limit?: number;
+    page?: number;
+  }): ProvidersResponse {
+    const mockProviders: Provider[] = [
+      {
+        id: 1,
+        name: 'SolarTech Brasil',
+        slug: 'solartech-brasil',
+        short_description: 'Líder em soluções solares residenciais e comerciais',
+        description: 'A SolarTech Brasil é uma empresa pioneira no mercado de energia solar, oferecendo soluções completas para residências e empresas.',
+        country: 'Brasil',
+        address: 'São Paulo, SP',
+        phone: '(11) 99999-9999',
+        foundation_year: 2015,
+        members_count: 150,
+        status: 'active',
+        premium: true,
+        tags: ['capacity:500MW', 'location:São Paulo', 'experience:8 anos'],
+        social_links: {},
+        categories: [{ id: 1, name: 'Geração Distribuída', slug: 'geracao-distribuida' }],
+        logo_url: '/logos/solartech.png',
+        cover_image_url: '/covers/solartech.jpg',
+        rating: 4.8,
+        review_count: 245,
+        installed_capacity_mw: 500,
+        location: 'São Paulo',
+        specialties: ['Residencial', 'Comercial', 'Industrial']
+      },
+      {
+        id: 2,
+        name: 'EcoSolar Energia',
+        slug: 'ecosolar-energia',
+        short_description: 'Especialista em usinas solares de grande porte',
+        description: 'A EcoSolar Energia atua no desenvolvimento de usinas solares de grande porte e soluções de armazenamento.',
+        country: 'Brasil',
+        address: 'Rio de Janeiro, RJ',
+        phone: '(21) 88888-8888',
+        foundation_year: 2012,
+        members_count: 200,
+        status: 'active',
+        premium: true,
+        tags: ['capacity:1200MW', 'location:Rio de Janeiro', 'experience:11 anos'],
+        social_links: {},
+        categories: [{ id: 2, name: 'Usinas Solares de Grande Porte', slug: 'usinas-solares' }],
+        logo_url: '/logos/ecosolar.png',
+        cover_image_url: '/covers/ecosolar.jpg',
+        rating: 4.9,
+        review_count: 189,
+        installed_capacity_mw: 1200,
+        location: 'Rio de Janeiro',
+        specialties: ['Usinas', 'Armazenamento', 'Grid-Scale']
+      },
+      {
+        id: 3,
+        name: 'GreenPower Solutions',
+        slug: 'greenpower-solutions',
+        short_description: 'Inovação em sistemas off-grid e armazenamento',
+        description: 'A GreenPower Solutions é especializada em sistemas off-grid e soluções de armazenamento de energia.',
+        country: 'Brasil',
+        address: 'Belo Horizonte, MG',
+        phone: '(31) 77777-7777',
+        foundation_year: 2018,
+        members_count: 80,
+        status: 'active',
+        premium: false,
+        tags: ['capacity:150MW', 'location:Belo Horizonte', 'experience:5 anos'],
+        social_links: {},
+        categories: [{ id: 3, name: 'Armazenamento de Energia', slug: 'armazenamento' }, { id: 4, name: 'Energia Off-Grid', slug: 'off-grid' }],
+        logo_url: '/logos/greenpower.png',
+        cover_image_url: '/covers/greenpower.jpg',
+        rating: 4.6,
+        review_count: 127,
+        installed_capacity_mw: 150,
+        location: 'Belo Horizonte',
+        specialties: ['Off-Grid', 'Baterias', 'Sistemas Híbridos']
+      },
+      {
+        id: 4,
+        name: 'Solar Nordeste',
+        slug: 'solar-nordeste',
+        short_description: 'Especialista em energia solar para o Nordeste brasileiro',
+        description: 'A Solar Nordeste aproveita o alto potencial solar da região para oferecer as melhores soluções energéticas.',
+        country: 'Brasil',
+        address: 'Fortaleza, CE',
+        phone: '(85) 66666-6666',
+        foundation_year: 2016,
+        members_count: 120,
+        status: 'active',
+        premium: true,
+        tags: ['capacity:800MW', 'location:Fortaleza', 'experience:7 anos'],
+        social_links: {},
+        categories: [{ id: 1, name: 'Geração Distribuída', slug: 'geracao-distribuida' }, { id: 2, name: 'Usinas Solares de Grande Porte', slug: 'usinas-solares' }],
+        logo_url: '/logos/solarnordeste.png',
+        cover_image_url: '/covers/solarnordeste.jpg',
+        rating: 4.7,
+        review_count: 203,
+        installed_capacity_mw: 800,
+        location: 'Fortaleza',
+        specialties: ['Residencial', 'Comercial', 'Usinas']
+      },
+      {
+        id: 5,
+        name: 'CleanTech Innovations',
+        slug: 'cleantech-innovations',
+        short_description: 'Tecnologias avançadas em eficiência energética',
+        description: 'A CleanTech Innovations desenvolve tecnologias avançadas para maximizar a eficiência energética em sistemas solares.',
+        country: 'Brasil',
+        address: 'Curitiba, PR',
+        phone: '(41) 55555-5555',
+        foundation_year: 2019,
+        members_count: 60,
+        status: 'active',
+        premium: false,
+        tags: ['capacity:100MW', 'location:Curitiba', 'experience:4 anos'],
+        social_links: {},
+        categories: [{ id: 5, name: 'Eficiência Energética', slug: 'eficiencia' }, { id: 9, name: 'Inovação e Novas Tecnologias', slug: 'inovacao' }],
+        logo_url: '/logos/cleantech.png',
+        cover_image_url: '/covers/cleantech.jpg',
+        rating: 4.5,
+        review_count: 89,
+        installed_capacity_mw: 100,
+        location: 'Curitiba',
+        specialties: ['Eficiência', 'IoT', 'Smart Grid']
+      }
+    ];
+
+    // Filtrar por categoria se especificado
+    let filteredProviders = mockProviders;
+    if (params?.category_id) {
+      filteredProviders = mockProviders.filter(provider => 
+        provider.categories.some(cat => cat.id === params.category_id)
+      );
+    }
+    if (params?.category_slug) {
+      filteredProviders = mockProviders.filter(provider => 
+        provider.categories.some(cat => cat.slug === params.category_slug)
+      );
+    }
+
+    // Ordenar se especificado
+    if (params?.sort_by) {
+      switch (params.sort_by) {
+        case 'rating':
+          filteredProviders.sort((a, b) => b.rating - a.rating);
+          break;
+        case 'capacity':
+          filteredProviders.sort((a, b) => b.installed_capacity_mw - a.installed_capacity_mw);
+          break;
+        case 'reviews':
+          filteredProviders.sort((a, b) => b.review_count - a.review_count);
+          break;
+      }
+    }
+
+    // Aplicar limite se especificado
+    const limit = params?.limit || filteredProviders.length;
+    const page = params?.page || 1;
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedProviders = filteredProviders.slice(startIndex, endIndex);
+
+    return {
+      providers: paginatedProviders,
+      total: filteredProviders.length,
+      page: page,
+      per_page: limit,
+      total_pages: Math.ceil(filteredProviders.length / limit)
+    };
   }
 }
 

@@ -417,6 +417,15 @@ Provider.all.each do |provider|
   puts "B2B Ad created for: #{provider.name}" unless b2b_ad.new_record?
 end
 
+# Load analytics seeds
+load Rails.root.join('db', 'seeds', 'analytics_seeds.rb')
+
+# Load dynamic banners seeds
+load Rails.root.join('db', 'seeds', 'dynamic_banners.rb')
+
+# Load provider banners seeds
+load Rails.root.join('db', 'seeds', 'provider_banners_seeds.rb')
+
 puts "\n=== Seed data creation completed! ==="
 puts "Created sample data for all models including:"
 puts "- Products: #{Product.count}"
@@ -430,3 +439,4 @@ puts "- Pricings: #{Pricing.count}"
 puts "- Contents: #{Content.count}"
 puts "- Badges: #{Badge.count}"
 puts "- B2B Ads: #{B2bAd.count}"
+puts "- Analytics: #{Analytic.count}"
