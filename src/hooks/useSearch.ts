@@ -42,9 +42,6 @@ interface SearchResponse {
   };
 }
 
-// Base URL da API Rails - ajuste conforme necessário
-const API_BASE_URL = 'http://localhost:3000/api/v1';
-
 export const useSearch = () => {
   const [results, setResults] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,60 +51,15 @@ export const useSearch = () => {
     setIsLoading(true);
     
     try {
-      // Construir parâmetros da URL
-      const params = new URLSearchParams();
-      
-      if (filters.query) params.append('query', filters.query);
-      if (filters.location) params.append('location', filters.location);
-      if (filters.rating > 0) params.append('rating', filters.rating.toString());
-      if (filters.services.length > 0) params.append('services', filters.services.join(','));
-      
-      // Adicionar parâmetros de ordenação
-      params.append('sort_by', 'rating'); // Padrão por rating
-      params.append('per_page', '20');
-      
-      const response = await fetch(`${API_BASE_URL}/providers/search?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: SearchResponse = await response.json();
-      
-      // Mapear dados da API para o formato esperado pelo frontend
-      const mappedResults = data.results.map(provider => ({
-        id: provider.id,
-        name: provider.name,
-        location: provider.address || provider.location || 'Localização não informada',
-        rating: provider.rating || 0,
-        price: provider.price || 0,
-        certifications: provider.certifications || [],
-        services: provider.services || [],
-        experience: provider.experience || '0 anos',
-        availability: provider.availability || 'Consultar disponibilidade',
-        short_description: provider.short_description,
-        phone: provider.phone,
-        address: provider.address,
-        logo_url: provider.logo_url,
-        review_count: provider.review_count || 0,
-        specialties: provider.specialties || []
-      }));
-
-      setResults(mappedResults);
-      setTotalResults(data.pagination.total_count);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      
-      // Fallback para dados mock em caso de erro
+      // Usando apenas dados mockados enquanto a API não está disponível
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay da API
       const mockResults = generateMockResults(filters);
       setResults(mockResults);
       setTotalResults(mockResults.length);
+    } catch (error) {
+      console.error('Erro na busca:', error);
+      setResults([]);
+      setTotalResults(0);
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +79,7 @@ export const useSearch = () => {
   };
 };
 
-// Função para gerar resultados mock baseados nos filtros (fallback)
+// Função para gerar resultados mock baseados nos filtros
 const generateMockResults = (filters: SearchFilters): Company[] => {
   const mockCompanies: Company[] = [
     {
