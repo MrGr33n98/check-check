@@ -203,9 +203,9 @@ const SearchPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="flex gap-8">
           {/* Sidebar com filtros */}
-          <div className="lg:col-span-1">
+          <div className="w-[280px] flex-shrink-0">
             <div className="sticky top-8">
               <AdvancedSearch
                 onSearch={handleSearch}
@@ -217,7 +217,7 @@ const SearchPage: React.FC = () => {
           </div>
 
           {/* Lista de resultados */}
-          <div className="lg:col-span-3">
+          <div className="flex-1">
             {isLoading ? (
               // Loading skeleton
               <div className="space-y-6">
