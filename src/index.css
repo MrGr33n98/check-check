@@ -1,3 +1,7 @@
+:root {
+  --nav-h: 72px;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -124,4 +128,47 @@
 
 .animate-fade-out {
   animation: fadeOut 0.3s ease-in;
+}
+
+/* Custom classes for larger components */
+.shadow-3xl {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25), 0 25px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.text-9xl {
+  font-size: 8rem;
+  line-height: 1;
+}
+
+@media (min-width: 1280px) {
+  .xl\:text-9xl {
+    font-size: 10rem;
+    line-height: 0.9;
+  }
+}
+
+@media (min-width: 1536px) {
+  .xl\:text-9xl {
+    font-size: 12rem;
+    line-height: 0.85;
+  }
+}
+
+/* Enhanced animations for larger elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 2s;
 }

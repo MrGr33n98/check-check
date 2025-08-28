@@ -74,6 +74,17 @@ Rails.application.configure do
   # Suppress logger output for asset requests.
   config.assets.quiet = true
 
+  # ActiveAdmin compatibility settings
+  config.assets.debug = false
+  config.assets.compile = true
+  config.assets.digest = false
+  
+  # Disable preload warnings in development
+  config.assets.precompile += %w( active_admin.css active_admin.js )
+  
+  # Reduce preload warnings
+  config.assets.unknown_asset_fallback = false
+
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true
 

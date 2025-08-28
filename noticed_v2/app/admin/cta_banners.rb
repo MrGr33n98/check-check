@@ -110,35 +110,5 @@ ActiveAdmin.register CtaBanner do
     active_admin_comments
   end
 
-  # JavaScript para mostrar/ocultar campos baseado no tipo de fundo
-  content_for :head do
-    javascript_tag do
-      raw %{
-        document.addEventListener('DOMContentLoaded', function() {
-          const backgroundTypeSelect = document.getElementById('background_type_select');
-          const backgroundColorInput = document.getElementById('background_color_input');
-          const backgroundImageInput = document.querySelector('input[type="file"][name*="background_image"]');
-          
-          function toggleBackgroundFields() {
-            const selectedType = backgroundTypeSelect.value;
-            const colorWrapper = backgroundColorInput.closest('.input');
-            const imageWrapper = backgroundImageInput.closest('.input');
-            
-            if (selectedType === 'solid') {
-              colorWrapper.style.display = 'block';
-              imageWrapper.style.display = 'none';
-            } else if (selectedType === 'image') {
-              colorWrapper.style.display = 'none';
-              imageWrapper.style.display = 'block';
-            }
-          }
-          
-          if (backgroundTypeSelect) {
-            backgroundTypeSelect.addEventListener('change', toggleBackgroundFields);
-            toggleBackgroundFields(); // Executar na inicialização
-          }
-        });
-      }
-    end
-  end
+  # JavaScript removido - será adicionado via assets se necessário
 end

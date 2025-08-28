@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import PageBackground from '@/components/ui/PageBackground';
 import EnhancedHomePage from '@/pages/EnhancedHomePage';
 import CompanyDetail from '@/pages/CompanyDetail';
 import BlogPage from '@/pages/BlogPage';
@@ -29,6 +30,7 @@ import BannerManager from '@/components/admin/BannerManager';
 function App() {
   return (
     <Router>
+      <PageBackground />
       <Layout>
         <Routes>
           <Route path="/" element={<EnhancedHomePage />} />

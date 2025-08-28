@@ -36,6 +36,98 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     
     render json: @providers.map { |provider| provider_json(provider) }
   end
+
+  # GET /api/v1/providers/search
+  def search
+    @providers = Provider.active.includes(:categories)
+    
+    # Search by location (city, state, or address)
+    if params[:location].present?
+      location_query = params[:location].downcase
+      @providers = @providers.where(
+        "LOWER(address) LIKE ? OR LOWER(country) LIKE ? OR EXISTS (
+          SELECT 1 FROM unnest(tags) AS tag 
+          WHERE LOWER(tag) LIKE ?
+        )",
+        "%#{location_query}%",
+        "%#{location_query}%", 
+        "%#{location_query}%"
+      )
+    end
+    
+    # Search by company name or description
+    if params[:query].present?
+      search_query = params[:query].downcase
+      @providers = @providers.where(
+        "LOWER(name) LIKE ? OR LOWER(short_description) LIKE ? OR LOWER(title) LIKE ?",
+        "%#{search_query}%",
+        "%#{search_query}%",
+        "%#{search_query}%"
+      )
+    end
+    
+    # Filter by services/specialties
+    if params[:services].present?
+      services = params[:services].split(',').map(&:strip)
+      services.each do |service|
+        @providers = @providers.where("? = ANY(tags)", service.downcase)
+      end
+    end
+    
+    # Filter by minimum rating
+    if params[:rating].present? && params[:rating].to_f > 0
+      # For now, we'll simulate ratings based on company age and size
+      # In a real app, you'd have a proper ratings system
+    end
+    
+    # Sort results
+    case params[:sort_by]
+    when 'rating'
+      @providers = @providers.order(foundation_year: :asc) # Older companies first as proxy for rating
+    when 'size'
+      @providers = @providers.order(members_count: :desc)
+    when 'capacity'
+      @providers = @providers.order(members_count: :desc) # Use members as proxy for capacity
+    else
+      @providers = @providers.order(:name)
+    end
+    
+    # Pagination
+    page = params[:page]&.to_i || 1
+    per_page = params[:per_page]&.to_i || 20
+    offset = (page - 1) * per_page
+    
+    total_count = @providers.count
+    @providers = @providers.offset(offset).limit(per_page)
+    
+    # Add mock ratings and additional data for frontend
+    results = @providers.map do |provider|
+      provider_data = provider_json(provider)
+      
+      # Add mock rating based on company characteristics
+      rating = calculate_mock_rating(provider)
+      review_count = calculate_mock_review_count(provider)
+      
+      provider_data.merge({
+        rating: rating,
+        review_count: review_count,
+        price: calculate_mock_price(provider),
+        experience: "#{Date.current.year - provider.foundation_year} anos",
+        services: extract_services_from_tags(provider.tags),
+        certifications: extract_certifications_from_tags(provider.tags)
+      })
+    end
+    
+    render json: {
+      results: results,
+      pagination: {
+        current_page: page,
+        per_page: per_page,
+        total_pages: (total_count.to_f / per_page).ceil,
+        total_count: total_count
+      }
+    }
+  end
   
   # GET /api/v1/providers/:id
   def show
@@ -179,6 +271,55 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     # Filter out system tags and return relevant specialties
     system_prefixes = ['cnpj:', 'employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
     tags.reject { |tag| system_prefixes.any? { |prefix| tag.start_with?(prefix) } }
+  end
+
+  def extract_services_from_tags(tags)
+    service_keywords = ['residencial', 'comercial', 'industrial', 'rural', 'sustentabilidade', 'energia solar', 'fotovoltaica']
+    tags.select { |tag| service_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
+  end
+
+  def extract_certifications_from_tags(tags)
+    cert_keywords = ['inmetro', 'aneel', 'iso', 'certificação', 'cresesb']
+    tags.select { |tag| cert_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
+  end
+
+  def calculate_mock_rating(provider)
+    # Calculate rating based on company characteristics
+    base_rating = 3.5
+    
+    # Bonus for older companies (more experience)
+    age_bonus = [(Date.current.year - provider.foundation_year) * 0.05, 1.0].min
+    
+    # Bonus for larger companies
+    size_bonus = [provider.members_count / 500.0, 0.5].min
+    
+    # Bonus for more tags (more services/specialties)
+    service_bonus = [provider.tags.length * 0.02, 0.3].min
+    
+    rating = base_rating + age_bonus + size_bonus + service_bonus
+    [rating, 5.0].min.round(1)
+  end
+
+  def calculate_mock_review_count(provider)
+    # Calculate review count based on company size and age
+    base_reviews = 10
+    age_factor = Date.current.year - provider.foundation_year
+    size_factor = provider.members_count / 10
+    
+    (base_reviews + age_factor * 3 + size_factor).to_i
+  end
+
+  def calculate_mock_price(provider)
+    # Calculate starting price based on company characteristics
+    base_price = 15000
+    
+    # Larger companies might charge more
+    size_multiplier = 1 + (provider.members_count / 1000.0)
+    
+    # Older companies might charge premium
+    experience_multiplier = 1 + [(Date.current.year - provider.foundation_year) * 0.02, 0.3].min
+    
+    (base_price * size_multiplier * experience_multiplier).to_i
   end
 
   def provider_params

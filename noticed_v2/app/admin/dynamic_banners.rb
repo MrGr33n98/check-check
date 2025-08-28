@@ -174,35 +174,5 @@ ActiveAdmin.register DynamicBanner do
     end
   end
 
-  # Rotas customizadas
-  member_action :duplicate, method: :post
 end
 
-# CSS customizado para melhorar a aparência
-ActiveAdmin.register_stylesheet "dynamic_banners_admin.css" do
-  """
-  .dynamic-banner-preview {
-    max-width: 100%;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .current-image {
-    margin-top: 15px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 4px;
-  }
-  
-  .batch-actions {
-    margin-bottom: 20px;
-  }
-  
-  .status-tag {
-    font-weight: bold;
-    padding: 4px 8px;
-    border-radius: 4px;
-  }
-  """
-end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -78,6 +78,27 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
     t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
+  create_table "analytics", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.integer "leads_received", default: 0
+    t.integer "page_views", default: 0
+    t.integer "conversions", default: 0
+    t.decimal "conversion_rate", precision: 5, scale: 2, default: "0.0"
+    t.decimal "monthly_growth", precision: 5, scale: 2, default: "0.0"
+    t.string "response_time"
+    t.decimal "average_rating", precision: 3, scale: 2, default: "0.0"
+    t.integer "total_reviews", default: 0
+    t.integer "profile_views", default: 0
+    t.date "date"
+    t.integer "intention_score", default: 0
+    t.integer "conversion_point_leads", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["date"], name: "index_analytics_on_date"
+    t.index ["provider_id", "date"], name: "index_analytics_on_provider_id_and_date", unique: true
+    t.index ["provider_id"], name: "index_analytics_on_provider_id"
+  end
+
   create_table "articles", force: :cascade do |t|
     t.string "title"
     t.string "slug"
@@ -139,6 +160,46 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
     t.index ["name"], name: "index_badges_on_name"
     t.index ["position"], name: "index_badges_on_position"
     t.index ["year"], name: "index_badges_on_year"
+  end
+
+  create_table "banners", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "description"
+    t.string "link_url", null: false
+    t.integer "banner_type", default: 0, null: false
+    t.integer "status", default: 0, null: false
+    t.integer "device_target", default: 0, null: false
+    t.integer "priority", default: 0, null: false
+    t.datetime "starts_at", null: false
+    t.datetime "ends_at"
+    t.integer "click_count", default: 0, null: false
+    t.integer "impression_count", default: 0, null: false
+    t.text "conversion_tracking_code"
+    t.bigint "provider_id"
+    t.text "custom_css"
+    t.text "custom_html"
+    t.boolean "show_close_button", default: false
+    t.integer "display_frequency", default: 1
+    t.json "targeting_rules"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["banner_type"], name: "index_banners_on_banner_type"
+    t.index ["device_target"], name: "index_banners_on_device_target"
+    t.index ["ends_at"], name: "index_banners_on_ends_at"
+    t.index ["priority"], name: "index_banners_on_priority"
+    t.index ["provider_id"], name: "index_banners_on_provider_id"
+    t.index ["starts_at", "ends_at"], name: "index_banners_on_starts_at_and_ends_at"
+    t.index ["starts_at"], name: "index_banners_on_starts_at"
+    t.index ["status", "banner_type"], name: "index_banners_on_status_and_banner_type"
+    t.index ["status"], name: "index_banners_on_status"
+  end
+
+  create_table "banners_categories", id: false, force: :cascade do |t|
+    t.bigint "banner_id", null: false
+    t.bigint "category_id", null: false
+    t.index ["banner_id", "category_id"], name: "index_banners_categories_on_banner_id_and_category_id", unique: true
+    t.index ["banner_id"], name: "index_banners_categories_on_banner_id"
+    t.index ["category_id"], name: "index_banners_categories_on_category_id"
   end
 
   create_table "campaigns", force: :cascade do |t|
@@ -242,6 +303,39 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
     t.index ["category_tags"], name: "index_contents_on_category_tags", using: :gin
     t.index ["product_id"], name: "index_contents_on_product_id"
     t.index ["seo_url"], name: "index_contents_on_seo_url", unique: true
+  end
+
+  create_table "cta_banners", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "subtitle"
+    t.string "button1_text", null: false
+    t.string "button1_url", null: false
+    t.string "button2_text", null: false
+    t.string "button2_url", null: false
+    t.string "background_type", default: "solid", null: false
+    t.string "background_color"
+    t.boolean "enabled", default: true, null: false
+    t.string "position", default: "homepage"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["enabled", "position"], name: "index_cta_banners_on_enabled_and_position"
+    t.index ["enabled"], name: "index_cta_banners_on_enabled"
+    t.index ["position"], name: "index_cta_banners_on_position"
+  end
+
+  create_table "dynamic_banners", force: :cascade do |t|
+    t.string "title", limit: 255, null: false
+    t.text "description", null: false
+    t.string "link_url", null: false
+    t.integer "display_order", default: 1, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "start_date"
+    t.date "end_date"
+    t.index ["active", "display_order"], name: "index_dynamic_banners_on_active_and_order"
+    t.index ["active"], name: "index_dynamic_banners_on_active"
+    t.index ["display_order"], name: "index_dynamic_banners_on_display_order"
   end
 
   create_table "leads", force: :cascade do |t|
@@ -376,6 +470,36 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
     t.index ["status"], name: "index_products_on_status"
   end
 
+  create_table "promotional_banners", force: :cascade do |t|
+    t.string "title", limit: 200, null: false
+    t.string "background_color", default: "#f97316", null: false
+    t.string "text_color", default: "#ffffff", null: false
+    t.string "link_url", null: false
+    t.integer "display_order", default: 1, null: false
+    t.boolean "active", default: true, null: false
+    t.string "position", default: "homepage", null: false
+    t.bigint "provider_id"
+    t.string "utm_source", limit: 100
+    t.string "utm_medium", limit: 100
+    t.string "utm_campaign", limit: 100
+    t.string "utm_content", limit: 100
+    t.string "utm_term", limit: 100
+    t.text "notes"
+    t.datetime "start_date"
+    t.datetime "end_date"
+    t.integer "clicks_count", default: 0
+    t.integer "impressions_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active", "position", "display_order"], name: "index_promotional_banners_active_position_order"
+    t.index ["active"], name: "index_promotional_banners_on_active"
+    t.index ["created_at"], name: "index_promotional_banners_on_created_at"
+    t.index ["display_order"], name: "index_promotional_banners_on_display_order"
+    t.index ["position"], name: "index_promotional_banners_on_position"
+    t.index ["provider_id"], name: "index_promotional_banners_on_provider_id"
+    t.index ["start_date", "end_date"], name: "index_promotional_banners_date_range"
+  end
+
   create_table "providers", force: :cascade do |t|
     t.string "name", null: false
     t.string "seo_url"
@@ -508,6 +632,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
     t.integer "views", default: 0
     t.integer "role", default: 0
     t.boolean "approved"
+    t.boolean "corporate_email", default: false
+    t.string "company_name"
+    t.string "position"
+    t.index ["company_name"], name: "index_users_on_company_name"
+    t.index ["corporate_email"], name: "index_users_on_corporate_email"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
@@ -515,6 +644,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "analytics", "providers"
   add_foreign_key "articles", "categories"
   add_foreign_key "articles", "products"
   add_foreign_key "articles", "users"
@@ -523,6 +653,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
   add_foreign_key "b2b_ads", "providers", column: "company_id"
   add_foreign_key "b2b_ads", "users", column: "customer_id"
   add_foreign_key "badges", "categories"
+  add_foreign_key "banners", "providers"
   add_foreign_key "campaigns", "members", column: "owner_member_id"
   add_foreign_key "campaigns", "products"
   add_foreign_key "categories", "categories", column: "parent_id"
@@ -540,6 +671,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_26_180401) do
   add_foreign_key "product_accesses", "solutions"
   add_foreign_key "product_users", "products"
   add_foreign_key "product_users", "users"
+  add_foreign_key "promotional_banners", "providers"
   add_foreign_key "providers", "admin_users", column: "approved_by_id"
   add_foreign_key "questions", "categories"
   add_foreign_key "questions", "products"

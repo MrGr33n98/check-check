@@ -19,7 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <LocationProvider>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-transparent relative z-10">
         {/* Dynamic Banners */}
         <DynamicBannerSlider 
           autoRotate={true}
@@ -31,7 +31,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
         
         {/* Enhanced Header */}
-        <EnhancedHeader />
+        <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
+          <EnhancedHeader />
+        </div>
 
       {/* Main content */}
       <main className="flex-1">
@@ -39,7 +41,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-background">
+      <footer className="border-t border-gray-200/50 bg-white/95 backdrop-blur-md shadow-lg">
         <div className="container py-8 md:py-12">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             <div className="space-y-3">

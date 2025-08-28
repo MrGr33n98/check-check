@@ -281,9 +281,43 @@ ActiveAdmin.register Analytic do
     end
   end
 
-  private
+  # Ações em lote
+  batch_action :update_conversion_rates do |ids|
+    batch_action_collection.find(ids).each do |analytic|
+      if analytic.page_views > 0
+        real_rate = (analytic.conversions.to_f / analytic.page_views * 100).round(2)
+        analytic.update(conversion_rate: real_rate)
+      end
+    end
+    redirect_to collection_path, notice: 'Taxas de conversão atualizadas!'
+  end
 
-  def monthly_comparison_data
+  # CSV export
+  csv do
+    column :id
+    column :provider_name do |analytic|
+      analytic.provider.name
+    end
+    column :date
+    column :leads_received
+    column :page_views
+    column :conversions
+    column :conversion_rate
+    column :monthly_growth
+    column :response_time
+    column :average_rating
+    column :total_reviews
+    column :profile_views
+    column :intention_score
+    column :conversion_point_leads
+    column :created_at
+  end
+
+  # Métodos auxiliares para o controller
+  controller do
+    private
+
+    def monthly_comparison_data
     current_month = Date.current.beginning_of_month..Date.current.end_of_month
     previous_month = 1.month.ago.beginning_of_month..1.month.ago.end_of_month
     
@@ -342,35 +376,5 @@ ActiveAdmin.register Analytic do
     []
   end
 
-  # Ações em lote
-  batch_action :update_conversion_rates do |ids|
-    batch_action_collection.find(ids).each do |analytic|
-      if analytic.page_views > 0
-        real_rate = (analytic.conversions.to_f / analytic.page_views * 100).round(2)
-        analytic.update(conversion_rate: real_rate)
-      end
-    end
-    redirect_to collection_path, notice: 'Taxas de conversão atualizadas!'
-  end
-
-  # CSV export
-  csv do
-    column :id
-    column :provider_name do |analytic|
-      analytic.provider.name
-    end
-    column :date
-    column :leads_received
-    column :page_views
-    column :conversions
-    column :conversion_rate
-    column :monthly_growth
-    column :response_time
-    column :average_rating
-    column :total_reviews
-    column :profile_views
-    column :intention_score
-    column :conversion_point_leads
-    column :created_at
   end
 end

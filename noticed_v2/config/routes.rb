@@ -49,6 +49,9 @@ Rails.application.routes.draw do
       resources :articles, param: :id
       resources :providers do
         resources :analytics, only: [:index, :create, :update]
+        collection do
+          get :search
+        end
       end
       
       # Banner API routes

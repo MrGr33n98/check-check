@@ -225,28 +225,4 @@ ActiveAdmin.register PromotionalBanner do
     end
   end
 
-  # CSS customizado
-  content_for :head do
-    style do
-      raw %{
-        .utm-section {
-          background-color: #f8f9fa;
-          border-left: 4px solid #007cba;
-          padding: 15px;
-          margin: 15px 0;
-        }
-        
-        .banner-preview {
-          border: 2px dashed #ddd;
-          padding: 20px;
-          background-color: #fafafa;
-        }
-        
-        .status_tag.position {
-          background-color: #6c757d;
-          color: white;
-        }
-      }
-    end
   end
-end

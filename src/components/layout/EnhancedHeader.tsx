@@ -118,8 +118,10 @@ const EnhancedHeader: React.FC = () => {
                       to={`/categorias/${category.slug}`}
                       className="flex items-center space-x-2 w-full"
                     >
-                      {category.icon}
-                      <span>{category.name}</span>
+                      <span className="flex items-center space-x-2">
+                        {category.icon}
+                        <span>{category.name}</span>
+                      </span>
                     </Link>
                   </DropdownMenuItem>
                   {category.subcategories && (

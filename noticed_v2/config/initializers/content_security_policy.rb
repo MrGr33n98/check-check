@@ -5,26 +5,24 @@
 # https://guides.rubyonrails.org/security.html#content-security-policy-header
 
 Rails.application.configure do
-  config.content_security_policy do |policy|
-    policy.default_src :self, :https
-    policy.font_src    :self, :https, :data
-    policy.img_src     :self, :https, :data
-    policy.object_src  :none
-    policy.script_src  :self, :https, :unsafe_eval
-    policy.style_src   :self, :https, :unsafe_inline
+  # Temporarily disable CSP in development to fix ActiveAdmin issues
+  if Rails.env.development?
+    config.content_security_policy_report_only = true
+  else
+    config.content_security_policy do |policy|
+      policy.default_src :self, :https
+      policy.font_src    :self, :https, :data
+      policy.img_src     :self, :https, :data
+      policy.object_src  :none
+      policy.script_src  :self, :https, :unsafe_eval, :unsafe_inline
+      policy.style_src   :self, :https, :unsafe_inline
 
-    # Allow @vite/client to connect to the Vite development server
-    if Rails.env.development?
-      policy.connect_src :self, :https, "http://localhost:5173", "ws://localhost:5173"
+      # Specify URI for violation reports
+      # policy.report_uri "/csp-violation-report-endpoint"
     end
-    # Specify URI for violation reports
-    # policy.report_uri "/csp-violation-report-endpoint"
+
+    # Generate session nonces for permitted importmap and inline scripts
+    config.content_security_policy_nonce_generator = ->(request) { request.session.id.to_s }
+    config.content_security_policy_nonce_directives = %w(script-src)
   end
-
-  # Generate session nonces for permitted importmap and inline scripts
-  config.content_security_policy_nonce_generator = ->(request) { request.session.id.to_s }
-  config.content_security_policy_nonce_directives = %w(script-src)
-
-  # Report violations without enforcing the policy.
-  # config.content_security_policy_report_only = true
 end

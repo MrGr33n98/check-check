@@ -192,8 +192,8 @@ ActiveAdmin.register Banner do
       f.input :status, label: "Status", as: :select,
               collection: Banner.statuses.keys.map { |k| [k.humanize, k] },
               include_blank: false
-      f.input :starts_at, label: "Data/Hora de Início", as: :datetime_local
-      f.input :ends_at, label: "Data/Hora de Fim (opcional)", as: :datetime_local
+      f.input :starts_at, label: "Data/Hora de Início", as: :datetime_select
+      f.input :ends_at, label: "Data/Hora de Fim (opcional)", as: :datetime_select
     end
 
     f.inputs "Imagens" do
