@@ -15,7 +15,13 @@ class DynamicBanner < ApplicationRecord
 
   def image_url
     return nil unless image.attached?
-    Rails.application.routes.url_helpers.rails_blob_url(image, only_path: false)
+    
+    begin
+      Rails.application.routes.url_helpers.rails_blob_url(image, host: Rails.application.config.action_mailer.default_url_options[:host] || 'localhost:3000')
+    rescue => e
+      Rails.logger.error "Error generating image URL: #{e.message}"
+      nil
+    end
   end
 
   def to_json_api

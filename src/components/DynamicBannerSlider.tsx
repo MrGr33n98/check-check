@@ -42,9 +42,14 @@ const DynamicBannerSlider: React.FC<DynamicBannerSliderProps> = ({
       try {
         setIsLoading(true);
         const response = await fetch('/api/v1/dynamic_banners/active');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
-        if (data.status === 'success' && data.data.length > 0) {
+        if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
           setBanners(data.data);
           setError(null);
         } else {
@@ -60,7 +65,9 @@ const DynamicBannerSlider: React.FC<DynamicBannerSliderProps> = ({
       }
     };
 
-    fetchBanners();
+    // Add a small delay to prevent immediate re-renders
+    const timeoutId = setTimeout(fetchBanners, 100);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Auto-rotation effect
@@ -153,10 +160,25 @@ const DynamicBannerSlider: React.FC<DynamicBannerSliderProps> = ({
     }
   }, []);
 
-  // Don't render if not visible, loading, error, or no banners
-  if (!isVisible || isLoading || error || banners.length === 0) {
+  // Don't render if not visible or loading
+  if (!isVisible || isLoading) {
     return null;
   }
+
+  // Use default banner if no banners or error
+  const defaultBanner: DynamicBanner = {
+    id: 0,
+    title: 'SolarFinder - Encontre as Melhores Empresas',
+    description: 'Conectamos você com as melhores empresas de energia solar do Brasil. Compare preços, avaliações e encontre a solução perfeita!',
+    link_url: '/empresa/cadastro',
+    display_order: 1,
+    active: true,
+    image_url: '/api/placeholder/800/200',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  const displayBanners = (error || banners.length === 0) ? [defaultBanner] : banners;
 
   const currentBanner = banners[currentIndex];
 

@@ -203,9 +203,9 @@ const SearchPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar com filtros */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-3">
             <div className="sticky top-8">
               <AdvancedSearch
                 onSearch={handleSearch}
@@ -217,7 +217,7 @@ const SearchPage: React.FC = () => {
           </div>
 
           {/* Lista de resultados */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-6">
             {isLoading ? (
               // Loading skeleton
               <div className="space-y-6">
@@ -367,6 +367,53 @@ const SearchPage: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Banner lateral direito */}
+          <div className="lg:col-span-3">
+            <div className="sticky top-8">
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="relative h-96 bg-gradient-to-br from-blue-600 to-purple-700">
+                    <div className="absolute inset-0 bg-black bg-opacity-20" />
+                    <div className="relative p-6 h-full flex flex-col justify-center text-white">
+                      <h3 className="text-xl font-bold mb-4">
+                        Sua Empresa Aqui!
+                      </h3>
+                      <p className="text-sm mb-6 opacity-90">
+                        Alcance milhares de clientes interessados em energia solar. 
+                        Cadastre sua empresa e apareça nos primeiros resultados.
+                      </p>
+                      <div className="space-y-3">
+                        <button className="w-full bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors">
+                          Cadastrar Empresa
+                        </button>
+                        <button className="w-full border border-white text-white font-semibold py-2 px-4 rounded-lg hover:bg-white hover:text-blue-600 transition-colors">
+                          Saiba Mais
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Banner adicional menor */}
+              <Card className="mt-6 overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="relative h-48 bg-gradient-to-r from-green-500 to-teal-600">
+                    <div className="relative p-4 h-full flex flex-col justify-center text-white text-center">
+                      <h4 className="text-lg font-bold mb-2">
+                        💡 Dica do Especialista
+                      </h4>
+                      <p className="text-sm opacity-90">
+                        Compare pelo menos 3 orçamentos antes de decidir. 
+                        Economia pode chegar a 95% na conta de luz!
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
