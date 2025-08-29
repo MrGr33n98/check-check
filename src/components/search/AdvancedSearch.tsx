@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -37,6 +37,8 @@ interface AdvancedSearchProps {
   onClear?: () => void;
   isLoading?: boolean;
   resultsCount?: number;
+  // Novo: permite preencher a localização inicial (ex.: vinda da URL)
+  initialLocation?: string;
 }
 
 // Dados de configuração
@@ -76,7 +78,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   onSearch, 
   onClear, 
   isLoading = false,
-  resultsCount = 0
+  resultsCount = 0,
+  initialLocation
 }) => {
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -104,6 +107,19 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
 
+  // Ref para manter onSearch estável dentro do efeito
+  const onSearchRef = useRef<typeof onSearch>();
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  // Sincroniza localização inicial vinda do pai (URL) sem sobrescrever alterações do usuário
+  useEffect(() => {
+    if (initialLocation && filters.location !== initialLocation) {
+      setFilters(prev => ({ ...prev, location: initialLocation }));
+    }
+  }, [initialLocation]);
+
   // Simulação de sugestões de localização (integração futura com IBGE)
   const LOCATION_SUGGESTIONS = [
     '📍 São Paulo, SP',
@@ -118,25 +134,23 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     '📍 Goiânia, GO'
   ];
 
-  // Detectar localização do usuário (simulado)
+  // Detectar localização do usuário (simulado) - não sobrescrever se já há initialLocation ou filtro definido
   useEffect(() => {
-    // Simulação de detecção por IP
     const userLocation = '📍 Florianópolis, SC';
-    if (!filters.location) {
+    if (!filters.location && !initialLocation) {
       setFilters(prev => ({ ...prev, location: userLocation }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Busca automática quando filtros mudam
+  // Busca automática quando filtros mudam (evita depender de onSearch para não entrar em loop)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (onSearch) {
-        onSearch(filters);
-      }
+      onSearchRef.current?.(filters);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, onSearch]);
+  }, [filters]);
 
   const handleLocationSearch = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, location: value }));
@@ -169,7 +183,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       query: '',
       location: '',
       radius: 50,
-      priceRange: [15000, 120000],
+      priceRange: [0, 100000],
       rating: 0,
       ratings: [],
       certifications: [],
@@ -204,7 +218,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     if (filters.experience.length > 0) count++;
     if (filters.services.length > 0) count++;
     if (filters.certifications.length > 0) count++;
-    if (filters.priceRange[0] !== 15000 || filters.priceRange[1] !== 120000) count++;
+    if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 100000) count++;
     return count;
   };
 
@@ -237,140 +251,99 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header com contador de resultados */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Filtros Avançados</h2>
+      <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <span className="text-sm font-medium text-gray-700">Filtros</span>
           {getActiveFiltersCount() > 0 && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {getActiveFiltersCount()} filtros ativos
+            <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5">
+              {getActiveFiltersCount()}
             </Badge>
           )}
         </div>
-        
         {resultsCount > 0 && (
-          <div className="text-sm text-gray-600">
-            <span className="font-medium text-blue-600">{resultsCount}</span> empresas encontradas
-          </div>
+          <span className="text-sm text-gray-500">
+            {resultsCount} {resultsCount === 1 ? 'empresa' : 'empresas'}
+          </span>
         )}
       </div>
 
-      {/* Busca principal */}
-      <Card className="shadow-sm border-gray-200">
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Buscar empresas de energia solar..."
-              value={filters.query}
-              onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
-              className="pl-10 h-12 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-            />
+      {/* Campos de busca */}
+      <Card className="border border-gray-100 shadow-sm">
+        <CardContent className="p-0 divide-y divide-gray-100">
+          {/* Campo de busca por texto */}
+          <div className="p-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Buscar empresas..."
+                value={filters.query}
+                onChange={(e) => setFilters(prev => ({ ...prev, query: e.target.value }))}
+                className="pl-9 bg-gray-50 border-gray-200"
+              />
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Filtros principais */}
-      <Card className="shadow-sm border-gray-200">
-        <CardContent className="p-0">
-          {/* Localização */}
-          <FilterSection 
-            title="Localização" 
-            icon={<MapPin className="w-4 h-4" />} 
+          {/* Seções de filtro */}
+          <FilterSection
+            title="Localização"
+            icon={<MapPin className="w-4 h-4" />}
             sectionKey="location"
           >
-            <div className="relative">
-              <Input
-                placeholder="Digite sua cidade ou estado..."
-                value={filters.location}
-                onChange={(e) => handleLocationSearch(e.target.value)}
-                className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-              />
-              {showLocationSuggestions && locationSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg z-10 mt-1">
-                  {locationSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setFilters(prev => ({ ...prev, location: suggestion }));
-                        setShowLocationSuggestions(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="space-y-3">
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Digite uma cidade..."
+                  value={filters.location}
+                  onChange={(e) => handleLocationSearch(e.target.value)}
+                  className="pl-9 bg-gray-50 border-gray-200"
+                />
+              </div>
             </div>
           </FilterSection>
 
-          {/* Tipos de Serviço */}
-          <FilterSection 
-            title="Tipos de Serviço" 
-            icon={<Briefcase className="w-4 h-4" />} 
+          <FilterSection
+            title="Serviços"
+            icon={<Briefcase className="w-4 h-4" />}
             sectionKey="services"
           >
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {SERVICE_OPTIONS.map((service) => (
-                <Badge
+                <label
                   key={service.id}
-                  variant={filters.services.includes(service.id) ? "default" : "outline"}
-                  className={`cursor-pointer transition-all hover:scale-105 ${
-                    filters.services.includes(service.id) 
-                      ? 'bg-blue-600 text-white border-blue-600' 
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                  }`}
-                  onClick={() => setFilters(prev => ({
-                    ...prev,
-                    services: toggleArrayFilter(prev.services, service.id)
-                  }))}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-md"
                 >
-                  <span className="mr-1">{service.icon}</span>
-                  {service.label}
-                </Badge>
+                  <input
+                    type="checkbox"
+                    checked={filters.services.includes(service.id)}
+                    onChange={() => setFilters(prev => ({
+                      ...prev,
+                      services: toggleArrayFilter(prev.services, service.id)
+                    }))}
+                    className="rounded border-gray-300 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">{service.icon} {service.label}</span>
+                </label>
               ))}
             </div>
           </FilterSection>
 
-          {/* Faixa de Preço */}
-          <FilterSection 
-            title="Faixa de Preço" 
-            icon={<span className="text-sm">💰</span>} 
-            sectionKey="price"
-          >
-            <div className="space-y-4">
-              <div className="px-2">
-                <Slider
-                  value={filters.priceRange}
-                  onValueChange={(value) => setFilters(prev => ({ 
-                    ...prev, 
-                    priceRange: value as [number, number] 
-                  }))}
-                  min={5000}
-                  max={200000}
-                  step={5000}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>{formatPrice(filters.priceRange[0])}</span>
-                <span>{formatPrice(filters.priceRange[1])}</span>
-              </div>
-            </div>
-          </FilterSection>
-
-          {/* Avaliações */}
-          <FilterSection 
-            title="Avaliação Mínima" 
-            icon={<Star className="w-4 h-4" />} 
+          <FilterSection
+            title="Avaliações"
+            icon={<Star className="w-4 h-4" />}
             sectionKey="ratings"
           >
             <div className="space-y-2">
               {RATING_OPTIONS.map((rating) => (
-                <label key={rating.id} className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <label
+                  key={rating.id}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-md"
+                >
                   <input
                     type="checkbox"
                     checked={filters.ratings.includes(rating.id)}
@@ -378,51 +351,51 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                       ...prev,
                       ratings: toggleNumberArrayFilter(prev.ratings, rating.id)
                     }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-blue-600"
                   />
-                  <span className="text-sm">{rating.icon}</span>
-                  <span className="text-sm text-gray-700">{rating.label}</span>
+                  <span className="text-sm text-gray-700">{rating.icon}</span>
                 </label>
               ))}
             </div>
           </FilterSection>
 
-          {/* Experiência */}
-          <FilterSection 
-            title="Experiência da Empresa" 
-            icon={<Clock className="w-4 h-4" />} 
+          <FilterSection
+            title="Experiência"
+            icon={<Clock className="w-4 h-4" />}
             sectionKey="experience"
           >
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-2">
               {EXPERIENCE_OPTIONS.map((exp) => (
-                <Badge
+                <label
                   key={exp.id}
-                  variant={filters.experience.includes(exp.id) ? "default" : "outline"}
-                  className={`cursor-pointer transition-all hover:scale-105 ${
-                    filters.experience.includes(exp.id) 
-                      ? 'bg-blue-600 text-white border-blue-600' 
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
-                  }`}
-                  onClick={() => setFilters(prev => ({
-                    ...prev,
-                    experience: toggleArrayFilter(prev.experience, exp.id)
-                  }))}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-md"
                 >
-                  ⏳ {exp.label}
-                </Badge>
+                  <input
+                    type="checkbox"
+                    checked={filters.experience.includes(exp.id)}
+                    onChange={() => setFilters(prev => ({
+                      ...prev,
+                      experience: toggleArrayFilter(prev.experience, exp.id)
+                    }))}
+                    className="rounded border-gray-300 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">{exp.label}</span>
+                </label>
               ))}
             </div>
           </FilterSection>
 
-          {/* Certificações */}
-          <FilterSection 
-            title="Certificações" 
-            icon={<Award className="w-4 h-4" />} 
+          <FilterSection
+            title="Certificações"
+            icon={<Award className="w-4 h-4" />}
             sectionKey="certifications"
           >
             <div className="space-y-2">
               {CERTIFICATION_OPTIONS.map((cert) => (
-                <label key={cert.id} className="flex items-start gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <label
+                  key={cert.id}
+                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded-md"
+                >
                   <input
                     type="checkbox"
                     checked={filters.certifications.includes(cert.id)}
@@ -430,12 +403,9 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                       ...prev,
                       certifications: toggleArrayFilter(prev.certifications, cert.id)
                     }))}
-                    className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-blue-600"
                   />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{cert.label}</div>
-                    <div className="text-xs text-gray-500">{cert.description}</div>
-                  </div>
+                  <span className="text-sm text-gray-700">{cert.label}</span>
                 </label>
               ))}
             </div>
@@ -443,29 +413,19 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         </CardContent>
       </Card>
 
-      {/* Botão Limpar Filtros */}
+      {/* Botão de limpar filtros */}
       {getActiveFiltersCount() > 0 && (
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={clearAllFilters}
-            className="flex items-center gap-2 border-gray-300 hover:border-red-400 hover:text-red-600 hover:bg-red-50"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Limpar Filtros
-          </Button>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Buscando empresas...</span>
-        </div>
+        <Button
+          variant="outline"
+          className="w-full text-gray-600 border-gray-200"
+          onClick={clearAllFilters}
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Limpar filtros
+        </Button>
       )}
     </div>
-  );
+);
 };
 
 export default AdvancedSearch;

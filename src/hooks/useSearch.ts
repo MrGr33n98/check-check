@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import debounce from 'lodash/debounce';
+import { api } from '@/middleware/authMiddleware';
 
 interface SearchFilters {
   query: string;
@@ -42,80 +44,52 @@ interface SearchResponse {
   };
 }
 
-// Base URL da API Rails - ajuste conforme necessário
-const API_BASE_URL = 'http://localhost:3000/api/v1';
-
 export const useSearch = () => {
   const [results, setResults] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
 
-  const searchCompanies = async (filters: SearchFilters) => {
-    setIsLoading(true);
-    
-    try {
-      // Construir parâmetros da URL
-      const params = new URLSearchParams();
-      
-      if (filters.query) params.append('query', filters.query);
-      if (filters.location) params.append('location', filters.location);
-      if (filters.rating > 0) params.append('rating', filters.rating.toString());
-      if (filters.services.length > 0) params.append('services', filters.services.join(','));
-      
-      // Adicionar parâmetros de ordenação
-      params.append('sort_by', 'rating'); // Padrão por rating
-      params.append('per_page', '20');
-      
-      const response = await fetch(`${API_BASE_URL}/providers/search?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      });
+  const debouncedSearch = useCallback(
+    debounce(async (filters: SearchFilters) => {
+      setIsLoading(true);
+      try {
+        const params: Record<string, any> = {
+          location: filters.location || undefined,
+          query: filters.query || undefined,
+          services: filters.services && filters.services.length > 0 ? filters.services.join(',') : undefined,
+          rating: filters.rating && filters.rating > 0 ? filters.rating : undefined,
+          page: 1,
+          per_page: 20
+        };
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await api.get<SearchResponse>('/providers/search', { params });
+        const data = response.data;
+        setResults(data.results || []);
+        setTotalResults(data.pagination?.total_count || (data.results ? data.results.length : 0));
+      } catch (error) {
+        console.error('Erro na busca:', error);
+        setResults([]);
+        setTotalResults(0);
+      } finally {
+        setIsLoading(false);
       }
+    }, 300),
+    []
+  );
 
-      const data: SearchResponse = await response.json();
-      
-      // Mapear dados da API para o formato esperado pelo frontend
-      const mappedResults = data.results.map(provider => ({
-        id: provider.id,
-        name: provider.name,
-        location: provider.address || provider.location || 'Localização não informada',
-        rating: provider.rating || 0,
-        price: provider.price || 0,
-        certifications: provider.certifications || [],
-        services: provider.services || [],
-        experience: provider.experience || '0 anos',
-        availability: provider.availability || 'Consultar disponibilidade',
-        short_description: provider.short_description,
-        phone: provider.phone,
-        address: provider.address,
-        logo_url: provider.logo_url,
-        review_count: provider.review_count || 0,
-        specialties: provider.specialties || []
-      }));
-
-      setResults(mappedResults);
-      setTotalResults(data.pagination.total_count);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      
-      // Fallback para dados mock em caso de erro
-      const mockResults = generateMockResults(filters);
-      setResults(mockResults);
-      setTotalResults(mockResults.length);
-    } finally {
-      setIsLoading(false);
+  const searchCompanies = (filters: SearchFilters) => {
+    if (!filters.location.trim()) {
+      clearSearch();
+      return;
     }
+    setIsLoading(true);
+    debouncedSearch(filters);
   };
 
   const clearSearch = () => {
     setResults([]);
     setTotalResults(0);
+    setIsLoading(false);
   };
 
   return {
@@ -127,7 +101,7 @@ export const useSearch = () => {
   };
 };
 
-// Função para gerar resultados mock baseados nos filtros (fallback)
+// Função para gerar resultados mock baseados nos filtros
 const generateMockResults = (filters: SearchFilters): Company[] => {
   const mockCompanies: Company[] = [
     {
