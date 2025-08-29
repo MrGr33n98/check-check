@@ -1,17 +1,35 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Zap, BatteryCharging, Lightbulb, DollarSign, Users, Globe, Rocket, TrendingUp, Shield } from 'lucide-react'; // Example icons
+import { Search, Zap, BatteryCharging, Lightbulb, DollarSign, Users, Globe, Rocket, TrendingUp, Shield, ArrowRight } from 'lucide-react'; // Example icons
 
-// Definindo um tipo para os objetos de categoria
+// Definindo um tipo para os objetos de categoria vindos da API
+interface ApiCategory {
+  id: number | string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  featured?: boolean;
+  banner_image_url?: string | null;
+}
+
+// Definindo um tipo para os cards na página
 interface Category {
-  id: number;
+  id: number | string;
   name: string;
   slug: string;
   description?: string;
   featured?: boolean;
+  banner_image_url?: string | null;
 }
 
-// Mock data for categories
+// Config de hero opcional, carregada via Admin (banner por posição)
+interface HeroConfig {
+  title: string;
+  subtitle: string;
+  backgroundImage?: string | null;
+}
+
+// Mock data for categories (fallback)
 const mockCategories: Category[] = [
   {
     id: 1,
@@ -81,28 +99,33 @@ const mockCategories: Category[] = [
 // Helper para mapear slugs a ícones (exemplo)
 const getCategoryIcon = (slug: string) => {
   switch (slug) {
-    case 'geracao-distribuida': return <Zap className="w-8 h-8 text-blue-600" />;
-    case 'usinas-solares': return <Lightbulb className="w-8 h-8 text-yellow-600" />;
-    case 'armazenamento': return <BatteryCharging className="w-8 h-8 text-green-600" />;
-    case 'off-grid': return <Globe className="w-8 h-8 text-purple-600" />;
-    case 'eficiencia': return <TrendingUp className="w-8 h-8 text-teal-600" />;
-    case 'financiamento': return <DollarSign className="w-8 h-8 text-indigo-600" />;
-    case 'comunidades': return <Users className="w-8 h-8 text-pink-600" />;
-    case 'sustentabilidade': return <Shield className="w-8 h-8 text-lime-600" />;
-    case 'inovacao': return <Rocket className="w-8 h-8 text-orange-600" />;
-    default: return <Search className="w-8 h-8 text-gray-500" />;
+    case 'geracao-distribuida': return <Zap className="w-6 h-6 text-blue-600" />;
+    case 'usinas-solares': return <Lightbulb className="w-6 h-6 text-yellow-600" />;
+    case 'armazenamento': return <BatteryCharging className="w-6 h-6 text-green-600" />;
+    case 'off-grid': return <Globe className="w-6 h-6 text-purple-600" />;
+    case 'eficiencia': return <TrendingUp className="w-6 h-6 text-teal-600" />;
+    case 'financiamento': return <DollarSign className="w-6 h-6 text-indigo-600" />;
+    case 'comunidades': return <Users className="w-6 h-6 text-pink-600" />;
+    case 'sustentabilidade': return <Shield className="w-6 h-6 text-lime-600" />;
+    case 'inovacao': return <Rocket className="w-6 h-6 text-orange-600" />;
+    default: return <Search className="w-6 h-6 text-gray-500" />;
   }
 };
 
 function CategoriesPage() {
-  const [categories] = useState<Category[]>(mockCategories);
+  const [categories, setCategories] = useState<Category[]>(mockCategories);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
+  // Estado do Hero (configurável)
+  const [hero, setHero] = useState<HeroConfig>({
+    title: 'Todas as Categorias de Energia Solar',
+    subtitle: 'Explore empresas por segmento do setor solar. Encontre empresas especializadas em geração, eficiência energética, armazenamento e muito mais.',
+    backgroundImage: null
+  });
+
   useEffect(() => {
-    console.log('CategoriesPage: Initializing page');
-    
-    // SEO: Set page title and meta description for the main categories page
+    // SEO
     document.title = "Todas as Categorias de Energia Solar | SolarFinder";
     let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
@@ -112,9 +135,58 @@ function CategoriesPage() {
     }
     metaDescription.setAttribute('content', "Explore empresas por segmento do setor solar. Encontre empresas especializadas em geração, eficiência energética, armazenamento e muito mais.");
 
-    // Since we're using mock data, we don't need to fetch from API
-    console.log('CategoriesPage: Using mock data');
-    setLoading(false);
+    const controller = new AbortController();
+
+    // Buscar categorias reais da API (ActiveAdmin configurável via banner_image)
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/v1/categories', { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: ApiCategory[] = await res.json();
+        if (!Array.isArray(data)) throw new Error('Formato inesperado');
+        const mapped: Category[] = data.map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          description: c.description || '',
+          featured: c.featured,
+          banner_image_url: c.banner_image_url || null,
+        }));
+        setCategories(mapped.length > 0 ? mapped : mockCategories);
+      } catch (err) {
+        console.warn('Falha ao carregar categorias da API, usando mock:', err);
+        setCategories(mockCategories);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Buscar configuração do hero via banner por posição (categories_hero)
+    const fetchHeroConfig = async () => {
+      try {
+        const res = await fetch('/api/v1/promotional_banners/by_position/categories_hero', { signal: controller.signal });
+        if (!res.ok) return; // mantém default
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) return;
+        const data = await res.json();
+        if (data && Array.isArray(data.data) && data.data.length > 0) {
+          const b = data.data[0];
+          setHero((prev) => ({
+            title: b.title || prev.title,
+            subtitle: b.description || prev.subtitle,
+            backgroundImage: b.image_url || prev.backgroundImage,
+          }));
+        }
+      } catch (err) {
+        // silencioso: mantém default
+        console.warn('Hero config indisponível, usando padrão.');
+      }
+    };
+
+    fetchCategories();
+    fetchHeroConfig();
+    return () => controller.abort();
   }, []);
 
   const filteredCategories = categories.filter(category =>
@@ -123,25 +195,29 @@ function CategoriesPage() {
   );
 
   if (loading) {
-    console.log('CategoriesPage: Still loading, showing loading indicator');
     return <div className="container mx-auto px-4 py-16 text-center text-lg">Carregando categorias...</div>;
   }
 
-  console.log('CategoriesPage: Rendering categories:', categories);
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-blue-700 text-white py-16 md:py-24">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
-            Todas as Categorias de Energia Solar
+      {/* Hero Section (50% menor e configurável) */}
+      <section className="relative bg-blue-700 text-white py-8 md:py-10 overflow-hidden">
+        {hero.backgroundImage && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-20"
+            style={{ backgroundImage: `url(${hero.backgroundImage})` }}
+          />
+        )}
+        <div className="relative container mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-extrabold mb-3 tracking-tight">
+            {hero.title}
           </h1>
-          <p className="text-xl md:text-2xl mb-6 max-w-3xl mx-auto">
-            Explore empresas por segmento do setor solar. Encontre empresas especializadas em geração, eficiência energética, armazenamento e muito mais.
+          <p className="text-lg md:text-xl mb-5 max-w-3xl mx-auto">
+            {hero.subtitle}
           </p>
           <Link 
             to="/encontrar-empresas" 
-            className="inline-block bg-white text-blue-700 hover:bg-blue-100 px-8 py-3 rounded-full text-lg font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+            className="inline-block bg-white text-blue-700 hover:bg-blue-100 px-6 py-2.5 rounded-full text-base font-semibold shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
           >
             Encontre empresas confiáveis por categoria
           </Link>
@@ -166,7 +242,7 @@ function CategoriesPage() {
       </section>
 
       {/* Categories Grid */}
-      <section className="py-12 md:py-16">
+      <section className="py-10 md:py-14">
         <div className="container mx-auto px-4">
           {filteredCategories.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -174,21 +250,39 @@ function CategoriesPage() {
                 <Link 
                   key={category.id} 
                   to={`/categorias/${category.slug}`} 
-                  className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1"
+                  className="group block bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:-translate-y-0.5"
                   aria-label={`Ver empresas na categoria ${category.name}`}
                 >
-                  <div className="p-6">
-                    <div className="flex items-center justify-center mb-4">
-                      {getCategoryIcon(category.slug)}
+                  {/* Banner superior (configurado via ActiveAdmin) */}
+                  <div className="w-full h-[140px] bg-gray-100 overflow-hidden">
+                    {category.banner_image_url ? (
+                      <img
+                        src={category.banner_image_url}
+                        alt={`Banner da categoria ${category.name}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
+                  </div>
+
+                  {/* Conteúdo */}
+                  <div className="p-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+                        {getCategoryIcon(category.slug)}
+                      </div>
+                      <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">
+                        {category.name}
+                      </h2>
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">{category.name}</h2>
+
                     {category.description && (
-                      <p className="text-gray-600 text-sm text-center line-clamp-2">{category.description}</p>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{category.description}</p>
                     )}
-                    <div className="mt-4 text-center">
-                      <span className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-                        Ver empresas &rarr;
-                      </span>
+
+                    <div className="flex items-center text-blue-600 font-semibold group-hover:text-blue-700 transition-colors">
+                      <span>Ver empresas</span>
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </Link>

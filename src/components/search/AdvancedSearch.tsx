@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -37,6 +37,8 @@ interface AdvancedSearchProps {
   onClear?: () => void;
   isLoading?: boolean;
   resultsCount?: number;
+  // Novo: permite preencher a localização inicial (ex.: vinda da URL)
+  initialLocation?: string;
 }
 
 // Dados de configuração
@@ -76,7 +78,8 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   onSearch, 
   onClear, 
   isLoading = false,
-  resultsCount = 0
+  resultsCount = 0,
+  initialLocation
 }) => {
   const [filters, setFilters] = useState<SearchFilters>({
     query: '',
@@ -104,6 +107,19 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
 
+  // Ref para manter onSearch estável dentro do efeito
+  const onSearchRef = useRef<typeof onSearch>();
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
+
+  // Sincroniza localização inicial vinda do pai (URL) sem sobrescrever alterações do usuário
+  useEffect(() => {
+    if (initialLocation && filters.location !== initialLocation) {
+      setFilters(prev => ({ ...prev, location: initialLocation }));
+    }
+  }, [initialLocation]);
+
   // Simulação de sugestões de localização (integração futura com IBGE)
   const LOCATION_SUGGESTIONS = [
     '📍 São Paulo, SP',
@@ -118,25 +134,23 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     '📍 Goiânia, GO'
   ];
 
-  // Detectar localização do usuário (simulado)
+  // Detectar localização do usuário (simulado) - não sobrescrever se já há initialLocation ou filtro definido
   useEffect(() => {
-    // Simulação de detecção por IP
     const userLocation = '📍 Florianópolis, SC';
-    if (!filters.location) {
+    if (!filters.location && !initialLocation) {
       setFilters(prev => ({ ...prev, location: userLocation }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Busca automática quando filtros mudam
+  // Busca automática quando filtros mudam (evita depender de onSearch para não entrar em loop)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (onSearch) {
-        onSearch(filters);
-      }
+      onSearchRef.current?.(filters);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [filters, onSearch]);
+  }, [filters]);
 
   const handleLocationSearch = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, location: value }));
@@ -169,7 +183,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       query: '',
       location: '',
       radius: 50,
-      priceRange: [15000, 120000],
+      priceRange: [0, 100000],
       rating: 0,
       ratings: [],
       certifications: [],
@@ -204,7 +218,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     if (filters.experience.length > 0) count++;
     if (filters.services.length > 0) count++;
     if (filters.certifications.length > 0) count++;
-    if (filters.priceRange[0] !== 15000 || filters.priceRange[1] !== 120000) count++;
+    if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 100000) count++;
     return count;
   };
 
@@ -405,7 +419,6 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
           variant="outline"
           className="w-full text-gray-600 border-gray-200"
           onClick={clearAllFilters}
-          disabled={isLoading}
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           Limpar filtros

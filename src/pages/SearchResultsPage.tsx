@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
 import CityBanner from '@/components/banners/CityBanner';
 import HelpSection from '@/components/sections/HelpSection';
@@ -8,18 +8,26 @@ import { Star, MapPin, Phone, Mail, Award, Clock, ArrowRight } from 'lucide-reac
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { results, isLoading, totalResults, searchCompanies, clearSearch } = useSearch();
   const [sortBy, setSortBy] = useState('relevance');
   const [currentLocation, setCurrentLocation] = useState('');
+  const lastQuery = useRef('');
+
+  // String estável para dependência do efeito (evita reexecução por identidade do objeto)
+  const paramsKey = searchParams.toString();
 
   useEffect(() => {
     // Executar busca inicial baseada nos parâmetros da URL
     const initialQuery = searchParams.get('q') || '';
     const initialLocation = searchParams.get('location') || '';
+    const currentQuery = paramsKey;
     
     setCurrentLocation(initialLocation);
     
-    if (initialQuery || initialLocation) {
+    // Só executa a busca se houver um parâmetro de localização válido
+    if (initialLocation.trim() && currentQuery !== lastQuery.current) {
+      lastQuery.current = currentQuery;
       searchCompanies({
         query: initialQuery,
         location: initialLocation,
@@ -33,8 +41,10 @@ const SearchResultsPage = () => {
         availability: '',
         deviceTarget: ''
       });
+    } else if (!initialLocation.trim()) {
+      clearSearch(); // Limpa os resultados se não houver localização
     }
-  }, [searchParams]);
+  }, [paramsKey]);
 
   const sortOptions = [
     { value: 'relevance', label: 'Relevância' },
@@ -57,6 +67,16 @@ const SearchResultsPage = () => {
     }
   });
 
+  // Centraliza a limpeza de filtros: limpa resultados, zera localização e remove params da URL
+  // Além disso, força o remount do AdvancedSearch para resetar o estado interno dos filtros
+  const [filtersResetKey, setFiltersResetKey] = useState(0);
+  const handleClearAll = () => {
+    setCurrentLocation('');
+    clearSearch();
+    navigate('/buscar');
+    setFiltersResetKey((k) => k + 1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -65,12 +85,15 @@ const SearchResultsPage = () => {
           <div className="w-[280px] shrink-0">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
               <AdvancedSearch 
+                key={filtersResetKey}
                 onSearch={(filters) => {
                   searchCompanies(filters);
                   setCurrentLocation(filters.location);
                 }}
-                onClear={clearSearch}
+                onClear={handleClearAll}
                 isLoading={isLoading}
+                // Preenche localização inicial para sincronizar com a URL e evitar sobrescrita
+                initialLocation={currentLocation}
               />
             </div>
           </div>
@@ -248,13 +271,13 @@ const SearchResultsPage = () => {
                     Tente ajustar os filtros ou expandir a área de busca
                   </p>
                   <button
-                    onClick={clearSearch}
+                    onClick={handleClearAll}
                     className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
                     Limpar filtros
                   </button>
                 </div>
-                
+
                 <HelpSection 
                   title="Não encontrou o que procura?"
                   subtitle="Nossa equipe pode ajudar você a encontrar a empresa perfeita para seu projeto específico de energia solar."

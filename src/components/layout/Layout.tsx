@@ -10,7 +10,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-  const isDashboard = location.pathname.includes('/empresa/');
+  // Ajuste: somente páginas de dashboard devem ocultar header/footer, não a página de cadastro
+  const isDashboard = location.pathname.startsWith('/empresa/') && location.pathname !== '/empresa/cadastro';
 
   if (isDashboard) {
     // For dashboard pages, just render children without header/footer

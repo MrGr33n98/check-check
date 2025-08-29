@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import debounce from 'lodash/debounce';
+import { api } from '@/middleware/authMiddleware';
 
 interface SearchFilters {
   query: string;
@@ -47,27 +49,47 @@ export const useSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
 
-  const searchCompanies = async (filters: SearchFilters) => {
-    setIsLoading(true);
-    
-    try {
-      // Usando apenas dados mockados enquanto a API não está disponível
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simula delay da API
-      const mockResults = generateMockResults(filters);
-      setResults(mockResults);
-      setTotalResults(mockResults.length);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      setResults([]);
-      setTotalResults(0);
-    } finally {
-      setIsLoading(false);
+  const debouncedSearch = useCallback(
+    debounce(async (filters: SearchFilters) => {
+      setIsLoading(true);
+      try {
+        const params: Record<string, any> = {
+          location: filters.location || undefined,
+          query: filters.query || undefined,
+          services: filters.services && filters.services.length > 0 ? filters.services.join(',') : undefined,
+          rating: filters.rating && filters.rating > 0 ? filters.rating : undefined,
+          page: 1,
+          per_page: 20
+        };
+
+        const response = await api.get<SearchResponse>('/providers/search', { params });
+        const data = response.data;
+        setResults(data.results || []);
+        setTotalResults(data.pagination?.total_count || (data.results ? data.results.length : 0));
+      } catch (error) {
+        console.error('Erro na busca:', error);
+        setResults([]);
+        setTotalResults(0);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  const searchCompanies = (filters: SearchFilters) => {
+    if (!filters.location.trim()) {
+      clearSearch();
+      return;
     }
+    setIsLoading(true);
+    debouncedSearch(filters);
   };
 
   const clearSearch = () => {
     setResults([]);
     setTotalResults(0);
+    setIsLoading(false);
   };
 
   return {

@@ -143,7 +143,7 @@ const SearchPage: React.FC = () => {
     }
     
     // Filtrar por faixa de preço
-    if (filters.priceRange[0] !== 15000 || filters.priceRange[1] !== 120000) {
+    if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 100000) {
       filtered = filtered.filter(company => 
         company.priceRange[0] >= filters.priceRange[0] && 
         company.priceRange[1] <= filters.priceRange[1]
