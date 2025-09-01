@@ -426,6 +426,9 @@ load Rails.root.join('db', 'seeds', 'dynamic_banners.rb')
 # Load provider banners seeds
 load Rails.root.join('db', 'seeds', 'provider_banners_seeds.rb')
 
+# Load solar companies seeds
+load Rails.root.join('db', 'seeds', 'solar_companies.rb')
+
 puts "\n=== Seed data creation completed! ==="
 puts "Created sample data for all models including:"
 puts "- Products: #{Product.count}"

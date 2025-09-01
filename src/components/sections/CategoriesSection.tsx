@@ -219,7 +219,7 @@ const CategoriesSection: React.FC = () => {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  onClick={() => window.location.href = '/buscar'}
+                  onClick={() => window.location.href = '/busca-avancada'}
                 >
                   Ver Todas as Empresas
                   <ArrowRight className="w-5 h-5 ml-2" />

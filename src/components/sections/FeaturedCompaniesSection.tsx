@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +16,23 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useLocation } from '@/contexts/LocationContext';
+
+// Interface para empresa da API
+interface SolarCompany {
+  id: number;
+  name: string;
+  title: string;
+  short_description: string;
+  country: string;
+  address: string;
+  phone: string;
+  foundation_year: number;
+  members_count: number;
+  revenue: string;
+  social_links: string[];
+  tags: string[];
+  status: string;
+}
 
 interface Company {
   id: string;
@@ -138,10 +157,86 @@ const mockCompanies: Company[] = [
 ];
 
 const FeaturedCompaniesSection: React.FC = () => {
-  const [companies] = useState<Company[]>(mockCompanies);
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const { userLocation } = useLocation();
+
+  // Função para converter dados da API para o formato do componente
+  const convertApiToCompany = (apiCompany: SolarCompany): Company => {
+    // Gerar rating aleatório entre 4.0 e 5.0 para demonstração
+    const rating = Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
+    const reviewCount = Math.floor(Math.random() * 200) + 20;
+    
+    // Extrair cidade e estado do endereço
+    const addressParts = apiCompany.address.split(',');
+    const cityState = addressParts.slice(-2).join(',').trim();
+    const [city, state] = cityState.split(' - ');
+    
+    // Mapear tags para especialidades
+    const specialties = apiCompany.tags.slice(0, 3).map(tag => {
+      if (tag.toLowerCase().includes('residencial')) return 'Residencial';
+      if (tag.toLowerCase().includes('comercial')) return 'Comercial';
+      if (tag.toLowerCase().includes('industrial')) return 'Industrial';
+      if (tag.toLowerCase().includes('manutenção')) return 'Manutenção';
+      if (tag.toLowerCase().includes('monitoramento')) return 'Monitoramento';
+      return 'Consultoria';
+    });
+
+    // Calcular anos de experiência
+    const currentYear = new Date().getFullYear();
+    const yearsExperience = currentYear - apiCompany.foundation_year;
+
+    // Determinar faixa de preço baseada no tamanho da empresa
+    let priceRange: 'low' | 'medium' | 'high' = 'medium';
+    if (apiCompany.members_count < 100) priceRange = 'low';
+    else if (apiCompany.members_count > 200) priceRange = 'high';
+
+    return {
+      id: apiCompany.id.toString(),
+      name: apiCompany.name,
+      rating,
+      reviewCount,
+      city: city?.trim() || 'Brasil',
+      state: state?.trim() || '',
+      phone: apiCompany.phone,
+      website: apiCompany.social_links.find(link => 
+        !link.includes('facebook') && !link.includes('instagram') && !link.includes('linkedin')
+      ),
+      specialties: specialties.length > 0 ? specialties : ['Energia Solar'],
+      verified: true,
+      featured: true,
+      description: apiCompany.short_description,
+      completedProjects: Math.floor(Math.random() * 800) + 200,
+      yearsExperience,
+      priceRange
+    };
+  };
+
+  // Carregar empresas da API
+  const loadCompanies = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get('http://localhost:3000/api/v1/solar_companies');
+      const apiCompanies = response.data.solar_companies;
+      const convertedCompanies = apiCompanies.map(convertApiToCompany);
+      setCompanies(convertedCompanies);
+      setFilteredCompanies(convertedCompanies);
+    } catch (error) {
+      console.error('Erro ao carregar empresas:', error);
+      // Em caso de erro, usar dados mockados como fallback
+      setCompanies(mockCompanies);
+      setFilteredCompanies(mockCompanies);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar empresas ao montar o componente
+  useEffect(() => {
+    loadCompanies();
+  }, []);
   
   const companiesPerSlide = 3;
   const totalSlides = Math.ceil(filteredCompanies.length / companiesPerSlide);
@@ -263,7 +358,22 @@ const FeaturedCompaniesSection: React.FC = () => {
 
           {/* Companies Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {getCurrentSlideCompanies().map((company) => (
+            {isLoading ? (
+              // Loading skeleton
+              [...Array(3)].map((_, index) => (
+                <Card key={index} className="animate-pulse border-0 bg-white dark:bg-gray-800 overflow-hidden">
+                  <div className="h-32 bg-gray-200 dark:bg-gray-700"></div>
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              getCurrentSlideCompanies().map((company) => (
               <Card key={company.id} className="group hover:shadow-xl transition-all duration-300 border-0 bg-white dark:bg-gray-800 overflow-hidden">
                 {/* Banner Section */}
                 <div 
@@ -375,18 +485,29 @@ const FeaturedCompaniesSection: React.FC = () => {
 
                   {/* Actions */}
                   <div className="flex space-x-2 pt-2">
-                    <Button size="sm" className="flex-1 bg-orange-500 hover:bg-orange-600">
+                    <Button 
+                      size="sm" 
+                      className="flex-1 bg-orange-500 hover:bg-orange-600"
+                      onClick={() => {
+                        if (company.phone) {
+                          window.open(`tel:${company.phone}`, '_self');
+                        }
+                      }}
+                    >
                       <Phone className="w-4 h-4 mr-2" />
                       Contatar
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      Ver Perfil
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                    <Button variant="outline" size="sm" className="flex-1" asChild>
+                      <Link to={`/company/${company.id}`}>
+                        Ver Perfil
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Link>
                     </Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))
+            )}
           </div>
 
           {/* Slide Indicators */}
@@ -413,7 +534,7 @@ const FeaturedCompaniesSection: React.FC = () => {
             className="border-orange-200 text-orange-700 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-300 dark:hover:bg-orange-900/20"
             onClick={() => {
               const searchParams = userLocation ? `?location=${encodeURIComponent(userLocation)}` : '';
-              window.location.href = `/buscar${searchParams}`;
+              window.location.href = `/busca-avancada${searchParams}`;
             }}
           >
             <Filter className="w-4 h-4 mr-2" />

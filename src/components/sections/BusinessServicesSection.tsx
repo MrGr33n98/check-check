@@ -221,7 +221,7 @@ const BusinessServicesSection: React.FC = () => {
               <Button 
                 size="lg" 
                 className="bg-white text-orange-600 hover:bg-orange-50"
-                onClick={() => window.location.href = '/buscar'}
+                onClick={() => window.location.href = '/busca-avancada'}
               >
                 <Building2 className="w-5 h-5 mr-2" />
                 Encontrar Empresas

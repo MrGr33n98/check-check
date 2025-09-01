@@ -84,7 +84,7 @@ const EnhancedHeader: React.FC = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       // Redirecionar para página de busca com query
-      window.location.href = `/buscar?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(userLocation || '')}`;
+      window.location.href = `/busca-avancada?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(userLocation || '')}`;
     }
   };
 
@@ -143,7 +143,7 @@ const EnhancedHeader: React.FC = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link to="/buscar" className="text-sm font-medium hover:text-primary transition-colors">
+          <Link to="/busca-avancada" className="text-sm font-medium hover:text-primary transition-colors">
             Buscar Empresas
           </Link>
           <Link to="/sobre" className="text-sm font-medium hover:text-primary transition-colors">
@@ -250,7 +250,7 @@ const EnhancedHeader: React.FC = () => {
 
               <div className="border-t pt-2 space-y-1">
                 <Link 
-                  to="/buscar" 
+                  to="/busca-avancada" 
                   className="block px-2 py-2 text-sm hover:bg-muted rounded-md"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >

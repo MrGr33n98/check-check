@@ -180,20 +180,20 @@ const DynamicBannerSlider: React.FC<DynamicBannerSliderProps> = ({
 
   const displayBanners = (error || banners.length === 0) ? [defaultBanner] : banners;
 
-  const currentBanner = banners[currentIndex];
+  const currentBanner = displayBanners[currentIndex] || displayBanners[0] || defaultBanner;
 
   return (
     <div className={`relative w-full overflow-hidden rounded-lg shadow-lg ${className}`}>
       <div 
         className="relative w-full cursor-pointer transition-all duration-300 hover:opacity-95"
         style={{ height }}
-        onClick={() => handleBannerClick(currentBanner)}
+        onClick={() => currentBanner && handleBannerClick(currentBanner)}
       >
         {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${currentBanner.image_url})`
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${currentBanner?.image_url || '/api/placeholder/800/200'})`
           }}
         />
         
@@ -201,15 +201,15 @@ const DynamicBannerSlider: React.FC<DynamicBannerSliderProps> = ({
         <div className="absolute inset-0 flex items-center justify-center p-6">
           <div className="text-center text-white max-w-2xl">
             <h2 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-lg">
-              {currentBanner.title}
+              {currentBanner?.title || 'SolarFinder'}
             </h2>
             <p className="text-lg md:text-xl opacity-90 drop-shadow-md">
-              {currentBanner.description}
+              {currentBanner?.description || 'Encontre as melhores empresas de energia solar'}
             </p>
             <div className="mt-4">
               <span className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium border border-white/30 hover:bg-white/30 transition-colors">
                 Saiba mais
-                {currentBanner.link_url.startsWith('http') && (
+                {currentBanner?.link_url?.startsWith('http') && (
                   <ExternalLink className="w-4 h-4 ml-2" />
                 )}
               </span>

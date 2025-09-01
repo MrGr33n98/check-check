@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
+ActiveRecord::Schema[7.0].define(version: 2025_08_29_233215) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -578,6 +578,23 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
+  create_table "solar_companies", force: :cascade do |t|
+    t.string "name"
+    t.string "title"
+    t.text "short_description"
+    t.string "country"
+    t.text "address"
+    t.string "phone"
+    t.integer "foundation_year"
+    t.integer "members_count"
+    t.string "revenue"
+    t.text "social_links"
+    t.text "tags"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "solutions", force: :cascade do |t|
     t.string "name"
     t.string "company"
@@ -635,11 +652,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.boolean "corporate_email", default: false
     t.string "company_name"
     t.string "position"
+    t.string "provider", default: "email", null: false
+    t.string "uid", default: "", null: false
+    t.json "tokens"
     t.index ["company_name"], name: "index_users_on_company_name"
     t.index ["corporate_email"], name: "index_users_on_corporate_email"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
+    t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

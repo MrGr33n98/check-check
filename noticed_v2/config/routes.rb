@@ -98,6 +98,9 @@ Rails.application.routes.draw do
           get :dashboard
         end
       end
+      
+      # Solar Companies API routes
+      resources :solar_companies, only: [:index, :show]
     end
   end
 

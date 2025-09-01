@@ -1,0 +1,2 @@
+class SolarCompany < ApplicationRecord
+end

@@ -1,8 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import axios from 'axios';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Star, MapPin, Phone, Globe, Award } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Star, MapPin, Phone, Globe, Award, ArrowRight } from 'lucide-react';
 
 // Interface para os filtros de busca
 interface SearchFilters {
@@ -19,9 +22,26 @@ interface SearchFilters {
   deviceTarget?: string;
 }
 
-// Interface para empresa
+// Interface para empresa da API
+interface SolarCompany {
+  id: number;
+  name: string;
+  title: string;
+  short_description: string;
+  country: string;
+  address: string;
+  phone: string;
+  foundation_year: number;
+  members_count: number;
+  revenue: string;
+  social_links: string[];
+  tags: string[];
+  status: string;
+}
+
+// Interface para empresa (formato do frontend)
 interface Company {
-  id: string;
+  id: number;
   name: string;
   location: string;
   rating: number;
@@ -40,7 +60,7 @@ interface Company {
 // Dados mockados de empresas
 const mockCompanies: Company[] = [
   {
-    id: '1',
+    id: 1,
     name: 'Solar Tech Florianópolis',
     location: 'Florianópolis, SC',
     rating: 4.8,
@@ -55,7 +75,7 @@ const mockCompanies: Company[] = [
     image: '/api/placeholder/300/200'
   },
   {
-    id: '2',
+    id: 2,
     name: 'Energia Limpa Sul',
     location: 'São José, SC',
     rating: 4.6,
@@ -70,7 +90,7 @@ const mockCompanies: Company[] = [
     image: '/api/placeholder/300/200'
   },
   {
-    id: '3',
+    id: 3,
     name: 'Fotovoltaica Premium',
     location: 'Palhoça, SC',
     rating: 4.9,
@@ -87,76 +107,128 @@ const mockCompanies: Company[] = [
 ];
 
 const SearchPage: React.FC = () => {
-  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>(mockCompanies);
+  const [searchParams] = useSearchParams();
+  const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [, setCurrentFilters] = useState<SearchFilters | null>(null);
+  const [initialLocation, setInitialLocation] = useState('');
+
+  // Função para converter dados da API para o formato do frontend
+  const convertApiToCompany = (apiCompany: SolarCompany): Company => {
+    // Gerar rating aleatório entre 4.0 e 5.0 para demonstração
+    const rating = Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
+    const reviewCount = Math.floor(Math.random() * 200) + 20;
+    
+    // Mapear tags para serviços (removendo duplicatas)
+    const serviceSet = new Set<string>();
+    apiCompany.tags.forEach(tag => {
+      const lowerTag = tag.toLowerCase();
+      if (lowerTag.includes('residencial')) serviceSet.add('instalacao-residencial');
+      if (lowerTag.includes('comercial')) serviceSet.add('instalacao-comercial');
+      if (lowerTag.includes('industrial')) serviceSet.add('instalacao-industrial');
+      if (lowerTag.includes('manutenção')) serviceSet.add('manutencao');
+      if (lowerTag.includes('monitoramento')) serviceSet.add('monitoramento');
+    });
+    
+    const services = Array.from(serviceSet);
+    if (services.length === 0) services.push('consultoria-tecnica');
+
+    // Certificações baseadas no ano de fundação e tamanho da empresa
+    const certifications = ['crea'];
+    if (apiCompany.foundation_year <= 2015) certifications.push('inmetro');
+    if (apiCompany.members_count > 100) certifications.push('aneel');
+    if (apiCompany.members_count > 200) certifications.push('iso-9001');
+
+    // Faixa de preço baseada no tamanho da empresa
+    let priceRange: [number, number] = [15000, 50000];
+    if (apiCompany.members_count > 100) priceRange = [25000, 80000];
+    if (apiCompany.members_count > 200) priceRange = [35000, 150000];
+
+    // Experiência baseada no ano de fundação
+    const currentYear = new Date().getFullYear();
+    const yearsInBusiness = currentYear - apiCompany.foundation_year;
+    let experience = '2-5-anos';
+    if (yearsInBusiness >= 10) experience = '10-anos';
+    else if (yearsInBusiness >= 5) experience = '5-10-anos';
+
+    return {
+      id: apiCompany.id,
+      name: apiCompany.name,
+      location: apiCompany.address.split(',').slice(-2).join(',').trim() || apiCompany.country,
+      rating,
+      reviewCount,
+      experience,
+      services: services.length > 0 ? services : ['instalacao-residencial'],
+      certifications,
+      priceRange,
+      phone: apiCompany.phone,
+      website: apiCompany.social_links.find(link => 
+        !link.includes('facebook') && !link.includes('instagram') && !link.includes('linkedin')
+      ) || 'www.exemplo.com.br',
+      description: apiCompany.short_description,
+      image: '/api/placeholder/300/200'
+    };
+  };
+
+  // Carregar empresas da API
+  const loadCompanies = async (searchParams: any = {}) => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get('http://localhost:3000/api/v1/solar_companies', {
+        params: searchParams
+      });
+      
+      const companies = response.data.solar_companies.map(convertApiToCompany);
+      setFilteredCompanies(companies);
+    } catch (error) {
+      console.error('Erro ao carregar empresas:', error);
+      // Em caso de erro, usar dados mockados como fallback
+      setFilteredCompanies(mockCompanies);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar empresas ao montar o componente e verificar parâmetros da URL
+  useEffect(() => {
+    const locationParam = searchParams.get('location');
+    const queryParam = searchParams.get('q');
+    
+    if (locationParam) {
+      setInitialLocation(locationParam);
+      // Fazer busca automática com a localização e query da URL
+      loadCompanies({ 
+        search: queryParam || '', 
+        location: locationParam 
+      });
+    } else {
+      loadCompanies();
+    }
+  }, [searchParams]);
 
   const handleSearch = useCallback(async (filters: SearchFilters) => {
-    setIsLoading(true);
     setCurrentFilters(filters);
     
-    // Simular delay de busca
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Preparar parâmetros de busca para a API
+    const searchParams: any = {};
     
-    let filtered = [...mockCompanies];
-    
-    // Filtrar por query
     if (filters.query) {
-      filtered = filtered.filter(company => 
-        company.name.toLowerCase().includes(filters.query.toLowerCase()) ||
-        company.description.toLowerCase().includes(filters.query.toLowerCase())
-      );
+      searchParams.search = filters.query;
     }
     
-    // Filtrar por localização
     if (filters.location && !filters.location.includes('Florianópolis')) {
-      filtered = filtered.filter(company => 
-        company.location.toLowerCase().includes(filters.location.toLowerCase().replace('📍 ', ''))
-      );
+      // Extrair cidade/estado da localização
+      const location = filters.location.replace('📍 ', '');
+      searchParams.location = location;
     }
     
-    // Filtrar por avaliação
-    if (filters.ratings.length > 0) {
-      const minRating = Math.min(...filters.ratings);
-      filtered = filtered.filter(company => company.rating >= minRating);
-    }
-    
-    // Filtrar por experiência
-    if (filters.experience.length > 0) {
-      filtered = filtered.filter(company => 
-        filters.experience.includes(company.experience)
-      );
-    }
-    
-    // Filtrar por serviços
-    if (filters.services.length > 0) {
-      filtered = filtered.filter(company => 
-        filters.services.some(service => company.services.includes(service))
-      );
-    }
-    
-    // Filtrar por certificações
-    if (filters.certifications.length > 0) {
-      filtered = filtered.filter(company => 
-        filters.certifications.some(cert => company.certifications.includes(cert))
-      );
-    }
-    
-    // Filtrar por faixa de preço
-    if (filters.priceRange[0] !== 0 || filters.priceRange[1] !== 100000) {
-      filtered = filtered.filter(company => 
-        company.priceRange[0] >= filters.priceRange[0] && 
-        company.priceRange[1] <= filters.priceRange[1]
-      );
-    }
-    
-    setFilteredCompanies(filtered);
-    setIsLoading(false);
+    // Carregar empresas com filtros da API
+    await loadCompanies(searchParams);
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setFilteredCompanies(mockCompanies);
     setCurrentFilters(null);
+    loadCompanies(); // Recarregar todas as empresas
   }, []);
 
   const formatPrice = (value: number) => {
@@ -171,6 +243,7 @@ const SearchPage: React.FC = () => {
     const serviceMap: { [key: string]: string } = {
       'instalacao-residencial': 'Instalação Residencial',
       'instalacao-comercial': 'Instalação Comercial',
+      'instalacao-industrial': 'Instalação Industrial',
       'manutencao': 'Manutenção',
       'monitoramento': 'Monitoramento',
       'energia-off-grid': 'Energia Off-Grid',
@@ -212,6 +285,7 @@ const SearchPage: React.FC = () => {
                 onClear={handleClearFilters}
                 isLoading={isLoading}
                 resultsCount={filteredCompanies.length}
+                initialLocation={initialLocation}
               />
             </div>
           </div>
@@ -348,7 +422,7 @@ const SearchPage: React.FC = () => {
                             </div>
 
                             {/* Contato */}
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                               <div className="flex items-center gap-1">
                                 <Phone className="w-4 h-4" />
                                 <span>{company.phone}</span>
@@ -357,6 +431,28 @@ const SearchPage: React.FC = () => {
                                 <Globe className="w-4 h-4" />
                                 <span>{company.website}</span>
                               </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex space-x-2">
+                              <Button 
+                                size="sm" 
+                                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                                onClick={() => {
+                                  if (company.phone) {
+                                    window.open(`tel:${company.phone}`, '_self');
+                                  }
+                                }}
+                              >
+                                <Phone className="w-4 h-4 mr-2" />
+                                Contatar
+                              </Button>
+                              <Button variant="outline" size="sm" className="flex-1" asChild>
+                                <Link to={`/company/${company.id}`}>
+                                  Ver Perfil
+                                  <ArrowRight className="w-4 h-4 ml-2" />
+                                </Link>
+                              </Button>
                             </div>
                           </div>
                         </div>

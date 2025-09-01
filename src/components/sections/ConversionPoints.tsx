@@ -198,7 +198,7 @@ const ConversionPoints: React.FC = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-to-r from-orange-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 text-white font-semibold px-8"
-                onClick={() => window.location.href = '/buscar'}
+                onClick={() => window.location.href = '/busca-avancada'}
               >
                 <Calculator className="w-5 h-5 mr-2" />
                 Solicitar Orçamentos Grátis
