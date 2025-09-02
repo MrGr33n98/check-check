@@ -26,9 +26,11 @@ ActiveAdmin.register PromoBanner do
   end
 
   filter :title
-  filter :position, as: :select, collection: [['Barra Lateral', 'sidebar'], ['Cabeçalho', 'header'], ['Rodapé', 'footer']]
+  filter :position, as: :select, collection: -> { PromoBanner.distinct.pluck(:position).map { |pos| [PromoBanner.new(position: pos).position_label, pos] } }
   filter :active
+  filter :priority
   filter :created_at
+  filter :updated_at
 
   form do |f|
     f.semantic_errors
