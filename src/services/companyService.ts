@@ -34,7 +34,7 @@ export interface Company {
 
 export interface Review {
   id: number;
-  solar_company_id: number;
+  provider_id: number;
   user_id: number;
   rating: number;
   comment: string;
@@ -45,7 +45,7 @@ export interface Review {
 
 export interface Content {
   id: number;
-  solar_company_id: number;
+  provider_id: number;
   user_id: number;
   title: string;
   content_type: string;
@@ -160,7 +160,7 @@ class CompanyService {
     status?: string;
   }): Promise<ReviewsResponse> {
     try {
-      const response = await api.get(`/solar_companies/${companyId}/reviews`, { params });
+      const response = await api.get(`/providers/${companyId}/reviews`, { params });
       return response.data;
     } catch (error) {
       console.error(`Error fetching reviews for company ${companyId}:`, error);
@@ -174,7 +174,7 @@ class CompanyService {
     content_type?: string;
   }): Promise<{ content: Content[] }> {
     try {
-      const response = await api.get(`/solar_companies/${companyId}/content`, { params });
+      const response = await api.get(`/providers/${companyId}/content`, { params });
       return response.data;
     } catch (error) {
       console.error(`Error fetching content for company ${companyId}:`, error);
@@ -184,7 +184,7 @@ class CompanyService {
 
   async getCompanyBadges(companyId: number): Promise<{ badges: Badge[] }> {
     try {
-      const response = await api.get(`/solar_companies/${companyId}/badges`);
+      const response = await api.get(`/providers/${companyId}/badges`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching badges for company ${companyId}:`, error);
