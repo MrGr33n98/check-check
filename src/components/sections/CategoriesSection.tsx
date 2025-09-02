@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,22 +13,32 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-interface Category {
-  id: string;
+interface ApiCategory {
+  id: number | string;
   name: string;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  projects: number;
+  description: string | null;
   slug: string;
+  featured?: boolean;
+  banner_image_url?: string | null;
 }
 
-const categories: Category[] = [
+interface Category {
+  id: string | number;
+  name: string;
+  description: string;
+  icon?: React.ReactNode;
+  color?: string;
+  projects?: number;
+  slug: string;
+  banner_image_url?: string | null;
+}
+
+const defaultCategories: Category[] = [
   {
     id: '1',
     name: 'Instalação Residencial',
     description: 'Sistemas solares para casas e apartamentos',
-    icon: <Home className="w-8 h-8" />,
+    icon: <Home className="w-6 h-6" />,
     color: 'from-blue-500 to-blue-600',
     projects: 1250,
     slug: 'residencial'
@@ -37,7 +47,7 @@ const categories: Category[] = [
     id: '2',
     name: 'Instalação Comercial',
     description: 'Soluções para empresas e comércios',
-    icon: <Building2 className="w-8 h-8" />,
+    icon: <Building2 className="w-6 h-6" />,
     color: 'from-green-500 to-green-600',
     projects: 850,
     slug: 'comercial'
@@ -46,7 +56,7 @@ const categories: Category[] = [
     id: '3',
     name: 'Instalação Industrial',
     description: 'Grandes sistemas para indústrias',
-    icon: <Factory className="w-8 h-8" />,
+    icon: <Factory className="w-6 h-6" />,
     color: 'from-purple-500 to-purple-600',
     projects: 320,
     slug: 'industrial'
@@ -55,7 +65,7 @@ const categories: Category[] = [
     id: '4',
     name: 'Manutenção',
     description: 'Serviços de manutenção e reparo',
-    icon: <Wrench className="w-8 h-8" />,
+    icon: <Wrench className="w-6 h-6" />,
     color: 'from-orange-500 to-orange-600',
     projects: 2100,
     slug: 'manutencao'
@@ -64,7 +74,7 @@ const categories: Category[] = [
     id: '5',
     name: 'Consultoria',
     description: 'Projetos e consultoria especializada',
-    icon: <Lightbulb className="w-8 h-8" />,
+    icon: <Lightbulb className="w-6 h-6" />,
     color: 'from-yellow-500 to-yellow-600',
     projects: 680,
     slug: 'consultoria'
@@ -73,7 +83,7 @@ const categories: Category[] = [
     id: '6',
     name: 'Monitoramento',
     description: 'Sistemas de monitoramento e análise',
-    icon: <Calculator className="w-8 h-8" />,
+    icon: <Calculator className="w-6 h-6" />,
     color: 'from-teal-500 to-teal-600',
     projects: 950,
     slug: 'monitoramento'
@@ -81,6 +91,39 @@ const categories: Category[] = [
 ];
 
 const CategoriesSection: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+
+  // Tenta buscar categorias reais da API para obter banner_image_url
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/v1/categories');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: ApiCategory[] = await res.json();
+        if (!Array.isArray(data)) return; // em alguns controladores retornam {data: [...]} — manter seguro
+        const mapped: Category[] = data.map((c, idx) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description || '',
+          slug: c.slug,
+          banner_image_url: c.banner_image_url || null,
+          // valores padrão para manter layout
+          color: defaultCategories[idx % defaultCategories.length]?.color,
+          icon: defaultCategories[idx % defaultCategories.length]?.icon
+        }));
+        if (isMounted && mapped.length > 0) setCategories(mapped);
+      } catch (e) {
+        // Silenciar erro e manter categorias padrão
+        console.warn('Falha ao buscar categorias dinâmicas, usando padrão. Erro:', e);
+      }
+    };
+    fetchCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleCategoryClick = (slug: string) => {
     window.location.href = `/categorias/${slug}`;
   };
@@ -113,19 +156,25 @@ const CategoriesSection: React.FC = () => {
               className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 bg-white dark:bg-gray-800 overflow-hidden"
               onClick={() => handleCategoryClick(category.slug)}
             >
+              {/* Banner no topo (150px de altura) */}
+              <div className="w-full h-[150px] bg-gray-100 dark:bg-gray-700 overflow-hidden">
+                {category.banner_image_url ? (
+                  <img
+                    src={category.banner_image_url}
+                    alt={`Banner da categoria ${category.name}`}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+              </div>
+
               <CardHeader className="pb-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-r ${category.color} text-white group-hover:scale-110 transition-transform duration-300`}>
-                    {category.icon}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {category.projects.toLocaleString()}
+                <div className="flex items-center mb-4">
+                  {category.icon ? (
+                    <div className={`p-3 rounded-xl bg-gradient-to-r ${category.color || 'from-blue-500 to-blue-600'} text-white group-hover:scale-110 transition-transform duration-300`}>
+                      {category.icon}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      projetos
-                    </div>
-                  </div>
+                  ) : <div />}
                 </div>
                 
                 <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 transition-colors">
@@ -170,7 +219,7 @@ const CategoriesSection: React.FC = () => {
                 <Button 
                   variant="outline" 
                   size="lg"
-                  onClick={() => window.location.href = '/buscar'}
+                  onClick={() => window.location.href = '/busca-avancada'}
                 >
                   Ver Todas as Empresas
                   <ArrowRight className="w-5 h-5 ml-2" />

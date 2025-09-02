@@ -7,7 +7,6 @@ import CompanyDetail from '@/pages/CompanyDetail';
 import BlogPage from '@/pages/BlogPage';
 import BlogArticlePage from '@/pages/BlogArticlePage';
 import CompanyRegistrationPage from '@/pages/CompanyRegistrationPage';
-import SearchResultsPage from '@/pages/SearchResultsPage';
 import SearchPage from '@/pages/SearchPage';
 import ReviewsPage from '@/pages/ReviewsPage';
 import AboutPage from '@/pages/AboutPage';
@@ -42,10 +41,7 @@ function App() {
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:id" element={<BlogArticlePage />} />
           <Route path="/empresa/cadastro" element={<CompanyRegistrationPage />} />
-          <Route path="/buscar" element={<SearchResultsPage />} />
           <Route path="/busca-avancada" element={<SearchPage />} />
-          <Route path="/encontrar-empresas" element={<SearchResultsPage />} />
-          <Route path="/avaliar-empresa" element={<SearchResultsPage />} />
           <Route path="/sobre" element={<AboutPage />} />
           <Route path="/como-funciona" element={<HowItWorksPage />} />
           <Route path="/faq" element={<FAQPage />} />

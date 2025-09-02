@@ -1,5 +1,3 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
-
 export interface Category {
   id: number;
   name: string;
@@ -49,43 +47,12 @@ export interface ApiResponse<T> {
 
 class ApiService {
   async getCategories(): Promise<Category[]> {
-    try {
-      // Tentando buscar as categorias da API
-      const response = await fetch(`${API_BASE_URL}/categories`);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching categories from API, using mock data:', error);
-      // Se falhar, retorna os dados mockados
-      return this.getMockCategories();
-    }
+    return this.getMockCategories();
   }
 
   async getCategoryBySlug(slug: string): Promise<Category | null> {
-    try {
-      // Tentando buscar a categoria específica da API
-      const response = await fetch(`${API_BASE_URL}/categories/${slug}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`Failed to fetch category: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`Error fetching category ${slug} from API:`, error);
-      // Se falhar, tenta encontrar nos dados mockados
-      const mockCategories = this.getMockCategories();
-      return mockCategories.find(category => category.slug === slug) || null;
-    }
+    const mockCategories = this.getMockCategories();
+    return mockCategories.find(category => category.slug === slug) || null;
   }
 
   async getProviders(params?: {
@@ -95,60 +62,12 @@ class ApiService {
     limit?: number;
     page?: number;
   }): Promise<ProvidersResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (params?.category_id) {
-        queryParams.append('category_id', params.category_id.toString());
-      }
-      if (params?.category_slug) {
-        queryParams.append('category_slug', params.category_slug);
-      }
-      if (params?.sort_by) {
-        queryParams.append('sort_by', params.sort_by);
-      }
-      if (params?.limit) {
-        queryParams.append('limit', params.limit.toString());
-      }
-      if (params?.page) {
-        queryParams.append('page', params.page.toString());
-      }
-
-      const url = `${API_BASE_URL}/providers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch providers: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching providers from API, using mock data:', error);
-      // Se falhar, retorna os dados mockados
-      return this.getMockProviders(params);
-    }
+    return this.getMockProviders(params);
   }
 
   async getProviderBySlug(slug: string): Promise<Provider | null> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/providers/${slug}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error(`Failed to fetch provider: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error(`Error fetching provider ${slug} from API:`, error);
-      // Se falhar, tenta encontrar nos dados mockados
-      const mockProviders = this.getMockProviders();
-      return mockProviders.providers.find(provider => provider.slug === slug) || null;
-    }
+    const mockProviders = this.getMockProviders();
+    return mockProviders.providers.find(provider => provider.slug === slug) || null;
   }
 
   private getMockCategories(): Category[] {

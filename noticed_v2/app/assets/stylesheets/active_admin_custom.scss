@@ -1,0 +1,17 @@
+/* app/assets/stylesheets/active_admin_custom.scss */
+
+// Custom styles for Active Admin
+
+// Make the Promo Banner Preview panel sticky
+.promo_banners.show #main_content .panel.preview_do_banner,
+.promo_banners.form #main_content .panel.preview {
+  position: sticky;
+  top: 20px; /* Adjust as needed to clear the header */
+  z-index: 100; /* Ensure it stays on top of other content */
+  align-self: flex-start; /* Important for sticky in flex containers */
+}
+
+/* Adjustments for the form layout to accommodate sticky sidebar */
+.promo_banners.form #main_content .columns {
+  align-items: flex-start; /* Align items to the top */
+}

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -217,9 +217,11 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.date "ends_on"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "provider_id"
     t.index ["code"], name: "index_campaigns_on_code", unique: true
     t.index ["owner_member_id"], name: "index_campaigns_on_owner_member_id"
     t.index ["product_id"], name: "index_campaigns_on_product_id"
+    t.index ["provider_id"], name: "index_campaigns_on_provider_id"
     t.index ["starts_on", "ends_on"], name: "index_campaigns_on_starts_on_and_ends_on"
   end
 
@@ -470,6 +472,30 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.index ["status"], name: "index_products_on_status"
   end
 
+  create_table "promo_banners", force: :cascade do |t|
+    t.string "title", null: false
+    t.text "subtitle"
+    t.string "button_text"
+    t.string "button_url"
+    t.string "background_color", default: "#3B82F6"
+    t.string "text_color", default: "#FFFFFF"
+    t.string "position", default: "sidebar"
+    t.boolean "active", default: true
+    t.integer "priority", default: 0
+    t.string "button_secondary_text"
+    t.string "button_secondary_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.boolean "show_title"
+    t.boolean "show_subtitle"
+    t.boolean "overlay_enabled"
+    t.string "overlay_color"
+    t.integer "overlay_opacity"
+    t.string "text_align"
+    t.index ["active", "priority"], name: "index_promo_banners_on_active_and_priority"
+    t.index ["position"], name: "index_promo_banners_on_position"
+  end
+
   create_table "promotional_banners", force: :cascade do |t|
     t.string "title", limit: 200, null: false
     t.string "background_color", default: "#f97316", null: false
@@ -521,11 +547,18 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.bigint "approved_by_id"
     t.datetime "approved_at"
     t.string "slug"
+    t.string "logo"
+    t.string "cover_image"
+    t.string "banner_image"
+    t.string "city"
+    t.string "state"
     t.index ["approved_by_id"], name: "index_providers_on_approved_by_id"
+    t.index ["city"], name: "index_providers_on_city"
     t.index ["country"], name: "index_providers_on_country"
     t.index ["name"], name: "index_providers_on_name"
     t.index ["seo_url"], name: "index_providers_on_seo_url", unique: true
     t.index ["slug"], name: "index_providers_on_slug", unique: true
+    t.index ["state"], name: "index_providers_on_state"
     t.index ["status"], name: "index_providers_on_status"
     t.index ["tags"], name: "index_providers_on_tags", using: :gin
   end
@@ -576,6 +609,23 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.index ["solution_id"], name: "index_reviews_on_solution_id"
     t.index ["status"], name: "index_reviews_on_status"
     t.index ["user_id"], name: "index_reviews_on_user_id"
+  end
+
+  create_table "solar_companies", force: :cascade do |t|
+    t.string "name"
+    t.string "title"
+    t.text "short_description"
+    t.string "country"
+    t.text "address"
+    t.string "phone"
+    t.integer "foundation_year"
+    t.integer "members_count"
+    t.string "revenue"
+    t.text "social_links"
+    t.text "tags"
+    t.string "status"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "solutions", force: :cascade do |t|
@@ -635,11 +685,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
     t.boolean "corporate_email", default: false
     t.string "company_name"
     t.string "position"
+    t.string "provider", default: "email", null: false
+    t.string "uid", default: "", null: false
+    t.json "tokens"
     t.index ["company_name"], name: "index_users_on_company_name"
     t.index ["corporate_email"], name: "index_users_on_corporate_email"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role"], name: "index_users_on_role"
+    t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
@@ -656,6 +710,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_08_27_235248) do
   add_foreign_key "banners", "providers"
   add_foreign_key "campaigns", "members", column: "owner_member_id"
   add_foreign_key "campaigns", "products"
+  add_foreign_key "campaigns", "providers"
   add_foreign_key "categories", "categories", column: "parent_id"
   add_foreign_key "comments", "posts"
   add_foreign_key "comments", "users"

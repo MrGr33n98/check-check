@@ -18,8 +18,8 @@ const EnhancedHeroSection: React.FC = () => {
       if (searchQuery !== userLocation) {
         setUserLocation(searchQuery);
       }
-      // Redirecionar para página de resultados
-      window.location.href = `/buscar?location=${encodeURIComponent(searchQuery)}`;
+      // Redirecionar para página de busca avançada
+      window.location.href = `/busca-avancada?location=${encodeURIComponent(searchQuery)}`;
     }
   };
 

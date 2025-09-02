@@ -9,8 +9,7 @@ import StarRating from '@/components/ui/star-rating'
 import ReviewCard from '@/components/ui/review-card'
 import { LeadForm, type LeadFormData } from '@/components/forms/LeadForm'
 import { useLeads } from '@/hooks/useLeads'
-import { mockCompanies, mockReviews, mockContent, mockBadges } from '@/data/mockData'
-import type { Company, Review, Content, Badge as BadgeType } from '@/data/types'
+import companyService, { type Company, type Review, type Content, type Badge as BadgeType } from '@/services/companyService'
 
 const CompanyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -21,33 +20,66 @@ const CompanyDetail: React.FC = () => {
   const [badges, setBadges] = useState<BadgeType[]>([])
   const [activeTab, setActiveTab] = useState('overview')
   const [isLeadFormOpen, setIsLeadFormOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const { submitLead } = useLeads()
 
   useEffect(() => {
-    if (id) {
-      const companyId = parseInt(id)
-      const foundCompany = mockCompanies.find(c => c.id === companyId)
-      
-      if (foundCompany) {
-        setCompany(foundCompany)
-        
+    const loadCompanyData = async () => {
+      if (!id) return
+
+      try {
+        setLoading(true)
+        setError(null)
+        const companyId = parseInt(id)
+
+        // Load company data
+        const companyData = await companyService.getCompanyById(companyId)
+        if (!companyData) {
+          setError('Empresa não encontrada')
+          return
+        }
+        setCompany(companyData)
+
         // Load reviews for this company (only approved ones)
-        const companyReviews = mockReviews.filter(
-          r => r.solar_company_id === companyId && r.status === 'approved'
-        )
-        setReviews(companyReviews)
-        
+        try {
+          const reviewsResponse = await companyService.getCompanyReviews(companyId, { 
+            status: 'approved',
+            per_page: 50 
+          })
+          setReviews(reviewsResponse.reviews || [])
+        } catch (reviewError) {
+          console.warn('Could not load reviews:', reviewError)
+          setReviews([])
+        }
+
         // Load content for this company
-        const companyContent = mockContent.filter(c => c.solar_company_id === companyId)
-        setContent(companyContent)
-        
+        try {
+          const contentResponse = await companyService.getCompanyContent(companyId)
+          setContent(contentResponse.content || [])
+        } catch (contentError) {
+          console.warn('Could not load content:', contentError)
+          setContent([])
+        }
+
         // Load badges for this company
-        const companyBadges = mockBadges.filter(
-          b => b.badgeable_type === 'Company' && b.badgeable_id === companyId
-        )
-        setBadges(companyBadges)
+        try {
+          const badgesResponse = await companyService.getCompanyBadges(companyId)
+          setBadges(badgesResponse.badges || [])
+        } catch (badgeError) {
+          console.warn('Could not load badges:', badgeError)
+          setBadges([])
+        }
+
+      } catch (err) {
+        console.error('Error loading company data:', err)
+        setError('Erro ao carregar dados da empresa')
+      } finally {
+        setLoading(false)
       }
     }
+
+    loadCompanyData()
   }, [id])
 
   const handleBack = () => {
@@ -84,11 +116,28 @@ const CompanyDetail: React.FC = () => {
     })
   }
 
-  if (!company) {
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Empresa não encontrada</h1>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando dados da empresa...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !company) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">{error || 'Empresa não encontrada'}</h1>
+          <p className="text-muted-foreground mb-4">
+            {error === 'Empresa não encontrada' 
+              ? 'A empresa que você está procurando não existe ou foi removida.'
+              : 'Ocorreu um erro ao carregar os dados da empresa. Tente novamente mais tarde.'
+            }
+          </p>
           <Button onClick={handleBack} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -110,34 +159,67 @@ const CompanyDetail: React.FC = () => {
 
       {/* Company Header */}
       <div className="mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
+        <Card className="overflow-hidden">
+          {/* Banner Section */}
+          <div 
+            className="relative h-48 bg-gradient-to-r from-blue-500 to-green-500"
+            style={{
+              backgroundImage: company.banner_image_url ? `url(${company.banner_image_url})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            {/* Overlay for better text readability */}
+            <div className={`absolute inset-0 ${company.banner_image_url ? 'bg-black/50' : 'bg-black/20'}`}></div>
+            
+            {/* Company Logo and Info */}
+            <div className="absolute bottom-6 left-6 flex items-end gap-6">
               {/* Company Logo */}
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white text-2xl font-bold">
+                {company.logo_url ? (
+                  <img 
+                    src={company.logo_url}
+                    alt={`Logo da ${company.name}`}
+                    className="w-24 h-24 rounded-lg object-contain border-2 border-white bg-white p-2 shadow-lg"
+                    onError={(e) => {
+                      // Fallback para inicial se a imagem não carregar
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow-lg ${company.logo_url ? 'hidden' : ''}`}>
                   {company.name.charAt(0)}
                 </div>
               </div>
+              
+              {/* Company Basic Info */}
+              <div className="text-white">
+                <h1 className="text-3xl font-bold drop-shadow-md mb-2">
+                  {company.name}
+                </h1>
+                <div className="flex items-center gap-4 text-white/90 drop-shadow-md">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{company.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Desde {company.foundedYear || '2015'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-6">
 
-              {/* Company Info */}
+              {/* Company Additional Info */}
               <div className="flex-1">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
-                      {company.name}
-                    </h1>
-                    
-                    <div className="flex items-center gap-4 text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{company.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>Desde {company.foundedYear || '2015'}</span>
-                      </div>
-                    </div>
 
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-2">

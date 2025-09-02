@@ -44,6 +44,8 @@ Rails.application.configure do
   # Use letter_opener to preview emails in browser during development
   config.action_mailer.delivery_method = :letter_opener
   
+  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+  
   # Alternative: Use SMTP for real email sending in development
   # config.action_mailer.delivery_method = :smtp
   # config.action_mailer.smtp_settings = {

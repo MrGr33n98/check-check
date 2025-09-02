@@ -8,4 +8,8 @@ class ApplicationController < ActionController::Base
     @unread = current_user.notifications.unread
     @read = current_user.notifications.read
   end
+
+  def authenticate_admin_user!
+    redirect_to new_admin_user_session_path unless current_admin_user
+  end
 end

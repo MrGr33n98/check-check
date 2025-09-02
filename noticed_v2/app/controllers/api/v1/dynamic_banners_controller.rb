@@ -22,11 +22,48 @@ class Api::V1::DynamicBannersController < ApplicationController
     
     render json: {
       status: 'success',
-      data: @dynamic_banners.map(&:to_json_api),
+      data: @dynamic_banners.map do |banner|
+        {
+          id: banner.id,
+          title: banner.title,
+          description: banner.description,
+          link_url: banner.link_url,
+          display_order: banner.display_order,
+          active: banner.active,
+          image_url: banner.image_url || '/api/placeholder/800/200',
+          created_at: banner.created_at,
+          updated_at: banner.updated_at
+        }
+      end,
       meta: {
         total: @dynamic_banners.count,
         active_count: DynamicBanner.active.count,
         timestamp: Time.current.iso8601
+      }
+    }
+  rescue => e
+    Rails.logger.error "Error in dynamic_banners#active: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    
+    # Return default company banner when there's an error
+    render json: {
+      status: 'success',
+      data: [{
+        id: 0,
+        title: 'SolarFinder - Encontre as Melhores Empresas',
+        description: 'Conectamos você com as melhores empresas de energia solar do Brasil. Compare preços, avaliações e encontre a solução perfeita!',
+        link_url: '/empresa/cadastro',
+        display_order: 1,
+        active: true,
+        image_url: '/api/placeholder/800/200',
+        created_at: Time.current.iso8601,
+        updated_at: Time.current.iso8601
+      }],
+      meta: {
+        total: 1,
+        active_count: 0,
+        timestamp: Time.current.iso8601,
+        fallback: true
       }
     }
   end

@@ -35,7 +35,7 @@ const CtaBanner: React.FC<CtaBannerProps> = ({
     title: 'Pronto para começar seu projeto solar?',
     subtitle: 'Conecte-se com as melhores empresas de energia solar da sua região e receba orçamentos personalizados em minutos.',
     button1_text: 'Encontrar Empresas',
-    button1_url: '/buscar',
+    button1_url: '/busca-avancada',
     button2_text: 'Cadastrar Minha Empresa',
     button2_url: '/cadastrar',
     background_type: 'solid',
