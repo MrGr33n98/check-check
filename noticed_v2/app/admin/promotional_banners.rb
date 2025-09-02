@@ -54,10 +54,12 @@ ActiveAdmin.register PromotionalBanner do
 
   # Filtros
   filter :title
-  filter :provider, as: :select, collection: -> { Provider.all.pluck(:name, :id) }
-  filter :position, as: :select, collection: PromotionalBanner.positions.map { |k, v| [k.humanize, k] }
+  filter :provider, as: :select, collection: -> { Provider.order(:name).pluck(:name, :id) }
+  filter :position, as: :select, collection: PromotionalBanner.positions.keys.map { |k| [k.humanize, k] }
   filter :active
+  filter :display_order
   filter :created_at
+  filter :updated_at
   filter :start_date
   filter :end_date
 

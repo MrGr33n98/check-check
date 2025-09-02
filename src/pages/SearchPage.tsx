@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import PromoBannerSidebar from '../components/banners/PromoBannerSidebar';
+import BannerSlider from '../components/BannerSlider';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -401,6 +402,7 @@ const SearchPage: React.FC = () => {
           {/* Banner lateral direito */}
           <aside className="lg:col-span-3">
             <div className="space-y-6">
+              <BannerSlider position="search_results" showCloseButton={false} />
               <PromoBannerSidebar />
             </div>
           </aside>
