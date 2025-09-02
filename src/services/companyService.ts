@@ -16,6 +16,9 @@ export interface Company {
   status: string;
   created_at?: string;
   updated_at?: string;
+  logo_url?: string;
+  cover_image_url?: string;
+  banner_image_url?: string;
   // Campos calculados/derivados para compatibilidade
   location?: string;
   description?: string;
@@ -85,18 +88,18 @@ class CompanyService {
     status?: string;
   }): Promise<CompaniesResponse> {
     try {
-      const response = await api.get('/solar_companies', { params });
+      const response = await api.get('/providers', { params });
       const data = response.data;
       
-      // Mapear os dados da API Rails para o formato esperado
-      const companies = data.solar_companies?.map(this.mapCompanyData) || [];
+      // Se a resposta é um array direto (como na API atual)
+      const companies = Array.isArray(data) ? data.map(this.mapCompanyData) : [];
       
       return {
         companies,
-        total: data.pagination?.total_count || companies.length,
-        page: data.pagination?.current_page || 1,
-        per_page: data.pagination?.per_page || 10,
-        total_pages: Math.ceil((data.pagination?.total_count || companies.length) / (data.pagination?.per_page || 10))
+        total: companies.length,
+        page: 1,
+        per_page: companies.length,
+        total_pages: 1
       };
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -106,7 +109,7 @@ class CompanyService {
 
   async getCompanyById(id: number): Promise<Company | null> {
     try {
-      const response = await api.get(`/solar_companies/${id}`);
+      const response = await api.get(`/providers/${id}`);
       return this.mapCompanyData(response.data);
     } catch (error) {
       console.error(`Error fetching company ${id}:`, error);
@@ -134,17 +137,20 @@ class CompanyService {
       status: rawData.status,
       created_at: rawData.created_at,
       updated_at: rawData.updated_at,
+      logo_url: rawData.logo_url,
+      cover_image_url: rawData.cover_image_url,
+      banner_image_url: rawData.banner_image_url,
       // Campos mapeados para compatibilidade
       location: rawData.address || rawData.country,
       description: rawData.short_description,
-      rating: 4.5, // Valor padrão até implementar sistema de avaliações
-      review_count: 0, // Valor padrão até implementar sistema de avaliações
-      specialties: rawData.tags || [],
+      rating: rawData.rating || 4.5,
+      review_count: rawData.review_count || 0,
+      specialties: rawData.specialties || rawData.tags || [],
       certifications: [],
       service_areas: rawData.country ? [rawData.country] : [],
       foundedYear: rawData.foundation_year,
       employeeCount: rawData.members_count ? `${rawData.members_count}` : undefined,
-      installed_capacity_mw: 0 // Valor padrão até ter esse campo
+      installed_capacity_mw: rawData.installed_capacity_mw || 0
     };
   }
 

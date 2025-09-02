@@ -80,6 +80,13 @@ Rails.application.routes.draw do
         end
       end
       
+      # Promo Banners API routes
+      resources :promo_banners, only: [:index, :show] do
+        collection do
+          get 'sidebar', to: 'promo_banners#sidebar'
+        end
+      end
+      
       # Dynamic Banners API routes
       resources :dynamic_banners, only: [:index] do
         member do

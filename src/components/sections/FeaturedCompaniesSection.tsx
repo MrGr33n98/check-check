@@ -54,107 +54,7 @@ interface Company {
   bannerImage?: string;
 }
 
-// Mock data - em produção viria de uma API
-const mockCompanies: Company[] = [
-  {
-    id: '1',
-    name: 'SolarTech Pro',
-    rating: 4.8,
-    reviewCount: 127,
-    city: 'São Paulo',
-    state: 'SP',
-    phone: '(11) 99999-9999',
-    website: 'https://solartech.com.br',
-    specialties: ['Residencial', 'Comercial', 'Instalação'],
-    verified: true,
-    featured: true,
-    description: 'Especialistas em energia solar com mais de 10 anos de experiência no mercado.',
-    completedProjects: 850,
-    yearsExperience: 12,
-    priceRange: 'medium'
-  },
-  {
-    id: '2',
-    name: 'EcoSolar Brasil',
-    rating: 4.9,
-    reviewCount: 203,
-    city: 'Rio de Janeiro',
-    state: 'RJ',
-    phone: '(21) 88888-8888',
-    specialties: ['Industrial', 'Manutenção', 'Consultoria'],
-    verified: true,
-    featured: true,
-    description: 'Líder em soluções sustentáveis de energia solar para grandes empresas.',
-    completedProjects: 1200,
-    yearsExperience: 15,
-    priceRange: 'high'
-  },
-  {
-    id: '3',
-    name: 'Solar Fácil',
-    rating: 4.6,
-    reviewCount: 89,
-    city: 'Belo Horizonte',
-    state: 'MG',
-    phone: '(31) 77777-7777',
-    specialties: ['Residencial', 'Financiamento'],
-    verified: true,
-    featured: false,
-    description: 'Tornamos a energia solar acessível para todos os brasileiros.',
-    completedProjects: 450,
-    yearsExperience: 8,
-    priceRange: 'low'
-  },
-  {
-    id: '4',
-    name: 'PowerSun Energia',
-    rating: 4.7,
-    reviewCount: 156,
-    city: 'Curitiba',
-    state: 'PR',
-    phone: '(41) 66666-6666',
-    website: 'https://powersun.com.br',
-    specialties: ['Comercial', 'Monitoramento', 'Manutenção'],
-    verified: true,
-    featured: true,
-    description: 'Soluções completas em energia solar com tecnologia de ponta.',
-    completedProjects: 680,
-    yearsExperience: 10,
-    priceRange: 'medium'
-  },
-  {
-    id: '5',
-    name: 'GreenEnergy Sul',
-    rating: 4.5,
-    reviewCount: 74,
-    city: 'Porto Alegre',
-    state: 'RS',
-    phone: '(51) 55555-5555',
-    specialties: ['Residencial', 'Rural'],
-    verified: false,
-    featured: false,
-    description: 'Especializada em projetos residenciais e rurais no Sul do Brasil.',
-    completedProjects: 320,
-    yearsExperience: 6,
-    priceRange: 'low'
-  },
-  {
-    id: '6',
-    name: 'Solar Nordeste',
-    rating: 4.8,
-    reviewCount: 198,
-    city: 'Fortaleza',
-    state: 'CE',
-    phone: '(85) 44444-4444',
-    specialties: ['Industrial', 'Comercial', 'Consultoria'],
-    verified: true,
-    featured: true,
-    description: 'Aproveitando o potencial solar do Nordeste brasileiro.',
-    completedProjects: 950,
-    yearsExperience: 11,
-    priceRange: 'high'
-  }
-];
+// Removidos dados mockados - agora usa apenas dados reais da API
 
 const FeaturedCompaniesSection: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -164,53 +64,67 @@ const FeaturedCompaniesSection: React.FC = () => {
   const { userLocation } = useLocation();
 
   // Função para converter dados da API para o formato do componente
-  const convertApiToCompany = (apiCompany: SolarCompany): Company => {
-    // Gerar rating aleatório entre 4.0 e 5.0 para demonstração
-    const rating = Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
-    const reviewCount = Math.floor(Math.random() * 200) + 20;
+  const convertApiToCompany = (apiCompany: any): Company => {
+    // Usar rating e review_count da API se disponíveis
+    const rating = apiCompany.rating || Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
+    const reviewCount = apiCompany.review_count || Math.floor(Math.random() * 200) + 20;
     
     // Extrair cidade e estado do endereço
-    const addressParts = apiCompany.address.split(',');
-    const cityState = addressParts.slice(-2).join(',').trim();
-    const [city, state] = cityState.split(' - ');
+    let city = 'Brasil';
+    let state = '';
+    if (apiCompany.address) {
+      const addressParts = apiCompany.address.split(',');
+      const cityState = addressParts.slice(-2).join(',').trim();
+      const parts = cityState.split(' - ');
+      city = parts[0]?.trim() || 'Brasil';
+      state = parts[1]?.trim() || '';
+    }
     
     // Mapear tags para especialidades
-    const specialties = apiCompany.tags.slice(0, 3).map(tag => {
-      if (tag.toLowerCase().includes('residencial')) return 'Residencial';
-      if (tag.toLowerCase().includes('comercial')) return 'Comercial';
-      if (tag.toLowerCase().includes('industrial')) return 'Industrial';
-      if (tag.toLowerCase().includes('manutenção')) return 'Manutenção';
-      if (tag.toLowerCase().includes('monitoramento')) return 'Monitoramento';
-      return 'Consultoria';
-    });
+    const specialties: string[] = [];
+    if (apiCompany.tags) {
+      apiCompany.tags.slice(0, 3).forEach((tag: string) => {
+        if (tag.toLowerCase().includes('residencial')) specialties.push('Residencial');
+        else if (tag.toLowerCase().includes('comercial')) specialties.push('Comercial');
+        else if (tag.toLowerCase().includes('industrial')) specialties.push('Industrial');
+        else if (tag.toLowerCase().includes('manutenção')) specialties.push('Manutenção');
+        else if (tag.toLowerCase().includes('monitoramento')) specialties.push('Monitoramento');
+        else specialties.push('Consultoria');
+      });
+    }
 
     // Calcular anos de experiência
     const currentYear = new Date().getFullYear();
-    const yearsExperience = currentYear - apiCompany.foundation_year;
+    const yearsExperience = apiCompany.foundation_year ? currentYear - apiCompany.foundation_year : 5;
 
     // Determinar faixa de preço baseada no tamanho da empresa
     let priceRange: 'low' | 'medium' | 'high' = 'medium';
     if (apiCompany.members_count < 100) priceRange = 'low';
     else if (apiCompany.members_count > 200) priceRange = 'high';
 
+    // Usar logo da API se disponível
+    const logoUrl = apiCompany.logo_url ? `http://localhost:3000${apiCompany.logo_url}` : undefined;
+
     return {
       id: apiCompany.id.toString(),
       name: apiCompany.name,
+      logo: logoUrl,
       rating,
       reviewCount,
-      city: city?.trim() || 'Brasil',
-      state: state?.trim() || '',
-      phone: apiCompany.phone,
-      website: apiCompany.social_links.find(link => 
+      city,
+      state,
+      phone: apiCompany.phone || '(11) 0000-0000',
+      website: apiCompany.social_links?.find((link: string) => 
         !link.includes('facebook') && !link.includes('instagram') && !link.includes('linkedin')
       ),
       specialties: specialties.length > 0 ? specialties : ['Energia Solar'],
       verified: true,
       featured: true,
-      description: apiCompany.short_description,
+      description: apiCompany.short_description || apiCompany.title || 'Empresa de energia solar',
       completedProjects: Math.floor(Math.random() * 800) + 200,
       yearsExperience,
-      priceRange
+      priceRange,
+      bannerImage: apiCompany.banner_image_url ? `http://localhost:3000${apiCompany.banner_image_url}` : undefined
     };
   };
 
@@ -218,16 +132,17 @@ const FeaturedCompaniesSection: React.FC = () => {
   const loadCompanies = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/solar_companies');
-      const apiCompanies = response.data.solar_companies;
+      const response = await axios.get('http://localhost:3000/api/v1/providers');
+      // A API de providers retorna um array direto
+      const apiCompanies = Array.isArray(response.data) ? response.data : [];
       const convertedCompanies = apiCompanies.map(convertApiToCompany);
       setCompanies(convertedCompanies);
       setFilteredCompanies(convertedCompanies);
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
-      // Em caso de erro, usar dados mockados como fallback
-      setCompanies(mockCompanies);
-      setFilteredCompanies(mockCompanies);
+      // Em caso de erro, mostrar lista vazia em vez de dados mockados
+      setCompanies([]);
+      setFilteredCompanies([]);
     } finally {
       setIsLoading(false);
     }
@@ -384,8 +299,8 @@ const FeaturedCompaniesSection: React.FC = () => {
                     backgroundPosition: 'center'
                   }}
                 >
-                  {/* Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-black/20"></div>
+                  {/* Overlay for better text readability - stronger overlay for custom banners */}
+                  <div className={`absolute inset-0 ${company.bannerImage ? 'bg-black/40' : 'bg-black/20'}`}></div>
                   
                   {/* Company Logo */}
                   <div className="absolute bottom-4 left-4 flex items-center space-x-3">
@@ -401,10 +316,6 @@ const FeaturedCompaniesSection: React.FC = () => {
                       <h3 className="font-semibold text-lg text-white drop-shadow-md">
                         {company.name}
                       </h3>
-                      <div className="flex items-center space-x-2 text-sm text-white/90">
-                        <MapPin className="w-3 h-3" />
-                        <span>{company.city}, {company.state}</span>
-                      </div>
                     </div>
                   </div>
                   
@@ -431,7 +342,7 @@ const FeaturedCompaniesSection: React.FC = () => {
                 </div>
                 
                 <CardContent className="space-y-4">
-                  {/* Rating and Price Range */}
+                  {/* Rating and Location */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -439,9 +350,10 @@ const FeaturedCompaniesSection: React.FC = () => {
                       </span>
                     </div>
                     
-                    <Badge className={getPriceRangeColor(company.priceRange)}>
-                      {getPriceRangeText(company.priceRange)}
-                    </Badge>
+                    <div className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-300">
+                      <MapPin className="w-3 h-3" />
+                      <span>{company.city}, {company.state}</span>
+                    </div>
                   </div>
 
                   {/* Description */}

@@ -12,6 +12,7 @@ interface Company {
   services: string[];
   bannerImage?: string;
   logo?: string;
+  image: string;
   foundedYear?: number;
   installedMW?: number;
   specialties?: string[];
@@ -42,9 +43,9 @@ export const CompanyCard = ({ company }: Props) => {
         <div className="flex items-start gap-6 -mt-8">
           {/* Logo flutuante */}
           <div className="w-24 h-24 rounded-full ring-4 ring-white bg-white shadow-md flex-shrink-0 overflow-hidden">
-            {company.logo ? (
+            {company.image ? (
               <img
-                src={company.logo}
+                src={company.image}
                 alt={`${company.name} logo`}
                 className="w-full h-full object-cover"
               />

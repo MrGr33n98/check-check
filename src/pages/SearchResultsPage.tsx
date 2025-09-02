@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
-import CityBanner from '@/components/banners/CityBanner';
 import HelpSection from '@/components/sections/HelpSection';
 import { useSearch } from '@/hooks/useSearch';
-import { Star, MapPin, Phone, Mail, Award, Clock, ArrowRight } from 'lucide-react';
+import { Star, MapPin, Phone, Mail, Award, Clock, ArrowRight, Building, Zap } from 'lucide-react';
+import PromoBannerSidebar from '@/components/banners/PromoBannerSidebar';
 
 const SearchResultsPage = () => {
   const [searchParams] = useSearchParams();
@@ -14,18 +14,15 @@ const SearchResultsPage = () => {
   const [currentLocation, setCurrentLocation] = useState('');
   const lastQuery = useRef('');
 
-  // String estável para dependência do efeito (evita reexecução por identidade do objeto)
   const paramsKey = searchParams.toString();
 
   useEffect(() => {
-    // Executar busca inicial baseada nos parâmetros da URL
     const initialQuery = searchParams.get('q') || '';
     const initialLocation = searchParams.get('location') || '';
     const currentQuery = paramsKey;
     
     setCurrentLocation(initialLocation);
     
-    // Só executa a busca se houver um parâmetro de localização válido
     if (initialLocation.trim() && currentQuery !== lastQuery.current) {
       lastQuery.current = currentQuery;
       searchCompanies({
@@ -42,9 +39,9 @@ const SearchResultsPage = () => {
         deviceTarget: ''
       });
     } else if (!initialLocation.trim()) {
-      clearSearch(); // Limpa os resultados se não houver localização
+      clearSearch();
     }
-  }, [paramsKey]);
+  }, [paramsKey, searchCompanies, clearSearch]);
 
   const sortOptions = [
     { value: 'relevance', label: 'Relevância' },
@@ -67,8 +64,6 @@ const SearchResultsPage = () => {
     }
   });
 
-  // Centraliza a limpeza de filtros: limpa resultados, zera localização e remove params da URL
-  // Além disso, força o remount do AdvancedSearch para resetar o estado interno dos filtros
   const [filtersResetKey, setFiltersResetKey] = useState(0);
   const handleClearAll = () => {
     setCurrentLocation('');
@@ -79,11 +74,12 @@ const SearchResultsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar com Filtros */}
-          <div className="w-[280px] shrink-0">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-8">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Left Sidebar (Filters) */}
+          <aside className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
               <AdvancedSearch 
                 key={filtersResetKey}
                 onSearch={(filters) => {
@@ -92,84 +88,48 @@ const SearchResultsPage = () => {
                 }}
                 onClear={handleClearAll}
                 isLoading={isLoading}
-                // Preenche localização inicial para sincronizar com a URL e evitar sobrescrita
                 initialLocation={currentLocation}
               />
             </div>
-          </div>
+          </aside>
 
-          {/* Conteúdo Principal */}
-          <div className="flex-1">
-            {/* Banner Customizável por Cidade */}
-            <CityBanner 
-              city={currentLocation}
-              onBannerClick={(bannerId: string) => {
-                console.log('Banner clicado:', bannerId);
-                // Aqui você pode implementar ações específicas como:
-                // - Redirecionar para página da empresa
-                // - Aplicar filtros específicos
-                // - Abrir modal de contato
-              }}
-              onBannerClose={(bannerId: string) => {
-                console.log('Banner fechado:', bannerId);
-                // Aqui você pode implementar tracking de fechamento
-              }}
-            />
-
-            {/* Resultados */}
+          {/* Main Content (Results) */}
+          <main className="lg:col-span-6">
             {totalResults > 0 && (
-              <div className="mb-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
-                      {totalResults} {totalResults === 1 ? 'empresa encontrada' : 'empresas encontradas'}
-                    </h2>
-                    <p className="text-gray-600">
-                      Empresas de energia solar na sua região
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Ordenar por:
-                    </label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {sortOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {totalResults} {totalResults === 1 ? 'empresa encontrada' : 'empresas encontradas'}
+                  </h2>
+                  <p className="text-gray-600">Empresas de energia solar na sua região</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {sortOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
 
-            {/* Loading State */}
             {isLoading && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {[...Array(6)].map((_, index) => (
                   <div key={index} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
-                    <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
-                      <div className="flex-1">
-                        <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
+                    <div className="h-32 bg-gray-200 rounded-lg"></div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Lista de Resultados */}
             {!isLoading && sortedResults.length > 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {sortedResults.map((company) => (
                   <div key={company.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
                     <div className="flex items-start gap-4 mb-4">
@@ -257,37 +217,37 @@ const SearchResultsPage = () => {
               </div>
             )}
 
-            {/* Estado Vazio - Seção de Ajuda */}
             {!isLoading && totalResults === 0 && (
-              <div>
-                <div className="text-center py-8 mb-8">
-                  <div className="text-gray-400 mb-4">
-                    <MapPin className="w-16 h-16 mx-auto" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                    Nenhuma empresa encontrada
-                  </h3>
-                  <p className="text-gray-500 mb-6">
-                    Tente ajustar os filtros ou expandir a área de busca
-                  </p>
-                  <button
-                    onClick={handleClearAll}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
+              <div className="text-center py-16">
+                 <MapPin className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                 <h3 className="text-xl font-semibold text-gray-600 mb-2">Nenhuma empresa encontrada</h3>
+                 <p className="text-gray-500 mb-6">Tente ajustar os filtros ou expandir a área de busca.</p>
+                 <button onClick={handleClearAll} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                   Limpar filtros
+                 </button>
+              </div>
+            )}
+          </main>
 
+          {/* Right Sidebar (Adverts & Banners) */}
+          <aside className="lg:col-span-3">
+            <div className="sticky top-6">
+              <PromoBannerSidebar />
+            </div>
+          </aside>
+
+        </div>
+
+        {!isLoading && totalResults === 0 && (
+            <div className="mt-12">
                 <HelpSection 
                   title="Não encontrou o que procura?"
                   subtitle="Nossa equipe pode ajudar você a encontrar a empresa perfeita para seu projeto específico de energia solar."
                   showContactForm={true}
                   variant="default"
                 />
-              </div>
-            )}
-          </div>
-        </div>
+            </div>
+        )}
       </div>
     </div>
   );

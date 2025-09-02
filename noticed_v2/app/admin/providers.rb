@@ -3,7 +3,7 @@ require 'csv'
 ActiveAdmin.register Provider do
   permit_params :name, :seo_url, :title, :short_description, :country, :address, 
                 :phone, :members_count, :foundation_year, :premium_until, :revenue,
-                :status, :approval_notes, :logo, :cover_image, :banner_image,
+                :status, :approval_notes, :logo, :cover_image, :banner_image, :city, :state,
                 social_links: [], tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
@@ -21,7 +21,14 @@ ActiveAdmin.register Provider do
 
   controller do
     def find_resource
-      Provider.friendly.find(params[:id])
+      id_param = params[:id]
+      if id_param.to_i.to_s == id_param # Check if it's an integer string
+        Provider.find(id_param)
+      else
+        Provider.friendly.find(id_param)
+      end
+    rescue ActiveRecord::RecordNotFound
+      raise # Re-raise the exception if not found by either method
     end
   end
 
@@ -31,7 +38,16 @@ ActiveAdmin.register Provider do
     column :name do |provider|
       link_to provider.name, admin_provider_path(provider)
     end
+    column "Logo" do |provider|
+      if provider.logo.attached?
+        image_tag provider.logo, style: "width: 40px; height: 40px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: white;"
+      else
+        span "—", style: "color: #999;"
+      end
+    end
     column :country
+    column :city
+    column :state
     column :members_count
     column :foundation_year
     column "Status" do |provider|
@@ -75,6 +91,8 @@ ActiveAdmin.register Provider do
   filter :premium_until
   filter :approved_by, as: :select, collection: -> { AdminUser.all.map { |u| [u.email, u.id] } }
   filter :created_at
+  filter :city_cont, as: :string, label: "Cidade (contém)"
+  filter :state_cont, as: :string, label: "Estado (UF) (contém)"
 
   form do |f|
     f.inputs "Informações da Empresa" do
@@ -84,6 +102,8 @@ ActiveAdmin.register Provider do
       f.input :short_description, as: :text, label: "Descrição Resumida"
       f.input :country, as: :string, label: "País"
       f.input :address, label: "Endereço"
+      f.input :city, label: "Cidade"
+      f.input :state, label: "Estado (UF)"
       f.input :phone, label: "Telefone"
       f.input :members_count, label: "Número de Funcionários"
       f.input :foundation_year, label: "Ano de Fundação"
@@ -122,13 +142,13 @@ ActiveAdmin.register Provider do
         end
       end
       
-      f.input :banner_image, as: :file, label: "Banner do Card", hint: "Imagem de fundo para o card da empresa na busca. Formato recomendado: JPG, tamanho máximo: 3MB"
+      f.input :banner_image, as: :file, label: "Banner do Card", hint: "Imagem de fundo para o card da empresa. Resolução recomendada: 800x200px (proporção 4:1). Formato: JPG/PNG, tamanho máximo: 500KB"
       if f.object.banner_image.attached?
         div class: "current-image" do
           h4 "Banner Atual:"
           image_tag f.object.banner_image, style: "max-width: 300px; max-height: 150px; margin: 10px 0; border-radius: 8px;"
           p style: "font-style: italic; color: #666; margin-top: 5px;" do
-            "Esta imagem aparecerá como fundo do card da empresa na página de busca, com o logo sobreposto."
+            "Esta imagem aparecerá como fundo do card da empresa (800x200px recomendado), com o logo sobreposto."
           end
         end
       end
@@ -147,6 +167,8 @@ ActiveAdmin.register Provider do
           row :short_description
           row :country
           row :address
+          row :city
+          row :state
           row :phone
           row :members_count
           row :foundation_year
@@ -163,6 +185,50 @@ ActiveAdmin.register Provider do
       end
       
       column do
+        panel "Imagens da Empresa" do
+          if provider.logo.attached?
+            div class: "logo-preview", style: "margin-bottom: 20px;" do
+              h4 "Logo da Empresa:"
+              image_tag provider.logo, style: "max-width: 200px; max-height: 100px; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: white;"
+              div style: "margin-top: 10px; font-size: 12px; color: #666;" do
+                "Arquivo: #{provider.logo.filename}"
+                br
+                "Tamanho: #{ActionController::Base.helpers.number_to_human_size(provider.logo.byte_size)}"
+              end
+            end
+          else
+            div class: "no-logo", style: "margin-bottom: 20px; padding: 20px; background: #f9f9f9; border: 1px dashed #ccc; text-align: center;" do
+              span style: "color: #999;" do
+                "Nenhum logo anexado"
+              end
+            end
+          end
+          
+          if provider.cover_image.attached?
+            div class: "cover-preview", style: "margin-bottom: 20px;" do
+              h4 "Imagem de Capa:"
+              image_tag provider.cover_image, style: "max-width: 300px; max-height: 150px; border: 1px solid #ddd; border-radius: 4px;"
+              div style: "margin-top: 10px; font-size: 12px; color: #666;" do
+                "Arquivo: #{provider.cover_image.filename}"
+                br
+                "Tamanho: #{ActionController::Base.helpers.number_to_human_size(provider.cover_image.byte_size)}"
+              end
+            end
+          end
+          
+          if provider.banner_image.attached?
+            div class: "banner-preview", style: "margin-bottom: 20px;" do
+              h4 "Banner do Card:"
+              image_tag provider.banner_image, style: "max-width: 300px; max-height: 150px; border: 1px solid #ddd; border-radius: 8px;"
+              div style: "margin-top: 10px; font-size: 12px; color: #666;" do
+                "Arquivo: #{provider.banner_image.filename}"
+                br
+                "Tamanho: #{ActionController::Base.helpers.number_to_human_size(provider.banner_image.byte_size)}"
+              end
+            end
+          end
+        end
+        
         panel "Status e Aprovação" do
           attributes_table_for provider do
             row "Status" do
@@ -299,6 +365,8 @@ ActiveAdmin.register Provider do
             country: row['country']&.strip,
             address: row['address']&.strip,
             phone: row['phone']&.strip,
+            city: row['city']&.strip,
+            state: row['state']&.strip,
             foundation_year: foundation_year,
             members_count: members_count || 0,
             revenue: row['revenue']&.strip,
@@ -380,11 +448,11 @@ ActiveAdmin.register Provider do
     csv_data = CSV.generate(headers: true) do |csv|
       csv << [
         'name', 'title', 'short_description', 'country', 'address', 'phone',
-        'foundation_year', 'members_count', 'revenue', 'social_links', 'tags', 'status'
+        'city', 'state', 'foundation_year', 'members_count', 'revenue', 'social_links', 'tags', 'status'
       ]
       csv << [
         'Exemplo Empresa Ltda', 'Empresa de Energia Solar', 'Especializada em soluções solares',
-        'Brasil', 'Rua das Flores, 123', '(11) 99999-9999', '2020', '50',
+        'Brasil', 'Rua das Flores, 123', '(11) 99999-9999', 'São Paulo', 'SP', '2020', '50',
         'R$ 1.000.000', 'https://facebook.com/exemplo;https://linkedin.com/exemplo',
         'energia solar;sustentabilidade', 'pending'
       ]

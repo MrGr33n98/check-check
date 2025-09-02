@@ -303,6 +303,23 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   onChange={(e) => handleLocationSearch(e.target.value)}
                   className="pl-9 bg-gray-50 border-gray-200"
                 />
+                {showLocationSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <Button
+                        key={index}
+                        variant="ghost"
+                        className="w-full justify-start text-left px-3 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          setFilters(prev => ({ ...prev, location: suggestion }));
+                          setShowLocationSuggestions(false);
+                        }}
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </FilterSection>

@@ -159,34 +159,67 @@ const CompanyDetail: React.FC = () => {
 
       {/* Company Header */}
       <div className="mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-6">
+        <Card className="overflow-hidden">
+          {/* Banner Section */}
+          <div 
+            className="relative h-48 bg-gradient-to-r from-blue-500 to-green-500"
+            style={{
+              backgroundImage: company.banner_image_url ? `url(${company.banner_image_url})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
+            {/* Overlay for better text readability */}
+            <div className={`absolute inset-0 ${company.banner_image_url ? 'bg-black/50' : 'bg-black/20'}`}></div>
+            
+            {/* Company Logo and Info */}
+            <div className="absolute bottom-6 left-6 flex items-end gap-6">
               {/* Company Logo */}
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white text-2xl font-bold">
+                {company.logo_url ? (
+                  <img 
+                    src={company.logo_url}
+                    alt={`Logo da ${company.name}`}
+                    className="w-24 h-24 rounded-lg object-contain border-2 border-white bg-white p-2 shadow-lg"
+                    onError={(e) => {
+                      // Fallback para inicial se a imagem não carregar
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                ) : null}
+                <div className={`w-24 h-24 bg-gradient-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white text-2xl font-bold border-2 border-white shadow-lg ${company.logo_url ? 'hidden' : ''}`}>
                   {company.name.charAt(0)}
                 </div>
               </div>
+              
+              {/* Company Basic Info */}
+              <div className="text-white">
+                <h1 className="text-3xl font-bold drop-shadow-md mb-2">
+                  {company.name}
+                </h1>
+                <div className="flex items-center gap-4 text-white/90 drop-shadow-md">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    <span>{company.location}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>Desde {company.foundedYear || '2015'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <CardContent className="p-6">
+            <div className="flex flex-col lg:flex-row gap-6">
 
-              {/* Company Info */}
+              {/* Company Additional Info */}
               <div className="flex-1">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
-                      {company.name}
-                    </h1>
-                    
-                    <div className="flex items-center gap-4 text-muted-foreground mb-3">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{company.location}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>Desde {company.foundedYear || '2015'}</span>
-                      </div>
-                    </div>
 
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 class Api::V1::ProvidersController < Api::V1::BaseController
   # GET /api/v1/providers
   def index
+    Rails.logger.info('API::V1::ProvidersController#index called')
     @providers = Provider.active.includes(:categories)
     
     # Filter by category
@@ -39,22 +40,23 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
   # GET /api/v1/providers/search
   def search
+    Rails.logger.info('API::V1::ProvidersController#search called')
     @providers = Provider.active.includes(:categories)
-    
+
     # Search by location (city, state, or address)
     if params[:location].present?
       location_query = params[:location].downcase
       @providers = @providers.where(
         "LOWER(address) LIKE ? OR LOWER(country) LIKE ? OR EXISTS (
-          SELECT 1 FROM unnest(tags) AS tag 
+          SELECT 1 FROM unnest(tags) AS tag
           WHERE LOWER(tag) LIKE ?
         )",
         "%#{location_query}%",
-        "%#{location_query}%", 
+        "%#{location_query}%",
         "%#{location_query}%"
       )
     end
-    
+
     # Search by company name or description
     if params[:query].present?
       search_query = params[:query].downcase
@@ -65,25 +67,51 @@ class Api::V1::ProvidersController < Api::V1::BaseController
         "%#{search_query}%"
       )
     end
-    
+
     # Filter by services/specialties
     if params[:services].present?
-      services = params[:services].split(',').map(&:strip)
-      services.each do |service|
-        @providers = @providers.where("? = ANY(tags)", service.downcase)
-      end
+      services = params[:services].split(',').map(&:strip).map(&:downcase)
+      @providers = @providers.where("tags && ARRAY[?]::varchar[]", services)
     end
-    
+
     # Filter by minimum rating
     if params[:rating].present? && params[:rating].to_f > 0
-      # For now, we'll simulate ratings based on company age and size
-      # In a real app, you'd have a proper ratings system
+      min_rating = params[:rating].to_f
+      # Assuming overall_average_rating is a method or column on Provider
+      @providers = @providers.where("overall_average_rating >= ?", min_rating)
     end
-    
+
+    # Filter by experience (foundation_year)
+    if params[:experience].present?
+      experience_ranges = params[:experience].split(',').map(&:strip)
+      current_year = Date.current.year
+      experience_conditions = []
+
+      experience_ranges.each do |range|
+        case range
+        when '0-2-anos'
+          experience_conditions << "foundation_year >= #{current_year - 2}"
+        when '2-5-anos'
+          experience_conditions << "(foundation_year >= #{current_year - 5} AND foundation_year < #{current_year - 2})"
+        when '5-10-anos'
+          experience_conditions << "(foundation_year >= #{current_year - 10} AND foundation_year < #{current_year - 5})"
+        when '10-anos'
+          experience_conditions << "foundation_year < #{current_year - 10}"
+        end
+      end
+      @providers = @providers.where(experience_conditions.join(' OR ')) if experience_conditions.any?
+    end
+
+    # Filter by certifications
+    if params[:certifications].present?
+      certifications = params[:certifications].split(',').map(&:strip).map(&:downcase)
+      @providers = @providers.where("tags && ARRAY[?]::varchar[]", certifications)
+    end
+
     # Sort results
     case params[:sort_by]
     when 'rating'
-      @providers = @providers.order(foundation_year: :asc) # Older companies first as proxy for rating
+      @providers = @providers.order(overall_average_rating: :desc)
     when 'size'
       @providers = @providers.order(members_count: :desc)
     when 'capacity'
@@ -91,23 +119,23 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     else
       @providers = @providers.order(:name)
     end
-    
+
     # Pagination
     page = params[:page]&.to_i || 1
     per_page = params[:per_page]&.to_i || 20
     offset = (page - 1) * per_page
-    
+
     total_count = @providers.count
     @providers = @providers.offset(offset).limit(per_page)
-    
+
     # Add mock ratings and additional data for frontend
     results = @providers.map do |provider|
       provider_data = provider_json(provider)
-      
+
       # Add mock rating based on company characteristics
       rating = calculate_mock_rating(provider)
       review_count = calculate_mock_review_count(provider)
-      
+
       provider_data.merge({
         rating: rating,
         review_count: review_count,
@@ -117,7 +145,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
         certifications: extract_certifications_from_tags(provider.tags)
       })
     end
-    
+
     render json: {
       results: results,
       pagination: {
@@ -131,8 +159,14 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   
   # GET /api/v1/providers/:id
   def show
-    @provider = Provider.find_by!(slug: params[:id]) || Provider.find(params[:id])
-    render json: provider_json(@provider)
+    @provider = Provider.find_by(slug: params[:id]) # Try finding by slug first
+    @provider ||= Provider.find_by(id: params[:id]) # If not found by slug, try finding by ID
+
+    if @provider
+      render json: provider_json(@provider)
+    else
+      render json: { error: "Provider not found" }, status: :not_found
+    end
   end
 
   def create
@@ -233,7 +267,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       name: provider.name,
       slug: provider.slug,
       short_description: provider.short_description,
-      description: provider.description,
+      description: provider.short_description,
       country: provider.country,
       address: provider.address,
       phone: provider.phone,

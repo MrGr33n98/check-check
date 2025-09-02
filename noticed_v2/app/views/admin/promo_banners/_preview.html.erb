@@ -1,0 +1,43 @@
+<%# app/views/admin/promo_banners/_preview.html.erb %>
+<% banner ||= PromoBanner.new(title: "Título de Exemplo", subtitle: "Este é um subtítulo de exemplo para o preview do banner.", button_text: "Botão Principal", button_secondary_text: "Botão Secundário") %>
+
+<%= stylesheet_link_tag 'active_admin/promo_banners_preview', media: 'all' %>
+
+<div class="promo-banner-preview-container"
+     style="--banner-bg-color: <%= banner.background_color || '#3B82F6' %>;
+            --banner-text-color: <%= banner.text_color || '#FFFFFF' %>;
+            --banner-text-align: <%= banner.text_align || 'center' %>;
+            --overlay-color: <%= banner.overlay_color || '#000000' %>;
+            --overlay-opacity: <%= (banner.overlay_opacity || 35) / 100.0 %>;">
+
+  <% if banner.background_image.attached? %>
+    <%= image_tag banner.background_image, class: "promo-banner-bg-image" %>
+  <% end %>
+
+  <% if banner.overlay_enabled? %>
+    <div class="promo-banner-overlay"></div>
+  <% end %>
+
+  <div class="promo-banner-content">
+    <% if banner.show_title? %>
+      <h3 class="promo-banner-title"><%= truncate(banner.title, length: 60, separator: ' ') %></h3>
+    <% end %>
+
+    <% if banner.show_subtitle? %>
+      <p class="promo-banner-subtitle"><%= truncate(banner.subtitle, length: 90, separator: ' ') %></p>
+    <% end %>
+
+    <div class="promo-banner-buttons">
+      <% if banner.button_text.present? %>
+        <a href="<%= banner.button_url %>" class="promo-banner-button primary" target="_blank" rel="noopener noreferrer">
+          <%= banner.button_text %>
+        </a>
+      <% end %>
+      <% if banner.button_secondary_text.present? %>
+        <a href="<%= banner.button_secondary_url %>" class="promo-banner-button secondary" target="_blank" rel="noopener noreferrer">
+          <%= banner.button_secondary_text %>
+        </a>
+      <% end %>
+    </div>
+  </div>
+</div>

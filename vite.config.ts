@@ -7,10 +7,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     hmr: {
+      clientPort: 5173,
       overlay: false
     },
     port: 5173,
-    host: true
+    host: true,
+    proxy: {
+      '/api': 'http://localhost:3000'
+    }
   },
   resolve: {
     alias: {
