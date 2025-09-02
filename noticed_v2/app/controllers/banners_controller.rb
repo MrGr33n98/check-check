@@ -25,7 +25,7 @@ class BannersController < ApplicationController
     @banners = apply_frequency_rules(@banners)
 
     respond_to do |format|
-      format.json { render json: @banners.as_json(include_images: true) }
+      format.json { render json: { success: true, data: @banners.as_json(include_images: true) } }
       format.html
     end
   end
@@ -76,7 +76,7 @@ class BannersController < ApplicationController
     @banners = apply_frequency_rules(@banners)
 
     respond_to do |format|
-      format.json { render json: @banners.as_json(include_images: true) }
+      format.json { render json: { success: true, data: @banners.as_json(include_images: true) } }
       format.html { render :index }
     end
   end

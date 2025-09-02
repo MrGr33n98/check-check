@@ -284,6 +284,7 @@ ActiveAdmin.register Banner do
 
   # Helpers para classes CSS
   controller do
+    helper_method :banner_type_class, :status_class
     def banner_type_class(type)
       case type
       when 'header', 'hero' then 'ok'

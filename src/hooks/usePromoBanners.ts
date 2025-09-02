@@ -35,8 +35,8 @@ export const usePromoBanners = (position?: string) => {
 
       const url = apiUrl
         ? position
-          ? `${apiUrl}/promotional_banners/by_position/${position}`
-          : `${apiUrl}/promotional_banners`
+          ? `${apiUrl.replace('/api/v1', '')}/banners/by_position/${position}`
+          : `${apiUrl.replace('/api/v1', '')}/banners`
         : '';
 
       try {
@@ -51,7 +51,11 @@ export const usePromoBanners = (position?: string) => {
         }
 
         const data = await response.json();
-        setBanners(data.data);
+        const mappedBanners = data.data.map((banner: any) => ({
+          ...banner,
+          background_image_url: banner.image_url,
+        }));
+        setBanners(mappedBanners);
       } catch (err) {
         console.error('Error fetching banners:', err);
         try {
