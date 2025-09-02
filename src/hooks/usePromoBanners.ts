@@ -32,9 +32,9 @@ export const usePromoBanners = (position?: string) => {
       try {
         setLoading(true);
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-        const url = position 
-          ? `${apiUrl}/promo_banners?position=${position}`
-          : `${apiUrl}/promo_banners`;
+        const url = position
+          ? `${apiUrl}/promotional_banners/by_position/${position}`
+          : `${apiUrl}/promotional_banners`;
         
         console.log('Fetching banners from:', url);
         
@@ -46,7 +46,7 @@ export const usePromoBanners = (position?: string) => {
         
         const data = await response.json();
         console.log('Banners received:', data);
-        setBanners(data);
+        setBanners(data.data);
       } catch (err) {
         console.error('Error fetching banners:', err);
         if (retries > 0) {
@@ -72,3 +72,4 @@ export const usePromoBanners = (position?: string) => {
     getBannerByPosition
   };
 };
+
