@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Star, MapPin, Phone, Mail, ArrowRight } from 'lucide-react';
+import { Star, MapPin, Phone, Globe, ArrowRight } from 'lucide-react';
 
 interface Company {
   id: number;
@@ -14,17 +14,11 @@ interface Company {
   phone: string;
   website: string;
   description: string;
-  image: string; // This is the logo_url from backend
-  bannerImage?: string; // This is the banner_image_url from backend
-  // Additional fields from backend that might be useful for CompanyCard
+  image: string;
+  bannerImage?: string;
   foundedYear?: number;
-  installed_capacity_mw?: number; // Renamed from installedMW to match backend
+  installed_capacity_mw?: number;
   specialties?: string[];
-  status?: string;
-  premium?: boolean;
-  social_links?: string[];
-  tags?: string[];
-  slug?: string;
 }
 
 interface Props {
@@ -32,155 +26,192 @@ interface Props {
 }
 
 export const CompanyCard = ({ company }: Props) => {
+  const startingPrice = company.priceRange?.[0];
+
   return (
-    <div className="bg-white rounded-[16px] shadow-sm hover:shadow-md transition-all overflow-hidden">
-      {/* Banner superior */}
-      <div className="relative h-32 w-full bg-gradient-to-r from-blue-50 to-blue-100">
+    <article
+      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col h-full group focus-within:ring-2 focus-within:ring-blue-500"
+      aria-label={`Card da empresa ${company.name}`}
+      itemScope
+      itemType="https://schema.org/LocalBusiness"
+    >
+      {/* Microdados básicos */}
+      <meta itemProp="name" content={company.name} />
+      {company.website && <meta itemProp="url" content={company.website} />}
+      {company.location && <meta itemProp="address" content={company.location} />}
+
+      {/* Banner */}
+      <div className="relative h-20 w-full bg-gradient-to-r from-blue-50 to-blue-100 overflow-visible">
         {company.bannerImage ? (
           <img
             src={company.bannerImage}
-            alt="Banner institucional"
+            alt={`Banner da empresa ${company.name}`}
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 opacity-10" />
         )}
-      </div>
 
-      <div className="px-6 pb-6">
-        <div className="flex items-start gap-6 -mt-8">
-          {/* Logo flutuante */}
-          <div className="w-24 h-24 rounded-full ring-4 ring-white bg-white shadow-md flex-shrink-0 overflow-hidden">
-            {company.image ? (
-              <img
-                src={company.image}
-                alt={`${company.name} logo`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-3xl">
-                {company.name.charAt(0)}
-              </div>
-            )}
-          </div>
-
-          {/* Informações principais */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-3">
-            <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    {company.name}
-                  </h3>
-                  {company.verified && (
-                    <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-medium">
-                      Verificado
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-4 text-gray-600 mb-2">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span className="text-sm">{company.location}</span>
-                  </div>
-                  {company.foundedYear && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <span>•</span>
-                      <span>Desde {company.foundedYear}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${i < Math.floor(company.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                    />
-                  ))}
-                  <span className="text-sm text-gray-600 ml-2">
-                    {company.rating} (127 avaliações)
-                  </span>
-                </div>
-              </div>
-              
-              {/* Preço */}
-              <div className="text-right">
-                <div className="text-3xl font-bold text-green-600">
-                  R$ {company.price.toLocaleString()}
-                </div>
-                <div className="text-gray-500 text-sm">a partir de</div>
-              </div>
-          </div>
-
-            {/* Informações chave */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-              <div className="flex items-center gap-2 text-gray-600">
-                <span>{company.experience}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600">
-                <span>{company.certifications.length} certificações</span>
-              </div>
-              {company.installed_capacity_mw && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>{company.installed_capacity_mw} MW instalados</span>
+        {/* Logo flutuante com “anel” em gradiente */}
+        <div className="absolute left-4 -bottom-8 z-10">
+          <div className="p-[2px] rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-purple-500">
+            <div className="w-16 h-16 rounded-full bg-white shadow-md overflow-hidden">
+              {company.image ? (
+                <img
+                  src={company.image}
+                  alt={`Logo da empresa ${company.name}`}
+                  className="w-full h-full object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold text-lg">
+                  {company.name?.charAt(0)}
                 </div>
               )}
-              {company.specialties && (
-                <div className="flex items-center gap-2 text-gray-600">
-                  <span>{company.specialties.join(', ')}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Serviços */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {company.services.slice(0, 4).map((service, index) => (
-                <span
-                  key={index}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                >
-                  {service}
-                </span>
-              ))}
-              {company.services.length > 4 && (
-                <span className="text-gray-500 text-sm py-1">
-                  +{company.services.length - 4} mais
-                </span>
-              )}
-            </div>
-
-            {/* Tabs e Ações */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-4 border-t border-gray-100">
-              <div className="flex gap-6 text-sm">
-                <Link to={`/company/${company.id}`} className="text-gray-600 hover:text-blue-600 font-medium pb-1 border-b-2 border-transparent hover:border-blue-600 transition-colors">
-                  Informações gerais
-                </Link>
-                <Link to={`/company/${company.id}/pricing`} className="text-gray-600 hover:text-blue-600 font-medium pb-1 border-b-2 border-transparent hover:border-blue-600 transition-colors">
-                  Planos e preços
-                </Link>
-                <Link to={`/company/${company.id}/reviews`} className="text-gray-600 hover:text-blue-600 font-medium pb-1 border-b-2 border-transparent hover:border-blue-600 transition-colors">
-                  Avaliações
-                </Link>
-              </div>
-              <div className="flex gap-3">
-                <Link
-                  to={`/company/${company.id}/demo`}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium text-sm"
-                >
-                  Assista à demonstração
-                </Link>
-                <Link
-                  to={`/company/${company.id}/quote`}
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
-                >
-                  Solicitar Orçamento
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Conteúdo */}
+      <div className="pt-12 px-4 pb-4 flex-grow flex flex-col">
+        {/* Título, localização, rating */}
+        <div className="mb-2">
+          <h2 className="text-lg font-bold text-gray-900 truncate" title={company.name} itemProp="name">
+            {company.name}
+          </h2>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-gray-600 text-xs">
+            <div className="flex items-center gap-1" aria-label="Localização">
+              <MapPin className="w-3.5 h-3.5" />
+              <span itemProp="address">{company.location}</span>
+            </div>
+            {company.foundedYear && (
+              <span className="flex items-center gap-0.5">• Desde {company.foundedYear}</span>
+            )}
+          </div>
+
+          {/* AggregateRating microdata */}
+          <div
+            className="flex items-center gap-0.5 mt-1"
+            itemProp="aggregateRating"
+            itemScope
+            itemType="https://schema.org/AggregateRating"
+          >
+            <meta itemProp="ratingValue" content={String(company.rating || 0)} />
+            <meta itemProp="reviewCount" content={String(company.reviewCount || 0)} />
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-3.5 h-3.5 ${
+                  i < Math.floor(company.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                }`}
+                aria-hidden="true"
+              />
+            ))}
+            <span className="text-xs text-gray-600 ml-1">
+              {company.rating || 0} ({company.reviewCount || 0} avaliações)
+            </span>
+          </div>
+        </div>
+
+        {/* Descrição */}
+        {company.description && (
+          <p className="text-gray-700 text-xs line-clamp-2 mb-2" title={company.description} itemProp="description">
+            {company.description}
+          </p>
+        )}
+
+        {/* Dados principais */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-gray-700 mb-2">
+          {company.experience && <span>{company.experience}</span>}
+          {!!company.certifications?.length && (
+            <span>{company.certifications.length} certificações</span>
+          )}
+          {company.installed_capacity_mw && <span>{company.installed_capacity_mw} MW instalados</span>}
+          {!!company.specialties?.length && <span>{company.specialties.join(', ')}</span>}
+        </div>
+
+        {/* Serviços */}
+        {!!company.services?.length && (
+          <div className="flex flex-wrap gap-1 mb-3" aria-label="Serviços">
+            {company.services.slice(0, 4).map((service, index) => (
+              <span
+                key={index}
+                className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-[10px] font-medium"
+              >
+                {service}
+              </span>
+            ))}
+            {company.services.length > 4 && (
+              <span className="text-gray-500 text-[10px] py-0.5">+{company.services.length - 4} mais</span>
+            )}
+          </div>
+        )}
+
+        {/* Contato + Preço */}
+        <div className="flex justify-between items-end border-t pt-2 mt-auto">
+          <div className="text-xs text-gray-600 space-y-1" aria-label="Contato">
+            {company.phone && (
+              <div className="flex items-center gap-1">
+                <Phone className="w-3 h-3" aria-hidden="true" />
+                <span itemProp="telephone">{company.phone}</span>
+              </div>
+            )}
+            {company.website && (
+              <div className="flex items-center gap-1">
+                <Globe className="w-3 h-3" aria-hidden="true" />
+                <span className="truncate">{company.website}</span>
+              </div>
+            )}
+          </div>
+
+          {typeof startingPrice === 'number' && (
+            <div className="text-right" aria-label="Preço">
+              <p className="text-green-600 font-bold text-xl leading-tight">
+                <span className="sr-only">Preço a partir de </span>
+                R$ {startingPrice.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500">a partir de</p>
+            </div>
+          )}
+        </div>
+
+        {/* Ações */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-4">
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600 font-medium">
+            <Link to={`/company/${company.id}`} className="hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+              Informações gerais
+            </Link>
+            <Link to={`/company/${company.id}/pricing`} className="hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+              Planos e preços
+            </Link>
+            <Link to={`/company/${company.id}/reviews`} className="hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+              Avaliações
+            </Link>
+          </div>
+
+          <div className="flex gap-2">
+            <Link
+              to={`/company/${company.id}/demo`}
+              className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded-md text-xs text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              Assista à demonstração
+            </Link>
+            <Link
+              to={`/company/${company.id}/quote`}
+              className="bg-blue-600 text-white hover:bg-blue-700 px-3 py-1 rounded-md text-xs flex items-center gap-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={`Solicitar orçamento para ${company.name}`}
+            >
+              Solicitar Orçamento
+              <ArrowRight className="w-3 h-3" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </article>
   );
-}
+};

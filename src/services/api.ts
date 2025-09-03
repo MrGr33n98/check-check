@@ -87,7 +87,13 @@ class ApiService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      return data; // Assuming backend returns { providers: [], total: ..., page: ..., etc. }
+      return {
+        providers: data.results || [],
+        total: data.pagination?.total_count || 0,
+        page: data.pagination?.current_page || 1,
+        per_page: data.pagination?.per_page || 0,
+        total_pages: data.pagination?.total_pages || 0,
+      };
     } catch (error) {
       console.error("Error fetching providers:", error);
       return { providers: [], total: 0, page: 1, per_page: 0, total_pages: 0 };
