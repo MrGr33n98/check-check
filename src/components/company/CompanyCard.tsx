@@ -10,7 +10,6 @@ interface Company {
   experience: string;
   services: string[];
   certifications: string[];
-  priceRange: [number, number];
   phone: string;
   website: string;
   description: string;
@@ -26,7 +25,6 @@ interface Props {
 }
 
 export const CompanyCard = ({ company }: Props) => {
-  const startingPrice = company.priceRange?.[0];
 
   return (
     <article
@@ -153,7 +151,7 @@ export const CompanyCard = ({ company }: Props) => {
         )}
 
         {/* Contato + Preço */}
-        <div className="flex justify-between items-end border-t pt-2 mt-auto">
+        <div className="border-t pt-2 mt-auto">
           <div className="text-xs text-gray-600 space-y-1" aria-label="Contato">
             {company.phone && (
               <div className="flex items-center gap-1">
@@ -168,16 +166,6 @@ export const CompanyCard = ({ company }: Props) => {
               </div>
             )}
           </div>
-
-          {typeof startingPrice === 'number' && (
-            <div className="text-right" aria-label="Preço">
-              <p className="text-green-600 font-bold text-xl leading-tight">
-                <span className="sr-only">Preço a partir de </span>
-                R$ {startingPrice.toLocaleString()}
-              </p>
-              <p className="text-xs text-gray-500">a partir de</p>
-            </div>
-          )}
         </div>
 
         {/* Ações */}
@@ -196,10 +184,10 @@ export const CompanyCard = ({ company }: Props) => {
 
           <div className="flex gap-2">
             <Link
-              to={`/company/${company.id}/demo`}
+              to={`/company/${company.id}`}
               className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-1 rounded-md text-xs text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              Assista à demonstração
+              Perfil da empresa
             </Link>
             <Link
               to={`/company/${company.id}/quote`}

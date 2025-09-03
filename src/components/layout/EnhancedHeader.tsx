@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { 
   Search, 
@@ -17,73 +21,116 @@ import {
   Building2,
   Wrench,
   Calculator,
-  Lightbulb
+  Lightbulb,
+  Shield,
+  TrendingUp,
+  Users,
+  Rocket,
+  Globe,
+  DollarSign
 } from 'lucide-react';
 import { useLocation } from '@/contexts/LocationContext';
+import apiService, { Category as ApiCategory } from '@/services/api';
 
+// Local interface for the header, including nested children
 interface Category {
-  id: string;
+  id: number | string;
   name: string;
   slug: string;
   icon: React.ReactNode;
-  subcategories?: {
-    id: string;
-    name: string;
-    slug: string;
-  }[];
+  children?: Category[];
 }
 
-const categories: Category[] = [
-  {
-    id: '1',
-    name: 'Instalação Solar',
-    slug: 'instalacao-solar',
-    icon: <Zap className="w-4 h-4" />,
-    subcategories: [
-      { id: '1-1', name: 'Residencial', slug: 'residencial' },
-      { id: '1-2', name: 'Comercial', slug: 'comercial' },
-      { id: '1-3', name: 'Industrial', slug: 'industrial' }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Manutenção',
-    slug: 'manutencao',
-    icon: <Wrench className="w-4 h-4" />,
-    subcategories: [
-      { id: '2-1', name: 'Preventiva', slug: 'preventiva' },
-      { id: '2-2', name: 'Corretiva', slug: 'corretiva' },
-      { id: '2-3', name: 'Limpeza', slug: 'limpeza' }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Consultoria',
-    slug: 'consultoria',
-    icon: <Lightbulb className="w-4 h-4" />,
-    subcategories: [
-      { id: '3-1', name: 'Projeto', slug: 'projeto' },
-      { id: '3-2', name: 'Financiamento', slug: 'financiamento' },
-      { id: '3-3', name: 'Homologação', slug: 'homologacao' }
-    ]
-  },
-  {
-    id: '4',
-    name: 'Monitoramento',
-    slug: 'monitoramento',
-    icon: <Calculator className="w-4 h-4" />
+// Helper to map category slugs to icons
+const getCategoryIcon = (slug: string) => {
+  switch (slug) {
+    case 'geracao-distribuida': return <Zap className="w-4 h-4" />;
+    case 'usinas-solares': return <Lightbulb className="w-4 h-4" />;
+    case 'armazenamento': return <Calculator className="w-4 h-4" />;
+    case 'off-grid': return <Globe className="w-4 h-4" />;
+    case 'eficiencia': return <TrendingUp className="w-4 h-4" />;
+    case 'financiamento': return <DollarSign className="w-4 h-4" />;
+    case 'comunidades': return <Users className="w-4 h-4" />;
+    case 'sustentabilidade': return <Shield className="w-4 h-4" />;
+    case 'inovacao': return <Rocket className="w-4 h-4" />;
+    default: return <Zap className="w-4 h-4" />;
   }
-];
+};
+
+// Recursive component to render menu items and their sub-menus
+const renderMenuItems = (categories: Category[]) => {
+  return categories.map(category => {
+    if (category.children && category.children.length > 0) {
+      return (
+        <DropdownMenuSub key={category.id}>
+          <DropdownMenuSubTrigger className="flex items-center space-x-2 w-full">
+            {category.icon}
+            <span>{category.name}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent>
+              {renderMenuItems(category.children)} {/* Recursion */}
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+      );
+    }
+    return (
+      <DropdownMenuItem key={category.id} asChild>
+        <Link 
+          to={`/categorias/${category.slug}`}
+          className="flex items-center space-x-2 w-full"
+        >
+          {category.icon}
+          <span>{category.name}</span>
+        </Link>
+      </DropdownMenuItem>
+    );
+  });
+};
 
 const EnhancedHeader: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { userLocation } = useLocation();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchCategories = async () => {
+      try {
+        const apiCategories = await apiService.getCategories(controller.signal);
+        
+        // Recursive function to map API data and add icons
+        const mapApiData = (apiCats: ApiCategory[]): Category[] => {
+          return apiCats.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            icon: getCategoryIcon(cat.slug),
+            children: cat.children ? mapApiData(cat.children) : [],
+          }));
+        };
+
+        setCategories(mapApiData(apiCategories));
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error("Failed to fetch header categories:", error);
+        }
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Redirecionar para página de busca com query
       window.location.href = `/busca-avancada?q=${encodeURIComponent(searchQuery)}&location=${encodeURIComponent(userLocation || '')}`;
     }
   };
@@ -110,36 +157,8 @@ const EnhancedHeader: React.FC = () => {
                 <ChevronDown className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              {categories.map((category) => (
-                <div key={category.id}>
-                  <DropdownMenuItem asChild>
-                    <Link 
-                      to={`/categorias/${category.slug}`}
-                      className="flex items-center space-x-2 w-full"
-                    >
-                      <span className="flex items-center space-x-2">
-                        {category.icon}
-                        <span>{category.name}</span>
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {category.subcategories && (
-                    <div className="pl-6">
-                      {category.subcategories.map((sub) => (
-                        <DropdownMenuItem key={sub.id} asChild>
-                          <Link 
-                            to={`/categorias/${category.slug}/${sub.slug}`}
-                            className="text-sm text-muted-foreground"
-                          >
-                            {sub.name}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <DropdownMenuContent className="w-60">
+              {renderMenuItems(categories)}
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -230,20 +249,7 @@ const EnhancedHeader: React.FC = () => {
                       {category.icon}
                       <span>{category.name}</span>
                     </Link>
-                    {category.subcategories && (
-                      <div className="pl-6 space-y-1">
-                        {category.subcategories.map((sub) => (
-                          <Link 
-                            key={sub.id}
-                            to={`/categorias/${category.slug}/${sub.slug}`}
-                            className="block px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded-md"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            {sub.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                    {/* Mobile menu doesn't support cascade, so we can list them indented or just show top-level */}
                   </div>
                 ))}
               </div>

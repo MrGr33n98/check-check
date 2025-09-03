@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import AdvancedSearch from '../components/search/AdvancedSearch';
 import PromoBannerSidebar from '../components/banners/PromoBannerSidebar';
@@ -7,7 +7,8 @@ import BannerSlider from '../components/BannerSlider';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Star, MapPin, Phone, Globe, Award, ArrowRight, Zap } from 'lucide-react';
+import { Star, MapPin, Phone, Globe, Award, ArrowRight } from 'lucide-react';
+import { getPlaceholderImage } from '@/utils/imageFallback';
 
 // Interface para os filtros de busca
 interface SearchFilters {
@@ -24,22 +25,32 @@ interface SearchFilters {
   deviceTarget?: string;
 }
 
-// Interface para empresa da API
-interface SolarCompany {
+// Type definitions for API response
+type ProviderApi = {
   id: number;
   name: string;
-  title: string;
-  short_description: string;
-  country: string;
-  address: string;
-  phone: string;
-  foundation_year: number;
-  members_count: number;
-  revenue: string;
-  social_links: string[];
-  tags: string[];
-  status: string;
-}
+  title?: string;
+  short_description?: string;
+  country?: string;
+  address?: string;
+  phone?: string;
+  foundation_year?: number;
+  members_count?: number;
+  revenue?: string;
+  social_links?: string[];
+  tags?: string[];
+  status?: string;
+  logo_url?: string;
+  banner_image_url?: string;
+  rating?: number;
+  review_count?: number;
+  website?: string;
+};
+
+type SearchResponse = {
+  results: ProviderApi[];
+  pagination: { total_count: number; page: number; per_page: number };
+};
 
 // Interface para empresa (formato do frontend)
 interface Company {
@@ -61,7 +72,6 @@ interface Company {
 
 const SearchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [, setCurrentFilters] = useState<SearchFilters | null>(null);
@@ -70,7 +80,7 @@ const SearchPage: React.FC = () => {
   const [companiesPerPage] = useState(8); // Max 8 companies per page
   const [totalCompanies, setTotalCompanies] = useState(0);
 
-  const convertApiToCompany = (apiCompany: any): Company => {
+  const convertApiToCompany = useCallback((apiCompany: ProviderApi): Company => {
     const rating = apiCompany.rating || Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
     const reviewCount = apiCompany.review_count || Math.floor(Math.random() * 200) + 20;
     const serviceSet = new Set<string>();
@@ -87,18 +97,18 @@ const SearchPage: React.FC = () => {
     const services = Array.from(serviceSet);
     if (services.length === 0) services.push('consultoria-tecnica');
     const certifications = ['crea'];
-    if (apiCompany.foundation_year <= 2015) certifications.push('inmetro');
-    if (apiCompany.members_count > 100) certifications.push('aneel');
-    if (apiCompany.members_count > 200) certifications.push('iso-9001');
+    if (apiCompany.foundation_year && apiCompany.foundation_year <= 2015) certifications.push('inmetro');
+    if (apiCompany.members_count && apiCompany.members_count > 100) certifications.push('aneel');
+    if (apiCompany.members_count && apiCompany.members_count > 200) certifications.push('iso-9001');
     let priceRange: [number, number] = [15000, 50000];
-    if (apiCompany.members_count > 100) priceRange = [25000, 80000];
-    if (apiCompany.members_count > 200) priceRange = [35000, 150000];
+    if (apiCompany.members_count && apiCompany.members_count > 100) priceRange = [25000, 80000];
+    if (apiCompany.members_count && apiCompany.members_count > 200) priceRange = [35000, 150000];
     const currentYear = new Date().getFullYear();
-    const yearsInBusiness = currentYear - apiCompany.foundation_year;
+    const yearsInBusiness = currentYear - (apiCompany.foundation_year || currentYear);
     let experience = '2-5-anos';
     if (yearsInBusiness >= 10) experience = '10-anos';
     else if (yearsInBusiness >= 5) experience = '5-10-anos';
-    const logoUrl = apiCompany.logo_url ? apiCompany.logo_url : '/api/placeholder/300/200';
+    const logoUrl = apiCompany.logo_url ? apiCompany.logo_url : getPlaceholderImage(300, 200);
 
     return {
       id: apiCompany.id,
@@ -113,22 +123,21 @@ const SearchPage: React.FC = () => {
       certifications,
       priceRange,
       phone: apiCompany.phone || '(11) 0000-0000',
-      website: apiCompany.social_links?.find((link: string) => 
+      website: apiCompany.website || apiCompany.social_links?.find((link: string) => 
         !link.includes('facebook') && !link.includes('instagram') && !link.includes('linkedin')
       ) || 'www.exemplo.com.br',
       description: apiCompany.short_description || apiCompany.title || 'Empresa de energia solar',
       image: logoUrl,
       bannerImage: apiCompany.banner_image_url ? apiCompany.banner_image_url : undefined
     };
-  };
+  }, []);
 
-  const loadCompanies = async (searchParams: any = {}, page: number = 1, perPage: number = companiesPerPage, retries = 3, delay = 1000) => {
+  const loadCompanies = useCallback(async (searchParams: Record<string, string | number>, page = 1, perPage = companiesPerPage, retries = 3, delay = 1000) => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/providers/search', {
+      const response = await axios.get<SearchResponse>('http://localhost:3000/api/v1/providers/search', {
         params: { ...searchParams, page, per_page: perPage }
       });
-      // Assuming the API returns a direct array of companies for now
       const companies = Array.isArray(response.data.results)
         ? response.data.results.map(convertApiToCompany)
         : [];
@@ -137,7 +146,10 @@ const SearchPage: React.FC = () => {
     } catch (error) {
       console.error('Erro ao carregar empresas:', error);
       if (retries > 0) {
-        setTimeout(() => loadCompanies(searchParams, page, perPage, retries - 1, delay * 2), delay + Math.random() * 1000);
+        setTimeout(
+          () => loadCompanies(searchParams, page, perPage, retries - 1, delay * 2),
+          delay + Math.random() * 1000
+        );
       } else {
         setFilteredCompanies([]);
         setTotalCompanies(0);
@@ -145,29 +157,28 @@ const SearchPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [companiesPerPage, convertApiToCompany]);
+
+  const locationParam = searchParams.get('location') || '';
+  const queryParam = searchParams.get('q') || '';
 
   useEffect(() => {
-    const locationParam = searchParams.get('location');
-    const queryParam = searchParams.get('q');
-    
+    const baseParams: Record<string, string> = {};
+    if (queryParam) baseParams.search = queryParam;
     if (locationParam) {
+      baseParams.location = locationParam;
       setInitialLocation(locationParam);
-      loadCompanies({ 
-        search: queryParam || '', 
-        location: locationParam 
-      }, currentPage, companiesPerPage);
-    } else {
-      loadCompanies({}, currentPage, companiesPerPage);
     }
-  }, [searchParams, currentPage, companiesPerPage]); // Add currentPage and companiesPerPage to dependencies
+    
+    loadCompanies(baseParams, currentPage, companiesPerPage);
+  }, [locationParam, queryParam, currentPage, companiesPerPage, loadCompanies]);
 
   const handleSearch = useCallback(async (filters: SearchFilters) => {
     setCurrentFilters(filters);
     setCurrentPage(1); // Reset to first page on new search
-    const searchParams: any = {};
+    const searchParams: Record<string, string | number> = {};
     if (filters.query) {
-      searchParams.query = filters.query; // Changed from 'search' to 'query' to match backend
+      searchParams.query = filters.query;
     }
     if (filters.location && !filters.location.includes('Florianópolis')) {
       const location = filters.location.replace('📍 ', '');
@@ -177,11 +188,8 @@ const SearchPage: React.FC = () => {
       searchParams.services = filters.services.join(',');
     }
     if (filters.ratings && filters.ratings.length > 0) {
-      // Send the highest selected rating to the backend
       searchParams.rating = Math.max(...filters.ratings);
     }
-    // Note: Backend needs to be updated to handle 'experience' and 'certifications'
-    // For now, we'll send them, but they won't have an effect until backend is updated.
     if (filters.experience && filters.experience.length > 0) {
       searchParams.experience = filters.experience.join(',');
     }
@@ -190,13 +198,13 @@ const SearchPage: React.FC = () => {
     }
 
     await loadCompanies(searchParams, 1, companiesPerPage);
-  }, [companiesPerPage]);
+  }, [companiesPerPage, loadCompanies]);
 
   const handleClearFilters = useCallback(() => {
     setCurrentFilters(null);
     setCurrentPage(1); // Reset to first page on clear filters
     loadCompanies({}, 1, companiesPerPage);
-  }, [companiesPerPage]);
+  }, [companiesPerPage, loadCompanies]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

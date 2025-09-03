@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,24 @@ import EducationalContent from '@/components/ui/educational-content';
 import PopularCategories from '@/components/ui/popular-categories';
 import CategoryHero from '@/components/ui/category-hero';
 import { CompanyCard } from '@/components/company/CompanyCard';
+import AdvancedSearch from '@/components/search/AdvancedSearch';
 import apiService, { Category, Provider } from '@/services/api';
+import { getPlaceholderImage } from '@/utils/imageFallback';
+
+// Interface para os filtros de busca (copiado de SearchPage.tsx)
+interface SearchFilters {
+  query: string;
+  location: string;
+  radius: number;
+  priceRange: [number, number];
+  rating: number;
+  ratings: number[];
+  certifications: string[];
+  services: string[];
+  experience: string[];
+  availability: string;
+  deviceTarget?: string;
+}
 
 // Interface para empresa (formato do frontend, para CompanyCard)
 interface CompanyForCard {
@@ -19,7 +36,6 @@ interface CompanyForCard {
   experience: string;
   services: string[];
   certifications: string[];
-  priceRange: [number, number];
   phone: string;
   website: string;
   description: string;
@@ -29,7 +45,6 @@ interface CompanyForCard {
   installed_capacity_mw?: number;
   specialties?: string[];
   verified?: boolean;
-  price: number;
 }
 
 function EnhancedCategoryPage() {
@@ -39,9 +54,11 @@ function EnhancedCategoryPage() {
   const [companies, setCompanies] = useState<CompanyForCard[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentFilters, setCurrentFilters] = useState<SearchFilters | null>(null); // New state for filters
+  const [totalCompanies, setTotalCompanies] = useState(0); // To pass to AdvancedSearch
 
   // Helper function to map Provider to CompanyForCard
-  const mapProviderToCompany = (provider: Provider): CompanyForCard => {
+  const mapProviderToCompany = useCallback((provider: Provider): CompanyForCard => {
     const currentYear = new Date().getFullYear();
     const yearsInBusiness = provider.foundation_year ? currentYear - provider.foundation_year : 0;
     let experience = 'N/A';
@@ -62,75 +79,99 @@ function EnhancedCategoryPage() {
       experience: experience,
       services: services.length > 0 ? services : ['Não especificado'],
       certifications: certifications.length > 0 ? certifications : ['Não especificado'],
-      priceRange: [provider.price || 0, provider.price || 0], // Assuming price is a single value for now
       phone: provider.phone || 'N/A',
       website: provider.social_links && provider.social_links.length > 0 ? provider.social_links[0] : 'N/A',
       description: provider.description || provider.short_description || 'N/A',
-      image: provider.logo_url || '/api/placeholder/300/200', // Fallback logo
+      image: provider.logo_url || getPlaceholderImage(300, 200), // Fallback logo
       bannerImage: provider.banner_image_url || undefined,
       foundedYear: provider.foundation_year,
       installed_capacity_mw: provider.installed_capacity_mw,
       specialties: provider.specialties,
       verified: provider.status === 'active' && provider.premium, // Example logic for verified
-      price: provider.price || 0,
     };
-  };
+  }, []);
+
+  // Handlers for search and filter
+  const handleSearch = useCallback(async (filters: SearchFilters) => {
+    setCurrentFilters(filters);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setCurrentFilters(null);
+  }, []);
+
+  const lastReqId = useRef(0);
+  const filtersKey = JSON.stringify(currentFilters);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!slug) {
+      setLoading(false);
+      setCategory(null);
+      setCompanies([]);
+      return;
+    }
 
+    const reqId = ++lastReqId.current;
+    const controller = new AbortController();
+    
     const fetchData = async () => {
-      if (!slug) {
-        setLoading(false);
-        return;
-      }
-
       setLoading(true);
-      setError(null);
 
       try {
-        // Try to fetch the category from the API
-        const fetchedCategory = await apiService.getCategoryBySlug(slug);
-        
-        if (fetchedCategory) {
-          if (isMounted) {
-            setCategory(fetchedCategory);
-            
-            // SEO: Update document title
-            document.title = `${fetchedCategory.name} | SolarFinder`;
-            
-            // SEO: Update meta description
-            let metaDescription = document.querySelector('meta[name="description"]');
-            if (!metaDescription) {
-              metaDescription = document.createElement('meta');
-              metaDescription.setAttribute('name', 'description');
-              document.head.appendChild(metaDescription);
-            }
-            if (fetchedCategory.description) {
-              metaDescription.setAttribute('content', fetchedCategory.description);
-            }
+        const [fetchedCategory, providersResponse] = await Promise.all([
+          apiService.getCategoryBySlug(slug, controller.signal),
+          apiService.getProviders({
+            category_slug: slug,
+            query: currentFilters?.query,
+            location: currentFilters?.location,
+            services: currentFilters?.services?.join(','),
+            certifications: currentFilters?.certifications?.join(','),
+            experience: currentFilters?.experience?.join(','),
+            rating: currentFilters?.ratings ? Math.max(...currentFilters.ratings) : undefined,
+          }, controller.signal)
+        ]);
 
-            // Fetch companies for this category
-            const providersResponse = await apiService.getProviders({ category_slug: slug });
-            if (isMounted) {
-              setCompanies(providersResponse.providers.map(mapProviderToCompany));
-            }
+        if (reqId !== lastReqId.current) {
+          return;
+        }
+
+        setError(null);
+
+        if (fetchedCategory) {
+          setCategory(fetchedCategory);
+          document.title = `${fetchedCategory.name} | SolarFinder`;
+          let metaDescription = document.querySelector('meta[name="description"]');
+          if (!metaDescription) {
+            metaDescription = document.createElement('meta');
+            metaDescription.setAttribute('name', 'description');
+            document.head.appendChild(metaDescription);
+          }
+          if (fetchedCategory.description) {
+            metaDescription.setAttribute('content', fetchedCategory.description);
           }
         } else {
-          if (isMounted) {
-            setError('Categoria não encontrada');
-            setCategory(null);
-          }
-        }
-      } catch (error: any) {
-        console.error('Error fetching category or companies:', error);
-        if (isMounted) {
-          setError(error.message);
+          setError('Categoria não encontrada');
           setCategory(null);
-          setCompanies([]); // Clear companies on error
         }
+
+        if (providersResponse) {
+          setCompanies(providersResponse.providers.map(mapProviderToCompany));
+          setTotalCompanies(providersResponse.total);
+        }
+
+      } catch (err: any) {
+        if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+          return;
+        }
+        if (reqId !== lastReqId.current) {
+          return;
+        }
+        console.error('Falha ao carregar categoria/provedores:', err);
+        setError('Falha ao carregar dados. Tente novamente.');
+        setCategory(null);
+        setCompanies([]);
       } finally {
-        if (isMounted) {
+        if (reqId === lastReqId.current) {
           setLoading(false);
         }
       }
@@ -139,9 +180,9 @@ function EnhancedCategoryPage() {
     fetchData();
 
     return () => {
-      isMounted = false;
+      controller.abort();
     };
-  }, [slug]);
+  }, [slug, filtersKey, mapProviderToCompany]);
 
 
 
@@ -209,90 +250,79 @@ function EnhancedCategoryPage() {
 
       {/* Hero Section */}
       <CategoryHero
-        categoryName={category.name}
-        categoryDescription={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
-        companyCount={0}
+        title={category.name}
+        subtitle={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
+        countBadge={totalCompanies > 0 ? `${totalCompanies} empresas encontradas` : 'Nenhuma empresa encontrada'}
+        backgroundImageUrl={category.banner_image_url}
       />
 
-      {/* Companies Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          {Array.isArray(companies) && companies.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {companies.map((company) => (
-                <CompanyCard key={company.id} company={company} />
-              ))}
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Sidebar com filtros */}
+          <aside className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <AdvancedSearch
+                onSearch={handleSearch}
+                onClear={handleClearFilters}
+                isLoading={loading}
+                resultsCount={totalCompanies}
+              />
             </div>
-          ) : (
-            <Card className="max-w-4xl mx-auto border-2 border-dashed border-blue-200 bg-blue-50">
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="bg-blue-100 p-3 rounded-full">
-                    <Users className="h-8 w-8 text-blue-600" />
-                  </div>
+          </aside>
+
+          {/* Lista de resultados */}
+          <main className="lg:col-span-9 space-y-6">
+            {/* Companies Section */}
+            <section>
+              {Array.isArray(companies) && companies.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {companies.map((company) => (
+                    <CompanyCard key={company.id} company={company} />
+                  ))}
                 </div>
-                <CardTitle className="text-2xl text-gray-800">
-                  Ainda não há empresas listadas nesta categoria
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-gray-600 mb-6">
-                  Seja o pioneiro! Cadastre sua empresa e ajude a construir esta comunidade.
-                </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Button 
-                    size="lg" 
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => navigate('/empresa/cadastro')}
-                  >
-                    Cadastrar empresa
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    onClick={() => navigate('/categorias')}
-                  >
-                    Explorar outras categorias
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <Card className="max-w-4xl mx-auto border-2 border-dashed border-blue-200 bg-blue-50">
+                  <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <Users className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </div>
+                    <CardTitle className="text-2xl text-gray-800">
+                      Ainda não há empresas listadas nesta categoria
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-gray-600 mb-6">
+                      Seja o pioneiro! Cadastre sua empresa e ajude a construir esta comunidade.
+                    </p>
+                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                      <Button 
+                        size="lg" 
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => navigate('/empresa/cadastro')}
+                      >
+                        Cadastrar empresa
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={() => navigate('/categorias')}
+                      >
+                        Explorar outras categorias
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </section>
+          </main>
         </div>
-      </section>
+      </div>
 
-      {/* Educational Content */}
-      <EducationalContent />
 
-      {/* Popular Categories Section */}
-      <PopularCategories />
 
-      {/* CTA Section */}
-      <section className="py-16 bg-blue-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para fazer parte desta comunidade?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Cadastre sua empresa de {category.name.toLowerCase()} e conecte-se com clientes interessados em soluções sustentáveis.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button 
-              size="lg" 
-              className="bg-white text-blue-700 hover:bg-blue-50"
-              onClick={() => navigate('/empresa/cadastro')}
-            >
-              Cadastrar empresa agora
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-white text-white hover:bg-blue-600"
-            >
-              <BookOpen className="mr-2 h-5 w-5" />
-              Acessar recursos educacionais
-            </Button>
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 }

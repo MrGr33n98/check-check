@@ -3,13 +3,13 @@ class Api::V1::CategoriesController < Api::V1::BaseController
   
   # GET /api/v1/categories
   def index
-    @categories = Category.where(active: true)
+    @categories = Category.where(active: true, parent_id: nil)
     if params[:featured].present?
       @categories = @categories.where(featured: params[:featured])
     end
     @categories = @categories.order(:name)
     
-    render json: @categories
+    render json: @categories.as_json(include: { children: { include: :children } })
   end
   
   # GET /api/v1/categories/:id

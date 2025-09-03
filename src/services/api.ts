@@ -5,6 +5,8 @@ export interface Category {
   description?: string;
   featured?: boolean;
   image_url?: string;
+  banner_image_url?: string;
+  children?: Category[];
 }
 
 export interface Provider {
@@ -46,13 +48,27 @@ export interface ApiResponse<T> {
 }
 
 class ApiService {
-  async getCategories(): Promise<Category[]> {
-    return this.getMockCategories();
+  async getCategories(signal?: AbortSignal): Promise<Category[]> {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, { signal });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // The API might return the data nested, e.g., { data: [...] }. Adjust if needed.
+      return Array.isArray(data) ? data : [];
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw error;
+      }
+      console.error("Error fetching categories:", error);
+      return []; // Return empty array on other errors
+    }
   }
 
-  async getCategoryBySlug(slug: string): Promise<Category | null> {
+  async getCategoryBySlug(slug: string, signal?: AbortSignal): Promise<Category | null> {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${slug}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${slug}`, { signal });
       if (!response.ok) {
         if (response.status === 404) {
           return null; // Category not found
@@ -61,9 +77,12 @@ class ApiService {
       }
       const data = await response.json();
       return data; // Assuming the backend returns the category object directly
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw error; // Re-throw abort errors so the calling component can handle them
+      }
       console.error("Error fetching category by slug:", error);
-      return null;
+      throw error; // Re-throw other errors as well
     }
   }
 
@@ -73,7 +92,7 @@ class ApiService {
     sort_by?: 'rating' | 'capacity' | 'reviews';
     limit?: number;
     page?: number;
-  }): Promise<ProvidersResponse> {
+  }, signal?: AbortSignal): Promise<ProvidersResponse> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.category_id) queryParams.append('category_id', params.category_id.toString());
@@ -82,7 +101,7 @@ class ApiService {
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.page) queryParams.append('page', params.page.toString());
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/search?${queryParams.toString()}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/search?${queryParams.toString()}`, { signal });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -94,9 +113,12 @@ class ApiService {
         per_page: data.pagination?.per_page || 0,
         total_pages: data.pagination?.total_pages || 0,
       };
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        throw error; // Re-throw abort errors
+      }
       console.error("Error fetching providers:", error);
-      return { providers: [], total: 0, page: 1, per_page: 0, total_pages: 0 };
+      throw error; // Re-throw other errors
     }
   }
 

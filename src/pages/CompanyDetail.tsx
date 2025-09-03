@@ -14,7 +14,7 @@ import companyService, { type Company, type Review, type Content, type Badge as 
 const CompanyDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [company, setCompany] = useState<Company | null>(null)
+  const [company, setCompany] = useState<(Company & { website?: string }) | null>(null)
   const [reviews, setReviews] = useState<Review[]>([])
   const [content, setContent] = useState<Content[]>([])
   const [badges, setBadges] = useState<BadgeType[]>([])
@@ -223,7 +223,7 @@ const CompanyDetail: React.FC = () => {
 
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-2">
-                        <StarRating rating={company.rating} size="sm" />
+                        <StarRating rating={company.rating ?? 0} size="sm" />
                         <span className="text-sm text-muted-foreground">
                           ({company.review_count} avaliações)
                         </span>
@@ -309,7 +309,7 @@ const CompanyDetail: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Avaliação Média</span>
-                    <span className="font-medium">{company.rating.toFixed(1)}/5.0</span>
+                    <span className="font-medium">{(company.rating ?? 0).toFixed(1)}/5.0</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Total de Avaliações</span>
