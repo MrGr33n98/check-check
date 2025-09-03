@@ -51,8 +51,20 @@ class ApiService {
   }
 
   async getCategoryBySlug(slug: string): Promise<Category | null> {
-    const mockCategories = this.getMockCategories();
-    return mockCategories.find(category => category.slug === slug) || null;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${slug}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null; // Category not found
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data; // Assuming the backend returns the category object directly
+    } catch (error) {
+      console.error("Error fetching category by slug:", error);
+      return null;
+    }
   }
 
   async getProviders(params?: {
@@ -62,7 +74,24 @@ class ApiService {
     limit?: number;
     page?: number;
   }): Promise<ProvidersResponse> {
-    return this.getMockProviders(params);
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.category_id) queryParams.append('category_id', params.category_id.toString());
+      if (params?.category_slug) queryParams.append('category_slug', params.category_slug);
+      if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+      if (params?.limit) queryParams.append('limit', params.limit.toString());
+      if (params?.page) queryParams.append('page', params.page.toString());
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/search?${queryParams.toString()}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data; // Assuming backend returns { providers: [], total: ..., page: ..., etc. }
+    } catch (error) {
+      console.error("Error fetching providers:", error);
+      return { providers: [], total: 0, page: 1, per_page: 0, total_pages: 0 };
+    }
   }
 
   async getProviderBySlug(slug: string): Promise<Provider | null> {

@@ -23,4 +23,26 @@ class Category < ApplicationRecord
   def self.ransackable_attributes(auth_object = nil)
     ["created_at", "id", "name", "slug", "updated_at"]
   end
+
+  def as_json(options = {})
+    super({
+      methods: [:photo_url, :banner_image_url]
+    }.merge(options))
+  end
+
+  def photo_url
+    if photo.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(photo, only_path: false)
+    else
+      nil
+    end
+  end
+
+  def banner_image_url
+    if banner_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(banner_image, only_path: false)
+    else
+      nil
+    end
+  end
 end

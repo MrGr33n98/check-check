@@ -2,21 +2,29 @@ import { Link } from 'react-router-dom';
 import { Star, MapPin, Phone, Mail, ArrowRight } from 'lucide-react';
 
 interface Company {
-  id: string;
+  id: number;
   name: string;
   location: string;
   rating: number;
-  price: number;
+  reviewCount: number;
   experience: string;
-  certifications: string[];
   services: string[];
-  bannerImage?: string;
-  logo?: string;
-  image: string;
+  certifications: string[];
+  priceRange: [number, number];
+  phone: string;
+  website: string;
+  description: string;
+  image: string; // This is the logo_url from backend
+  bannerImage?: string; // This is the banner_image_url from backend
+  // Additional fields from backend that might be useful for CompanyCard
   foundedYear?: number;
-  installedMW?: number;
+  installed_capacity_mw?: number; // Renamed from installedMW to match backend
   specialties?: string[];
-  verified?: boolean;
+  status?: string;
+  premium?: boolean;
+  social_links?: string[];
+  tags?: string[];
+  slug?: string;
 }
 
 interface Props {
@@ -112,9 +120,9 @@ export const CompanyCard = ({ company }: Props) => {
               <div className="flex items-center gap-2 text-gray-600">
                 <span>{company.certifications.length} certificações</span>
               </div>
-              {company.installedMW && (
+              {company.installed_capacity_mw && (
                 <div className="flex items-center gap-2 text-gray-600">
-                  <span>{company.installedMW} MW instalados</span>
+                  <span>{company.installed_capacity_mw} MW instalados</span>
                 </div>
               )}
               {company.specialties && (
