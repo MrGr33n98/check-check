@@ -45,6 +45,7 @@ interface CompanyForCard {
   verified?: boolean;
   price: number;
   premium_effect_active?: boolean;
+  slug: string; // Added
 }
 
 function EnhancedCategoryPage() {
@@ -90,6 +91,7 @@ function EnhancedCategoryPage() {
       verified: provider.status === 'active' && provider.premium, // Example logic for verified
       price: provider.price || 0,
       premium_effect_active: provider.premium_effect_active, // New field
+      slug: provider.slug, // Added
     };
   }, []);
 
@@ -191,7 +193,7 @@ function EnhancedCategoryPage() {
     return () => {
       controller.abort();
     };
-  }, [slug, filtersKey, mapProviderToCompany]);
+  }, [slug, filtersKey, mapProviderToCompany, currentFilters?.certifications, currentFilters?.experience, currentFilters?.ratings]);
 
 
 

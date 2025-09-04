@@ -20,6 +20,7 @@ interface Company {
   installed_capacity_mw?: number;
   specialties?: string[];
   premium_effect_active?: boolean;
+  slug: string; // Added
 }
 
 interface Props {
@@ -189,21 +190,31 @@ export const CompanyCard = ({ company }: Props) => {
         </div>
 
         {/* Ações */}
-        <div className="flex items-stretch justify-start gap-2 pt-2 border-t border-slate-200 overflow-x-auto">
+        <div className="flex flex-col items-center justify-center pt-2 border-t border-slate-200">
+          <div className="flex items-stretch justify-center gap-2 w-full">
+            <Link
+              to={`/company/${company.id}`}
+              className="flex-1 inline-flex items-center justify-center whitespace-nowrap bg-white border border-slate-300 text-slate-800 h-9 text-xs hover:bg-slate-50 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              aria-label="Perfil da empresa"
+            >
+              Perfil da empresa
+            </Link>
+            <Link
+              to={`/company/${company.id}/quote`}
+              className="flex-1 inline-flex items-center justify-center whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs shadow-sm rounded-md px-3 py-1 gap-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              aria-label={`Solicitar orçamento para ${company.name}`}
+            >
+              Solicitar Orçamento
+              <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+            </Link>
+          </div>
           <Link
-            to={`/company/${company.id}`}
-            className="order-2 sm:order-1 inline-flex items-center justify-center whitespace-nowrap bg-white border border-slate-300 text-slate-800 h-9 text-xs hover:bg-slate-50 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-slate-300"
-            aria-label="Perfil da empresa"
+            to={`/empresas/${company.slug}/avaliar`}
+            className="w-full inline-flex items-center justify-center whitespace-nowrap bg-white border border-slate-300 text-slate-800 h-9 text-xs hover:bg-slate-50 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-slate-300 mt-2"
+            aria-label={`Avaliar a empresa ${company.name}`}
           >
-            Perfil da empresa
-          </Link>
-          <Link
-            to={`/company/${company.id}/quote`}
-            className="order-1 sm:order-2 inline-flex items-center justify-center whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs shadow-sm rounded-md px-3 py-1 gap-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            aria-label={`Solicitar orçamento para ${company.name}`}
-          >
-            Solicitar Orçamento
-            <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <Star className="w-4 h-4 mr-1" />
+            Avalie esta empresa
           </Link>
         </div>
       </div>
