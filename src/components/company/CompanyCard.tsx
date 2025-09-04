@@ -189,17 +189,17 @@ export const CompanyCard = ({ company }: Props) => {
         </div>
 
         {/* Ações */}
-        <div className="flex flex-col sm:flex-row items-stretch justify-between gap-2 pt-4 border-t border-gray-100">
+        <div className="flex flex-col sm:flex-row items-stretch justify-between gap-1 pt-2 border-t border-gray-100">
           <Link
             to={`/company/${company.id}`}
-            className="order-2 sm:order-1 border border-gray-300 text-gray-800 text-sm hover:bg-gray-50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            className="order-2 sm:order-1 border border-gray-300 text-gray-800 h-10 sm:h-9 text-sm sm:text-xs hover:bg-gray-50 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300"
             aria-label="Perfil da empresa"
           >
             Perfil da empresa
           </Link>
           <Link
             to={`/company/${company.id}/quote`}
-            className="order-1 sm:order-2 bg-blue-600 hover:bg-blue-700 text-white text-sm shadow-sm px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="order-1 sm:order-2 bg-blue-600 hover:bg-blue-700 text-white h-10 sm:h-9 text-sm sm:text-xs shadow-sm rounded-md px-3 py-1 gap-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
             aria-label={`Solicitar orçamento para ${company.name}`}
           >
             Solicitar Orçamento
