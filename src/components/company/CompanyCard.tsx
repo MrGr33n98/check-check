@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Star, MapPin, Phone, Globe, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Company {
   id: number;
@@ -18,6 +19,7 @@ interface Company {
   foundedYear?: number;
   installed_capacity_mw?: number;
   specialties?: string[];
+  premium_effect_active?: boolean;
 }
 
 interface Props {
@@ -28,7 +30,11 @@ export const CompanyCard = ({ company }: Props) => {
 
   return (
     <article
-      className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col h-full group focus-within:ring-2 focus-within:ring-blue-500"
+      className={cn(
+        "bg-white rounded-xl shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col h-full group focus-within:ring-2 focus-within:ring-blue-500",
+        company.premium_effect_active && "relative overflow-hidden p-0.5 before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r before:from-blue-400 before:via-blue-500 before:to-blue-600 before:animate-spin-slow before:z-0",
+        company.premium_effect_active && "after:absolute after:inset-[2px] after:bg-white after:rounded-xl after:z-10"
+      )}
       aria-label={`Card da empresa ${company.name}`}
       itemScope
       itemType="https://schema.org/LocalBusiness"
@@ -39,7 +45,7 @@ export const CompanyCard = ({ company }: Props) => {
       {company.location && <meta itemProp="address" content={company.location} />}
 
       {/* Banner */}
-      <div className="relative h-20 w-full bg-gradient-to-r from-blue-50 to-blue-100 overflow-visible">
+      <div className="relative h-20 w-full bg-gradient-to-r from-blue-50 to-blue-100 overflow-visible z-20">
         {company.bannerImage ? (
           <img
             src={company.bannerImage}
@@ -75,7 +81,7 @@ export const CompanyCard = ({ company }: Props) => {
       </div>
 
       {/* Conteúdo */}
-      <div className="pt-12 px-4 pb-4 flex-grow flex flex-col">
+      <div className="pt-12 px-4 pb-4 flex-grow flex flex-col relative z-20">
         {/* Título, localização, rating */}
         <div className="mb-2">
           <h2 className="text-lg font-bold text-gray-900 truncate" title={company.name} itemProp="name">

@@ -45,6 +45,8 @@ interface CompanyForCard {
   installed_capacity_mw?: number;
   specialties?: string[];
   verified?: boolean;
+  price: number;
+  premium_effect_active?: boolean;
 }
 
 function EnhancedCategoryPage() {
@@ -88,6 +90,8 @@ function EnhancedCategoryPage() {
       installed_capacity_mw: provider.installed_capacity_mw,
       specialties: provider.specialties,
       verified: provider.status === 'active' && provider.premium, // Example logic for verified
+      price: provider.price || 0,
+      premium_effect_active: provider.premium_effect_active, // New field
     };
   }, []);
 
@@ -158,26 +162,35 @@ function EnhancedCategoryPage() {
           setCompanies(providersResponse.providers.map(mapProviderToCompany));
           setTotalCompanies(providersResponse.total);
         }
+        setLoading(false);
 
       } catch (err: any) {
         if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
-          return;
+          if (reqId === lastReqId.current) {
+            setLoading(false);
+          }
+          return Promise.resolve(); // Explicitly return a resolved promise
         }
-        if (reqId !== lastReqId.current) {
-          return;
-        }
-        console.error('Falha ao carregar categoria/provedores:', err);
-        setError('Falha ao carregar dados. Tente novamente.');
-        setCategory(null);
-        setCompanies([]);
-      } finally {
+
         if (reqId === lastReqId.current) {
+          console.error('Falha ao carregar categoria/provedores:', err);
+          setError('Falha ao carregar dados. Tente novamente.');
+          setCategory(null);
+          setCompanies([]);
           setLoading(false);
         }
       }
     };
 
-    fetchData();
+    (async () => {
+      try {
+        await fetchData();
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error("Unexpected error in useEffect's outer catch:", error);
+        }
+      }
+    })();
 
     return () => {
       controller.abort();

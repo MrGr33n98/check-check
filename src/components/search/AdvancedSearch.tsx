@@ -143,14 +143,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Busca automática quando filtros mudam (evita depender de onSearch para não entrar em loop)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      onSearchRef.current?.(filters);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [filters]);
+  
 
   const handleLocationSearch = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, location: value }));
