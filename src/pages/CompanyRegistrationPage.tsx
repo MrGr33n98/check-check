@@ -20,6 +20,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
 import { CompanyRegistrationFormData } from '../data/types';
 
+// safeTrim utility
+const safeTrim = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+
 const CompanyRegistrationPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -207,6 +210,36 @@ const CompanyRegistrationPage: React.FC = () => {
     { value: 'TO', label: 'Tocantins' }
   ];
 
+  const citiesByState: Record<string, string[]> = {
+    'AC': ['Rio Branco', 'Cruzeiro do Sul'],
+    'AL': ['Maceió', 'Arapiraca'],
+    'AP': ['Macapá', 'Santana'],
+    'AM': ['Manaus', 'Parintins'],
+    'BA': ['Salvador', 'Feira de Santana'],
+    'CE': ['Fortaleza', 'Caucaia'],
+    'DF': ['Brasília'],
+    'ES': ['Vitória', 'Vila Velha'],
+    'GO': ['Goiânia', 'Aparecida de Goiânia'],
+    'MA': ['São Luís', 'Imperatriz'],
+    'MT': ['Cuiabá', 'Várzea Grande'],
+    'MS': ['Campo Grande', 'Dourados'],
+    'MG': ['Belo Horizonte', 'Uberlândia'],
+    'PA': ['Belém', 'Ananindeua'],
+    'PB': ['João Pessoa', 'Campina Grande'],
+    'PR': ['Curitiba', 'Londrina'],
+    'PE': ['Recife', 'Jaboatão dos Guararapes'],
+    'PI': ['Teresina', 'Parnaíba'],
+    'RJ': ['Rio de Janeiro', 'São Gonçalo'],
+    'RN': ['Natal', 'Mossoró'],
+    'RS': ['Porto Alegre', 'Caxias do Sul'],
+    'RO': ['Porto Velho', 'Ji-Paraná'],
+    'RR': ['Boa Vista'],
+    'SC': ['Florianópolis', 'Joinville'],
+    'SP': ['São Paulo', 'Guarulhos'],
+    'SE': ['Aracaju', 'Nossa Senhora do Socorro'],
+    'TO': ['Palmas', 'Araguaína'],
+  };
+
   const handleNestedInputChange = (parentField: keyof CompanyRegistrationFormData, childField: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -346,42 +379,42 @@ const CompanyRegistrationPage: React.FC = () => {
     
     switch (step) {
       case 1:
-        if (!formData.userName.trim()) errors.userName = 'Seu nome é obrigatório';
-        if (!formData.userEmail.trim()) errors.userEmail = 'Seu e-mail é obrigatório';
+        if (!safeTrim(formData.userName)) errors.userName = 'Seu nome é obrigatório';
+        if (!safeTrim(formData.userEmail)) errors.userEmail = 'Seu e-mail é obrigatório';
         else if (!/^[^
 @]+@[^
 @]+\.[^
-@]+$/.test(formData.userEmail)) errors.userEmail = 'E-mail inválido'; // Basic email regex
-        if (!password.trim()) errors.password = 'A senha é obrigatória';
+@]+$/.test(safeTrim(formData.userEmail))) errors.userEmail = 'E-mail inválido'; // Basic email regex
+        if (!safeTrim(password)) errors.password = 'A senha é obrigatória';
         else if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres'; // Minimum length
         else if (!/[A-Z]/.test(password)) errors.password = 'A senha deve conter pelo menos uma letra maiúscula';
         else if (!/[a-z]/.test(password)) errors.password = 'A senha deve conter pelo menos uma letra minúscula';
         else if (!/[0-9]/.test(password)) errors.password = 'A senha deve conter pelo menos um número';
         else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.password = 'A senha deve conter pelo menos um caractere especial';
 
-        if (!formData.userPasswordConfirmation.trim()) errors.userPasswordConfirmation = 'Confirme sua senha';
+        if (!safeTrim(formData.userPasswordConfirmation)) errors.userPasswordConfirmation = 'Confirme sua senha';
         else if (password !== formData.userPasswordConfirmation) errors.userPasswordConfirmation = 'As senhas não coincidem';
 
-        if (!formData.companyName.trim()) errors.companyName = 'Nome da empresa é obrigatório';
-        if (!formData.foundedYear.trim()) errors.foundedYear = 'Ano de fundação é obrigatório';
-        if (!formData.employeeCount.trim()) errors.employeeCount = 'Número de funcionários é obrigatório';
-        if (!formData.businessType.trim()) errors.businessType = 'Tipo de negócio é obrigatório';
-        if (!formData.description.trim()) errors.description = 'Descrição é obrigatória';
+        if (!safeTrim(formData.companyName)) errors.companyName = 'Nome da empresa é obrigatório';
+        if (!safeTrim(formData.foundedYear)) errors.foundedYear = 'Ano de fundação é obrigatório';
+        if (!safeTrim(formData.employeeCount)) errors.employeeCount = 'Número de funcionários é obrigatório';
+        if (!safeTrim(formData.businessType)) errors.businessType = 'Tipo de negócio é obrigatório';
+        if (!safeTrim(formData.description)) errors.description = 'Descrição é obrigatória';
         break;
       case 2:
-        if (!formData.address.trim()) errors.address = 'Endereço é obrigatório';
-        if (!formData.city.trim()) errors.city = 'Cidade é obrigatória';
-        if (!formData.state.trim()) errors.state = 'Estado é obrigatório';
-        if (!formData.zipCode.trim()) errors.zipCode = 'CEP é obrigatório';
-        if (!formData.email.trim()) errors.email = 'E-mail é obrigatório';
-        if (!formData.phone.trim()) errors.phone = 'Telefone é obrigatório';
+        if (!safeTrim(formData.address)) errors.address = 'Endereço é obrigatório';
+        if (!safeTrim(formData.city)) errors.city = 'Cidade é obrigatória';
+        if (!safeTrim(formData.state)) errors.state = 'Estado é obrigatório';
+        if (!safeTrim(formData.zipCode)) errors.zipCode = 'CEP é obrigatório';
+        if (!safeTrim(formData.email)) errors.email = 'E-mail é obrigatório';
+        if (!safeTrim(formData.phone)) errors.phone = 'Telefone é obrigatório';
         if (formData.serviceAreas.length === 0) errors.serviceAreas = 'Selecione pelo menos uma área de atendimento';
         break;
       case 3:
         if (formData.servicesOffered.length === 0) errors.servicesOffered = 'Selecione pelo menos um serviço oferecido';
-        if (!formData.experienceYears.trim()) errors.experienceYears = 'Anos de experiência é obrigatório';
-        if (!formData.projectsCompleted.trim()) errors.projectsCompleted = 'Número de projetos é obrigatório';
-        if (!formData.installedCapacityMW.trim()) errors.installedCapacityMW = 'Capacidade instalada é obrigatória';
+        if (!safeTrim(formData.experienceYears)) errors.experienceYears = 'Anos de experiência é obrigatório';
+        if (!safeTrim(formData.projectsCompleted)) errors.projectsCompleted = 'Número de projetos é obrigatório';
+        if (!safeTrim(formData.installedCapacityMW)) errors.installedCapacityMW = 'Capacidade instalada é obrigatória';
         if (formData.specialties.length === 0) errors.specialties = 'Selecione pelo menos uma especialidade';
         break;
       case 4:
@@ -448,7 +481,7 @@ const CompanyRegistrationPage: React.FC = () => {
       // CNPJ removed
       data.append('provider[employee_count]', formData.employeeCount);
       data.append('provider[city]', formData.city);
-      data.append('provider[state]', formData.state);
+      data.append('provider[state]', safeTrim(formData.state).toUpperCase());
       data.append('provider[zip_code]', formData.zipCode);
       data.append('provider[email]', formData.email); // Company email
       data.append('provider[website]', formData.website);
@@ -478,7 +511,15 @@ const CompanyRegistrationPage: React.FC = () => {
         body: data, // FormData will automatically set Content-Type to multipart/form-data
       });
 
-      if (!response.ok) {
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Company registration successful:', result);
+        setIsSubmitted(true);
+      } else if (response.status === 500) {
+        const errorText = await response.text();
+        console.error('Erro 500 do servidor:', errorText);
+        setErrorMessage('Erro interno do servidor. Tente novamente em alguns minutos.');
+      } else {
         let errorDetails = 'Erro desconhecido';
         const contentType = response.headers.get('content-type');
 
@@ -522,7 +563,8 @@ const CompanyRegistrationPage: React.FC = () => {
         navigate('/login');
       }
       
-    } catch (error) {
+    } catch (error: any) { // Add : any to error for type safety
+      if (error?.name === 'AbortError') return; // ignore AbortError
       console.error('Erro ao enviar cadastro:', error);
       setErrorMessage(`Erro ao enviar cadastro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {
@@ -789,9 +831,7 @@ const renderStep1 = () => (
             type="email"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.email ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.email ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="contato@empresa.com"
           />
           {validationErrors.email && (
@@ -810,9 +850,7 @@ const renderStep1 = () => (
             type="tel"
             value={formData.phone}
             onChange={(e) => handleInputChange('phone', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.phone ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.phone ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="(11) 99999-9999"
           />
           {validationErrors.phone && (
@@ -844,9 +882,7 @@ const renderStep1 = () => (
             type="text"
             value={formData.address}
             onChange={(e) => handleInputChange('address', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.address ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.address ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Rua, número, bairro"
           />
           {validationErrors.address && (
@@ -859,35 +895,15 @@ const renderStep1 = () => (
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Cidade *
-          </label>
-          <input
-            type="text"
-            value={formData.city}
-            onChange={(e) => handleInputChange('city', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.city ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="São Paulo"
-          />
-          {validationErrors.city && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
-              {validationErrors.city}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
             Estado *
           </label>
           <select
             value={formData.state}
-            onChange={(e) => handleInputChange('state', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.state ? 'border-red-500' : 'border-gray-300'
-            }`}
+            onChange={(e) => {
+              handleInputChange('state', e.target.value);
+              handleInputChange('city', ''); // Clear city when state changes
+            }}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.state ? 'border-red-500' : 'border-gray-300'}`}
           >
             <option value="">Selecione o estado</option>
             {stateOptions.map((state) => (
@@ -904,7 +920,32 @@ const renderStep1 = () => (
           )}
         </div>
 
-                <div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Cidade *
+          </label>
+          <select
+            value={formData.city}
+            onChange={(e) => handleInputChange('city', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.city ? 'border-red-500' : 'border-gray-300'}`}
+            disabled={!formData.state} // Disable city selection until state is chosen
+          >
+            <option value="">Selecione a cidade</option>
+            {formData.state && citiesByState[formData.state] && citiesByState[formData.state].map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {validationErrors.city && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.city}
+            </p>
+          )}
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             CEP *
           </label>
@@ -912,9 +953,7 @@ const renderStep1 = () => (
             type="text"
             value={formData.zipCode}
             onChange={(e) => handleInputChange('zipCode', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.zipCode ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.zipCode ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="00000-000"
           />
           {validationErrors.zipCode && (
