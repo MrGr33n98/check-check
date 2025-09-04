@@ -208,6 +208,9 @@ const CompanyRegistrationPage = () => {
       data.append(`portfolio_images[${index}]`, image);
     });
 
+    console.log('Frontend formData.city:', formData.city);
+    console.log('Frontend formData.state:', formData.state);
+
     try {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
