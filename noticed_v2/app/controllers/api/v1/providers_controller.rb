@@ -176,10 +176,6 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   end
 
   def create
-    Rails.logger.debug "Received provider params: #{params[:provider].inspect}"
-    Rails.logger.debug "City from params: #{params[:provider][:city].inspect}"
-    Rails.logger.debug "State from params: #{params[:provider][:state].inspect}"
-
     # Existing params processing
     provider_params_with_tags = provider_params.except(
       :employee_count, :city, :state, :zip_code, :email, :website,
