@@ -27,6 +27,13 @@ const CompanyRegistrationPage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Informações básicas
+    // Informações do Usuário
+    userName: '',
+    userEmail: '',
+    userPassword: '',
+    userPasswordConfirmation: '',
+
+    // Informações básicas
     companyName: '',
     description: '',
     foundedYear: '',
@@ -117,7 +124,16 @@ const CompanyRegistrationPage = () => {
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        return formData.companyName && formData.description && formData.foundedYear;
+        return (
+          formData.userName &&
+          formData.userEmail &&
+          formData.userPassword &&
+          formData.userPasswordConfirmation &&
+          formData.userPassword === formData.userPasswordConfirmation && // Password confirmation
+          formData.companyName &&
+          formData.description &&
+          formData.foundedYear
+        );
       case 2:
         return formData.address && formData.city && formData.state && formData.phone && formData.email;
       case 3:
@@ -153,12 +169,67 @@ const CompanyRegistrationPage = () => {
 
     setIsSubmitting(true);
 
-    // Simular envio
-    setTimeout(() => {
-      console.log('Company registration submitted:', formData);
-      setIsSubmitted(true);
+    const apiEndpoint = '/api/v1/providers';
+    const data = new FormData();
+
+    // Append user data
+    data.append('user[name]', formData.userName);
+    data.append('user[email]', formData.userEmail);
+    data.append('user[password]', formData.userPassword);
+    data.append('user[password_confirmation]', formData.userPasswordConfirmation);
+
+    // Append provider data
+    data.append('provider[name]', formData.companyName);
+    data.append('provider[short_description]', formData.description);
+    data.append('provider[foundation_year]', formData.foundedYear);
+    data.append('provider[employee_count]', formData.employeeCount);
+    data.append('provider[address]', formData.address);
+    data.append('provider[city]', formData.city);
+    data.append('provider[state]', formData.state);
+    data.append('provider[zip_code]', formData.zipCode);
+    data.append('provider[phone]', formData.phone);
+    data.append('provider[email]', formData.email); // Company email
+    data.append('provider[website]', formData.website);
+    data.append('provider[installed_capacity_mw]', formData.installedCapacity);
+
+    // Append array fields
+    formData.serviceAreas.forEach(area => data.append('provider[service_areas][]', area));
+    formData.specialties.forEach(specialty => data.append('provider[specialties][]', specialty));
+    formData.certifications.forEach(cert => data.append('provider[certifications][]', cert));
+
+    // Append file fields
+    if (formData.logo) {
+      data.append('logo', formData.logo);
+    }
+    if (formData.coverImage) {
+      data.append('cover_image', formData.coverImage);
+    }
+    formData.portfolioImages.forEach((image, index) => {
+      data.append(`portfolio_images[${index}]`, image);
+    });
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        body: data,
+        // Headers are not needed for FormData with file uploads, fetch sets it automatically
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Company registration successful:', result);
+        setIsSubmitted(true);
+      } else {
+        const errorData = await response.json();
+        console.error('Company registration failed:', errorData);
+        alert(`Erro ao cadastrar empresa: ${JSON.stringify(errorData.errors || errorData)}`);
+      }
+    } catch (error) {
+      console.error('Network error during company registration:', error);
+      alert('Erro de rede ao cadastrar empresa. Tente novamente.');
+    } finally {
       setIsSubmitting(false);
-    }, 2000);
+    }
   };
 
   if (isSubmitted) {
@@ -200,6 +271,54 @@ const CompanyRegistrationPage = () => {
       case 1:
         return (
           <div className="space-y-4">
+            {/* User Information */}
+            <div>
+              <Label htmlFor="userName">Seu Nome Completo *</Label>
+              <Input
+                id="userName"
+                placeholder="Seu nome"
+                value={formData.userName}
+                onChange={(e) => handleInputChange('userName', e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="userEmail">Seu Email *</Label>
+              <Input
+                id="userEmail"
+                type="email"
+                placeholder="seu.email@example.com"
+                value={formData.userEmail}
+                onChange={(e) => handleInputChange('userEmail', e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="userPassword">Senha *</Label>
+                <Input
+                  id="userPassword"
+                  type="password"
+                  placeholder="********"
+                  value={formData.userPassword}
+                  onChange={(e) => handleInputChange('userPassword', e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="userPasswordConfirmation">Confirme a Senha *</Label>
+                <Input
+                  id="userPasswordConfirmation"
+                  type="password"
+                  placeholder="********"
+                  value={formData.userPasswordConfirmation}
+                  onChange={(e) => handleInputChange('userPasswordConfirmation', e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Company Information */}
             <div>
               <Label htmlFor="companyName">Nome da Empresa *</Label>
               <Input
