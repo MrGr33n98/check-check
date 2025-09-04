@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_03_232709) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -552,6 +552,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
     t.string "banner_image"
     t.string "city"
     t.string "state"
+    t.boolean "premium_effect_active", default: false
     t.index ["approved_by_id"], name: "index_providers_on_approved_by_id"
     t.index ["city"], name: "index_providers_on_city"
     t.index ["country"], name: "index_providers_on_country"

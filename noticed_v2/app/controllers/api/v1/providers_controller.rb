@@ -2,7 +2,10 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   # GET /api/v1/providers
   def index
     Rails.logger.info('API::V1::ProvidersController#index called')
-    @providers = Provider.active.includes(:categories)
+    @providers = Provider.active.includes(:categories, :solutions => :reviews)
+                         .with_attached_logo
+                         .with_attached_cover_image
+                         .with_attached_banner_image
     
     # Filter by category
     if params[:category_id].present?
@@ -41,7 +44,10 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   # GET /api/v1/providers/search
   def search
     Rails.logger.info('API::V1::ProvidersController#search called')
-    @providers = Provider.active.includes(:categories)
+    @providers = Provider.active.includes(:categories, :solutions => :reviews)
+                         .with_attached_logo
+                         .with_attached_cover_image
+                         .with_attached_banner_image
 
     # Search by location (city, state, or address)
     if params[:location].present?
@@ -275,6 +281,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       members_count: provider.members_count,
       status: provider.status,
       premium: provider.premium?,
+      premium_effect_active: provider.premium_effect_active,
       tags: provider.tags,
       social_links: provider.social_links,
       categories: provider.categories.map { |cat| { id: cat.id, name: cat.name, slug: cat.slug } },

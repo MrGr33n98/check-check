@@ -22,6 +22,7 @@ export interface Provider {
   members_count?: number;
   status: string;
   premium: boolean;
+  premium_effect_active?: boolean;
   tags: string[];
   social_links?: any;
   categories: Category[];

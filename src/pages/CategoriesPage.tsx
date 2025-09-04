@@ -125,8 +125,8 @@ function CategoriesPage() {
   });
 
   useEffect(() => {
-    let isMounted = true;
-    const abortController = new AbortController();
+    const controller = new AbortController();
+    let active = true;
 
     // SEO
     document.title = "Todas as Categorias de Energia Solar | SolarFinder";
@@ -138,77 +138,64 @@ function CategoriesPage() {
     }
     metaDescription.setAttribute('content', "Explore empresas por segmento do setor solar. Encontre empresas especializadas em geração, eficiência energética, armazenamento e muito mais.");
 
-    // Buscar categorias reais da API (ActiveAdmin configurável via banner_image)
-    const fetchCategories = async () => {
+    (async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/v1/categories', { signal: abortController.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const apiData: ApiCategory[] = await res.json();
-        
-        if (!Array.isArray(apiData)) throw new Error('Formato inesperado: a resposta da API não é um array.');
+        const [categoriesRes, heroRes] = await Promise.all([
+          fetch('/api/v1/categories', { signal: controller.signal }),
+          fetch('/api/v1/promotional_banners/by_position/categories_hero', { signal: controller.signal })
+        ]);
 
-        if (isMounted) {
-          const mappedData: Category[] = apiData.map(c => ({
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            description: c.description || '',
-            featured: c.featured || false,
-            banner_image_url: c.banner_image_url
-          }));
+        if (!active || controller.signal.aborted) return; // Ignore if component unmounted or request aborted
 
-          setCategories(mappedData.length > 0 ? mappedData : mockCategories);
-        }
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          console.log('Fetch de categorias abortado');
-        } else {
-          console.warn('Falha ao carregar categorias da API, usando mock:', err);
-          if (isMounted) {
-            setCategories(mockCategories);
+        // Process categories response
+        if (!categoriesRes.ok) throw new Error(`HTTP ${categoriesRes.status}`);
+        const apiCategories: ApiCategory[] = await categoriesRes.json();
+        if (!Array.isArray(apiCategories)) throw new Error('Formato inesperado: a resposta da API não é um array.');
+        const mappedCategories: Category[] = apiCategories.map(c => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          description: c.description || '',
+          featured: c.featured || false,
+          banner_image_url: c.banner_image_url
+        }));
+        setCategories(mappedCategories.length > 0 ? mappedCategories : mockCategories);
+
+        // Process hero config response
+        if (heroRes.ok) {
+          const contentType = heroRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = await heroRes.json();
+            if (data && Array.isArray(data.data) && data.data.length > 0) {
+              const b = data.data[0];
+              setHero((prev) => ({
+                title: b.title || prev.title,
+                subtitle: b.description || prev.subtitle,
+                backgroundImage: b.image_url || prev.backgroundImage,
+              }));
+            }
           }
         }
+
+      } catch (err: any) {
+        // Silence AbortError
+        if (err instanceof DOMException && err.name === "AbortError") {
+          console.log('Fetch de categorias/hero abortado');
+          return;
+        }
+        console.warn('Falha ao carregar categorias/hero, usando mock:', err);
+        setCategories(mockCategories);
       } finally {
-        if (isMounted) {
+        if (active && !controller.signal.aborted) {
           setLoading(false);
         }
       }
-    };
+    })();
 
-    // Buscar configuração do hero via banner por posição (categories_hero)
-    const fetchHeroConfig = async () => {
-      try {
-        const res = await fetch('/api/v1/promotional_banners/by_position/categories_hero', { signal: abortController.signal });
-        if (!res.ok) return; // mantém default
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) return;
-        const data = await res.json();
-        if (data && Array.isArray(data.data) && data.data.length > 0) {
-          const b = data.data[0];
-          if (isMounted) {
-            setHero((prev) => ({
-              title: b.title || prev.title,
-              subtitle: b.description || prev.subtitle,
-              backgroundImage: b.image_url || prev.backgroundImage,
-            }));
-          }
-        }
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          console.log('Fetch de hero config abortado');
-        } else {
-          // silencioso: mantém default
-          console.warn('Hero config indisponível, usando padrão.', err);
-        }
-      }
-    };
-
-    fetchCategories();
-    fetchHeroConfig();
     return () => {
-      isMounted = false;
-      abortController.abort();
+      active = false;
+      controller.abort();
     };
   }, []);
 

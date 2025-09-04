@@ -4,7 +4,7 @@ ActiveAdmin.register Provider do
   permit_params :name, :seo_url, :title, :short_description, :country, :address, 
                 :phone, :members_count, :foundation_year, :premium_until, :revenue,
                 :status, :approval_notes, :logo, :cover_image, :banner_image, :city, :state,
-                social_links: [], tags: [], category_ids: [], subcategory_ids: []
+                :premium_effect_active, social_links: [], tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
   scope :all, default: true
@@ -56,6 +56,7 @@ ActiveAdmin.register Provider do
     column :premium? do |provider|
       status_tag(provider.premium? ? 'Premium' : 'Free', class: (provider.premium? ? 'ok' : ''))
     end
+    column :premium_effect_active
     column "Aprovado por" do |provider|
       provider.approved_by&.email if provider.approved_at
     end
@@ -114,6 +115,7 @@ ActiveAdmin.register Provider do
     
     f.inputs "Premium e Status" do
       f.input :premium_until, as: :datepicker, label: "Premium até"
+      f.input :premium_effect_active, as: :boolean, label: "Ativar Efeito Premium"
       if f.object.persisted?
         f.input :status, as: :select, collection: Provider.statuses.map { |k, v| [k.humanize, v] }, 
                 include_blank: false, label: "Status"

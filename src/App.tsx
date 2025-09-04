@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Outlet, RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import PageBackground from '@/components/ui/PageBackground';
 import EnhancedHomePage from '@/pages/EnhancedHomePage';
@@ -26,73 +25,76 @@ import LeadsManagementPage from '@/pages/LeadsManagementPage';
 import PendingApprovalPage from '@/pages/PendingApprovalPage';
 import BannerManager from '@/components/admin/BannerManager';
 
-function App() {
-  return (
-    <Router>
-      <PageBackground />
-      <Layout>
-        <Routes>
-          <Route path="/" element={<EnhancedHomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/categorias" element={<CategoriesPage />} />
-          <Route path="/categorias/:slug" element={<EnhancedCategoryPage />} />
-          <Route path="/company/:id" element={<CompanyDetail />} />
-          <Route path="/company/:companyId/reviews" element={<ReviewsPage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:id" element={<BlogArticlePage />} />
-          <Route path="/empresa/cadastro" element={<CompanyRegistrationPage />} />
-          <Route path="/busca-avancada" element={<SearchPage />} />
-          <Route path="/sobre" element={<AboutPage />} />
-          <Route path="/como-funciona" element={<HowItWorksPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/contato" element={<ContactPage />} />
-          <Route path="/privacidade" element={<PrivacyPolicyPage />} />
-          <Route path="/termos" element={<TermsOfServicePage />} />
-          <Route 
-            path="/empresa/dashboard" 
-            element={
-              <ProtectedRoute requiredRole="empresa">
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/empresa/analytics" 
-            element={
-              <ProtectedRoute requiredRole="empresa">
-                <AnalyticsDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/empresa/customizar" 
-            element={
-              <ProtectedRoute requiredRole="empresa">
-                <CompanyCustomizationPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/empresa/leads" 
-            element={
-              <ProtectedRoute requiredRole="empresa">
-                <LeadsManagementPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/empresa/pending" element={<PendingApprovalPage />} />
-          <Route 
-            path="/admin/banners" 
-            element={
-              <ProtectedRoute requiredRole="empresa">
-                <BannerManager />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </Layout>
-    </Router>
-  );
-}
-
-export default App;
+// Define routes as an array of objects
+export const routes: RouteObject[] = [
+  {
+    path: '/',
+    element: (
+      <>
+        <PageBackground />
+        <Layout>
+          <Outlet /> {/* This is where nested routes will render */}
+        </Layout>
+      </>
+    ),
+    children: [
+      { index: true, element: <EnhancedHomePage /> }, // Render EnhancedHomePage at the root path
+      { path: 'login', element: <LoginPage /> },
+      { path: 'categorias', element: <CategoriesPage /> },
+      { path: 'categorias/:slug', element: <EnhancedCategoryPage /> },
+      { path: 'company/:id', element: <CompanyDetail /> },
+      { path: 'company/:companyId/reviews', element: <ReviewsPage /> },
+      { path: 'blog', element: <BlogPage /> },
+      { path: 'blog/:id', element: <BlogArticlePage /> },
+      { path: 'empresa/cadastro', element: <CompanyRegistrationPage /> },
+      { path: 'busca-avancada', element: <SearchPage /> },
+      { path: 'sobre', element: <AboutPage /> },
+      { path: 'como-funciona', element: <HowItWorksPage /> },
+      { path: 'faq', element: <FAQPage /> },
+      { path: 'contato', element: <ContactPage /> },
+      { path: 'privacidade', element: <PrivacyPolicyPage /> },
+      { path: 'termos', element: <TermsOfServicePage /> },
+      {
+        path: 'empresa/dashboard',
+        element: (
+          <ProtectedRoute requiredRole="empresa">
+            <DashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'empresa/analytics',
+        element: (
+          <ProtectedRoute requiredRole="empresa">
+            <AnalyticsDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'empresa/customizar',
+        element: (
+          <ProtectedRoute requiredRole="empresa">
+            <CompanyCustomizationPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'empresa/leads',
+        element: (
+          <ProtectedRoute requiredRole="empresa">
+            <LeadsManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      { path: 'empresa/pending', element: <PendingApprovalPage /> },
+      {
+        path: 'admin/banners',
+        element: (
+          <ProtectedRoute requiredRole="empresa">
+            <BannerManager />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+];

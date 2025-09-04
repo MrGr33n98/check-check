@@ -114,14 +114,23 @@ const EnhancedHeader: React.FC = () => {
         };
 
         setCategories(mapApiData(apiCategories));
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error("Failed to fetch header categories:", error);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          return Promise.resolve(); // Explicitly return a resolved promise
         }
+        console.error("Failed to fetch header categories:", error);
       }
     };
 
-    fetchCategories();
+    (async () => {
+      try {
+        await fetchCategories();
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error("Unexpected error in useEffect's outer catch:", error);
+        }
+      }
+    })();
 
     return () => {
       controller.abort();
