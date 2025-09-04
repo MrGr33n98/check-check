@@ -37,11 +37,11 @@ const CompanyRegistrationPage: React.FC = () => {
     // User Information
     userName: '',
     userEmail: '',
-    userPassword: '',
     userPasswordConfirmation: '',
 
     // Company Information
     companyName: '',
+    cnpj: '', // Added
     foundedYear: '',
     employeeCount: '',
     businessType: '',
@@ -141,7 +141,7 @@ const CompanyRegistrationPage: React.FC = () => {
     'Outros'
   ];
 
-  const handleInputChange = (field: keyof CompanyRegistrationFormData, value: any) => {
+  const handleInputChange = (field: keyof CompanyRegistrationFormData, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -240,11 +240,11 @@ const CompanyRegistrationPage: React.FC = () => {
     'TO': ['Palmas', 'Araguaína'],
   };
 
-  const handleNestedInputChange = (parentField: keyof CompanyRegistrationFormData, childField: string, value: any) => {
+  const handleNestedInputChange = (parentField: keyof CompanyRegistrationFormData, childField: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [parentField]: {
-        ...(prev[parentField] as any),
+        ...(prev[parentField] as Record<string, unknown>),
         [childField]: value
       }
     }));
@@ -381,10 +381,7 @@ const CompanyRegistrationPage: React.FC = () => {
       case 1:
         if (!safeTrim(formData.userName)) errors.userName = 'Seu nome é obrigatório';
         if (!safeTrim(formData.userEmail)) errors.userEmail = 'Seu e-mail é obrigatório';
-        else if (!/^[^
-@]+@[^
-@]+\.[^
-@]+$/.test(safeTrim(formData.userEmail))) errors.userEmail = 'E-mail inválido'; // Basic email regex
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeTrim(formData.userEmail))) errors.userEmail = 'E-mail inválido'; // Basic email regex
         if (!safeTrim(password)) errors.password = 'A senha é obrigatória';
         else if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres'; // Minimum length
         else if (!/[A-Z]/.test(password)) errors.password = 'A senha deve conter pelo menos uma letra maiúscula';
@@ -514,7 +511,7 @@ const CompanyRegistrationPage: React.FC = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Company registration successful:', result);
-        setIsSubmitted(true);
+        setIsSubmitting(true);
       } else if (response.status === 500) {
         const errorText = await response.text();
         console.error('Erro 500 do servidor:', errorText);
@@ -563,8 +560,8 @@ const CompanyRegistrationPage: React.FC = () => {
         navigate('/login');
       }
       
-    } catch (error: any) { // Add : any to error for type safety
-      if (error?.name === 'AbortError') return; // ignore AbortError
+    } catch (error: unknown) { // Add : unknown to error for type safety
+      if (error instanceof Error && error.name === 'AbortError') return; // ignore AbortError
       console.error('Erro ao enviar cadastro:', error);
       setErrorMessage(`Erro ao enviar cadastro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     } finally {

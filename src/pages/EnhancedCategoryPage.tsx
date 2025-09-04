@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, BookOpen } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import EducationalContent from '@/components/ui/educational-content';
-import PopularCategories from '@/components/ui/popular-categories';
 import CategoryHero from '@/components/ui/category-hero';
 import { CompanyCard } from '@/components/company/CompanyCard';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
@@ -126,13 +124,11 @@ function EnhancedCategoryPage() {
           apiService.getCategoryBySlug(slug, controller.signal),
           apiService.getProviders({
             category_slug: slug,
-            query: currentFilters?.query,
-            location: currentFilters?.location,
-            services: currentFilters?.services?.join(','),
-            certifications: currentFilters?.certifications?.join(','),
-            experience: currentFilters?.experience?.join(','),
-            rating: currentFilters?.ratings ? Math.max(...currentFilters.ratings) : undefined,
-          }, controller.signal)
+            
+            
+            
+            
+            }, controller.signal)
         ]);
 
         if (reqId !== lastReqId.current) {
@@ -164,8 +160,8 @@ function EnhancedCategoryPage() {
         }
         setLoading(false);
 
-      } catch (err: any) {
-        if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+      } catch (err: unknown) {
+        if ((err instanceof DOMException && err.name === 'AbortError') || (err instanceof Error && 'code' in err && err.code === 'ERR_CANCELED')) {
           if (reqId === lastReqId.current) {
             setLoading(false);
           }
@@ -186,7 +182,7 @@ function EnhancedCategoryPage() {
       try {
         await fetchData();
       } catch (error) {
-        if (error.name !== 'AbortError') {
+        if (error instanceof Error && error.name !== 'AbortError') {
           console.error("Unexpected error in useEffect's outer catch:", error);
         }
       }

@@ -33,6 +33,8 @@ export interface Provider {
   installed_capacity_mw: number;
   location: string;
   specialties: string[];
+  banner_image_url?: string;
+  price?: number;
 }
 
 export interface ProvidersResponse {

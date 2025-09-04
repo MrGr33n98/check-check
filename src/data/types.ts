@@ -211,6 +211,9 @@ export interface CompanyProfile extends Company {
 
 // Interface for form data in CompanyRegistrationPage
 export interface CompanyRegistrationFormData {
+  userName: string;
+  userEmail: string;
+  userPasswordConfirmation: string;
   companyName: string;
   cnpj: string;
   foundedYear: string;

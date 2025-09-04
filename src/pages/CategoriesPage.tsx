@@ -178,7 +178,7 @@ function CategoriesPage() {
           }
         }
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Silence AbortError
         if (err instanceof DOMException && err.name === "AbortError") {
           console.log('Fetch de categorias/hero abortado');
