@@ -55,7 +55,6 @@ const CompanyRegistrationPage = () => {
     certifications: [],
     
     // Documentação
-    cnpj: '',
     stateRegistration: '',
     municipalRegistration: '',
     
@@ -139,7 +138,7 @@ const CompanyRegistrationPage = () => {
       case 3:
         return formData.installedCapacity && formData.serviceAreas.length > 0;
       case 4:
-        return formData.cnpj;
+        return true; // CNPJ is removed, so this step is always valid
       case 5:
         return true; // Mídia é opcional
       case 6:
@@ -537,16 +536,7 @@ const CompanyRegistrationPage = () => {
               </AlertDescription>
             </Alert>
 
-            <div>
-              <Label htmlFor="cnpj">CNPJ *</Label>
-              <Input
-                id="cnpj"
-                placeholder="00.000.000/0000-00"
-                value={formData.cnpj}
-                onChange={(e) => handleInputChange('cnpj', e.target.value)}
-                required
-              />
-            </div>
+            
 
             <div>
               <Label htmlFor="stateRegistration">Inscrição Estadual</Label>

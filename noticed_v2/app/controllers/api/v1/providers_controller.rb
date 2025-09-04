@@ -182,7 +182,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
     # Existing params processing
     provider_params_with_tags = provider_params.except(
-      :cnpj, :employee_count, :city, :state, :zip_code, :email, :website,
+      :employee_count, :city, :state, :zip_code, :email, :website,
       :experience_years, :projects_completed, :installed_capacity_mw,
       :business_type, :service_areas, :services_offered, :specialties, :certifications,
       :social_media, :auto_verified
@@ -196,7 +196,6 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
     # Map additional fields to tags
     @provider.tags ||= []
-    @provider.tags << "cnpj:#{provider_params[:cnpj]}" if provider_params[:cnpj].present?
     @provider.tags << "employees:#{provider_params[:employee_count]}" if provider_params[:employee_count].present?
     @provider.tags << "location:#{provider_params[:city]},#{provider_params[:state]},#{provider_params[:zip_code]}" if provider_params[:city].present? || provider_params[:state].present? || provider_params[:zip_code].present?
     @provider.tags << "email:#{provider_params[:email]}" if provider_params[:email].present?
@@ -314,7 +313,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
   def extract_specialties_from_tags(tags)
     # Filter out system tags and return relevant specialties
-    system_prefixes = ['cnpj:', 'employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
+    system_prefixes = ['employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
     tags.reject { |tag| system_prefixes.any? { |prefix| tag.start_with?(prefix) } }
   end
 
@@ -370,7 +369,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   def provider_params
     params.require(:provider).permit(
       :name, :foundation_year, :short_description, :address, :phone, :country,
-      :cnpj, :employee_count, :city, :state, :zip_code, :email, :website,
+      :employee_count, :city, :state, :zip_code, :email, :website,
       :experience_years, :projects_completed, :installed_capacity_mw, :auto_verified,
       business_type: [], service_areas: [], services_offered: [], specialties: [], certifications: [],
       social_media: [:facebook, :instagram, :linkedin]
