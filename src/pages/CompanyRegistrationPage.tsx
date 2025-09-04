@@ -31,8 +31,14 @@ const CompanyRegistrationPage: React.FC = () => {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<CompanyRegistrationFormData>({
+    // User Information
+    userName: '',
+    userEmail: '',
+    userPassword: '',
+    userPasswordConfirmation: '',
+
+    // Company Information
     companyName: '',
-    cnpj: '',
     foundedYear: '',
     employeeCount: '',
     businessType: '',
@@ -340,8 +346,23 @@ const CompanyRegistrationPage: React.FC = () => {
     
     switch (step) {
       case 1:
+        if (!formData.userName.trim()) errors.userName = 'Seu nome é obrigatório';
+        if (!formData.userEmail.trim()) errors.userEmail = 'Seu e-mail é obrigatório';
+        else if (!/^[^
+@]+@[^
+@]+\.[^
+@]+$/.test(formData.userEmail)) errors.userEmail = 'E-mail inválido'; // Basic email regex
+        if (!password.trim()) errors.password = 'A senha é obrigatória';
+        else if (password.length < 6) errors.password = 'A senha deve ter no mínimo 6 caracteres'; // Minimum length
+        else if (!/[A-Z]/.test(password)) errors.password = 'A senha deve conter pelo menos uma letra maiúscula';
+        else if (!/[a-z]/.test(password)) errors.password = 'A senha deve conter pelo menos uma letra minúscula';
+        else if (!/[0-9]/.test(password)) errors.password = 'A senha deve conter pelo menos um número';
+        else if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) errors.password = 'A senha deve conter pelo menos um caractere especial';
+
+        if (!formData.userPasswordConfirmation.trim()) errors.userPasswordConfirmation = 'Confirme sua senha';
+        else if (password !== formData.userPasswordConfirmation) errors.userPasswordConfirmation = 'As senhas não coincidem';
+
         if (!formData.companyName.trim()) errors.companyName = 'Nome da empresa é obrigatório';
-        if (!formData.cnpj.trim()) errors.cnpj = 'CNPJ é obrigatório';
         if (!formData.foundedYear.trim()) errors.foundedYear = 'Ano de fundação é obrigatório';
         if (!formData.employeeCount.trim()) errors.employeeCount = 'Número de funcionários é obrigatório';
         if (!formData.businessType.trim()) errors.businessType = 'Tipo de negócio é obrigatório';
@@ -412,24 +433,29 @@ const CompanyRegistrationPage: React.FC = () => {
                               formData.email.toLowerCase().includes('@energia.com.br') ||
                               formData.email.toLowerCase().includes('@renovavel.com.br');
       
-      // Append all form data fields
+      // Append user data
+      data.append('user[name]', formData.userName);
+      data.append('user[email]', formData.userEmail);
+      data.append('user[password]', password); // Use the password state
+      data.append('user[password_confirmation]', formData.userPasswordConfirmation);
+
+      // Append provider data
       data.append('provider[name]', formData.companyName);
       data.append('provider[foundation_year]', formData.foundedYear);
       data.append('provider[short_description]', formData.description);
       data.append('provider[address]', formData.address);
       data.append('provider[phone]', formData.phone);
-      data.append('provider[cnpj]', formData.cnpj);
+      // CNPJ removed
       data.append('provider[employee_count]', formData.employeeCount);
       data.append('provider[city]', formData.city);
       data.append('provider[state]', formData.state);
       data.append('provider[zip_code]', formData.zipCode);
-      data.append('provider[email]', formData.email);
+      data.append('provider[email]', formData.email); // Company email
       data.append('provider[website]', formData.website);
       data.append('provider[experience_years]', formData.experienceYears);
       data.append('provider[projects_completed]', formData.projectsCompleted);
       data.append('provider[installed_capacity_mw]', formData.installedCapacityMW);
       data.append('provider[country]', formData.country || 'Brasil');
-      data.append('provider[password]', password);
       data.append('provider[auto_verified]', isCorporateEmail.toString());
 
       // Append array fields
@@ -478,7 +504,7 @@ const CompanyRegistrationPage: React.FC = () => {
       
       setSuccessMessage('Cadastro enviado com sucesso! Tentando login automático...');
       
-      const loginResult = await login(formData.email, password);
+      const loginResult = await login(formData.userEmail, password);
       
       if (loginResult.success && loginResult.user) {
         const user = loginResult.user;
@@ -551,6 +577,83 @@ const renderStep1 = () => (
         <p className="text-gray-600">Dados fundamentais sobre sua empresa</p>
       </div>
 
+      {/* User Information */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Seu Nome Completo *
+          </label>
+          <input
+            type="text"
+            value={formData.userName}
+            onChange={(e) => handleInputChange('userName', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.userName ? 'border-red-500' : 'border-gray-300'}`}
+            placeholder="Seu nome"
+          />
+          {validationErrors.userName && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.userName}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Seu Email *
+          </label>
+          <input
+            type="email"
+            value={formData.userEmail}
+            onChange={(e) => handleInputChange('userEmail', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.userEmail ? 'border-red-500' : 'border-gray-300'}`}
+            placeholder="seu.email@example.com"
+          />
+          {validationErrors.userEmail && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.userEmail}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Senha *
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.password ? 'border-red-500' : 'border-gray-300'}`}
+            placeholder="Crie uma senha segura"
+          />
+          {validationErrors.password && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.password}
+            </p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Confirme a Senha *
+          </label>
+          <input
+            type="password"
+            value={formData.userPasswordConfirmation} // Assuming this is a new field in formData
+            onChange={(e) => handleInputChange('userPasswordConfirmation', e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.userPasswordConfirmation ? 'border-red-500' : 'border-gray-300'}`}
+            placeholder="Confirme sua senha"
+          />
+          {validationErrors.userPasswordConfirmation && (
+            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {validationErrors.userPasswordConfirmation}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Company Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -560,9 +663,7 @@ const renderStep1 = () => (
             type="text"
             value={formData.companyName}
             onChange={(e) => handleInputChange('companyName', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.companyName ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.companyName ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="Ex: Solar Tech Ltda"
           />
           {validationErrors.companyName && (
@@ -575,36 +676,13 @@ const renderStep1 = () => (
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            CNPJ *
-          </label>
-          <input
-            type="text"
-            value={formData.cnpj}
-            onChange={(e) => handleInputChange('cnpj', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.cnpj ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="00.000.000/0000-00"
-          />
-          {validationErrors.cnpj && (
-            <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
-              {validationErrors.cnpj}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
             Ano de Fundação *
           </label>
           <input
             type="number"
             value={formData.foundedYear}
             onChange={(e) => handleInputChange('foundedYear', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.foundedYear ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.foundedYear ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="2020"
             min="1900"
             max={new Date().getFullYear()}
@@ -624,9 +702,7 @@ const renderStep1 = () => (
           <select
             value={formData.employeeCount}
             onChange={(e) => handleInputChange('employeeCount', e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              validationErrors.employeeCount ? 'border-red-500' : 'border-gray-300'
-            }`}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.employeeCount ? 'border-red-500' : 'border-gray-300'}`}
           >
             <option value="">Selecione</option>
             <option value="1-5">1-5 funcionários</option>
@@ -680,9 +756,7 @@ const renderStep1 = () => (
           value={formData.description}
           onChange={(e) => handleInputChange('description', e.target.value)}
           rows={4}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-            validationErrors.description ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${validationErrors.description ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Descreva sua empresa, diferenciais, missão e por que os clientes devem escolher vocês..."
         />
         {validationErrors.description && (
