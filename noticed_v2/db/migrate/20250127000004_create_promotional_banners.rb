@@ -39,7 +39,6 @@ class CreatePromotionalBanners < ActiveRecord::Migration[7.0]
     add_index :promotional_banners, :display_order
     add_index :promotional_banners, :position
     add_index :promotional_banners, [:active, :position, :display_order], name: 'index_promotional_banners_active_position_order'
-    add_index :promotional_banners, :provider_id
     add_index :promotional_banners, [:start_date, :end_date], name: 'index_promotional_banners_date_range'
     add_index :promotional_banners, :created_at
   end

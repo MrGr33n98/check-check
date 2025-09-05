@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_09_03_232709) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_04_141506) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -333,8 +333,6 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_03_232709) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.date "start_date"
-    t.date "end_date"
     t.index ["active", "display_order"], name: "index_dynamic_banners_on_active_and_order"
     t.index ["active"], name: "index_dynamic_banners_on_active"
     t.index ["display_order"], name: "index_dynamic_banners_on_display_order"
@@ -681,14 +679,14 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_03_232709) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.integer "views", default: 0
-    t.integer "role", default: 0
-    t.boolean "approved"
-    t.boolean "corporate_email", default: false
-    t.string "company_name"
-    t.string "position"
     t.string "provider", default: "email", null: false
     t.string "uid", default: "", null: false
     t.json "tokens"
+    t.boolean "corporate_email", default: false
+    t.string "company_name"
+    t.string "position"
+    t.integer "role", default: 0
+    t.boolean "approved"
     t.index ["company_name"], name: "index_users_on_company_name"
     t.index ["corporate_email"], name: "index_users_on_corporate_email"
     t.index ["email"], name: "index_users_on_email", unique: true

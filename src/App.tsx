@@ -8,6 +8,7 @@ import BlogArticlePage from '@/pages/BlogArticlePage';
 import CompanyRegistrationPage from '@/pages/CompanyRegistrationPage';
 import SearchPage from '@/pages/SearchPage';
 import ReviewsPage from '@/pages/ReviewsPage';
+import CompanyReviewPage from '@/pages/CompanyReviewPage'; // New import
 import AboutPage from '@/pages/AboutPage';
 import HowItWorksPage from '@/pages/HowItWorksPage';
 import FAQPage from '@/pages/FAQPage';
@@ -44,6 +45,7 @@ export const routes: RouteObject[] = [
       { path: 'categorias/:slug', element: <EnhancedCategoryPage /> },
       { path: 'company/:id', element: <CompanyDetail /> },
       { path: 'company/:companyId/reviews', element: <ReviewsPage /> },
+      { path: 'empresas/:slug/avaliar', element: <CompanyReviewPage /> }, // New route
       { path: 'blog', element: <BlogPage /> },
       { path: 'blog/:id', element: <BlogArticlePage /> },
       { path: 'empresa/cadastro', element: <CompanyRegistrationPage /> },

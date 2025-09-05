@@ -32,6 +32,7 @@ interface SolarCompany {
   social_links: string[];
   tags: string[];
   status: string;
+  slug: string; // Added
 }
 
 const CompanyProfilePage: React.FC = () => {
@@ -50,7 +51,7 @@ const CompanyProfilePage: React.FC = () => {
         // A API retorna diretamente o objeto da empresa, não wrapped
         setCompany(response.data);
         setError(null);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Erro ao carregar empresa:', err);
         setError('Empresa não encontrada');
       } finally {
