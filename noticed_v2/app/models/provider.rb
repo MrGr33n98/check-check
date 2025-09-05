@@ -47,12 +47,15 @@ class Provider < ApplicationRecord
 
   # Scopes
   scope :premium, -> { where('premium_until >= ?', Date.current) }
-  scope :by_country, ->(country) { where(country: country) }
+  scope :by_country, ->(country) { where('country = ?', country) }
   scope :by_tag, ->(tag) { where('? = ANY(tags)', tag) }
   scope :founded_after, ->(year) { where('foundation_year >= ?', year) }
   scope :founded_before, ->(year) { where('foundation_year <= ?', year) }
   scope :by_city, ->(city) { where('LOWER(city) = ?', city.downcase) }
   scope :by_state, ->(state) { where('LOWER(state) = ?', state.downcase) }
+  scope :in_featured_categories, -> {
+    joins(:categories).where(categories: { featured: true }).distinct
+  }
 
   # Ransack configuration for ActiveAdmin search
   def self.ransackable_associations(auth_object = nil)
@@ -62,7 +65,7 @@ class Provider < ApplicationRecord
   def self.ransackable_attributes(auth_object = nil)
     ["approved_at", "approved_by_id", "approval_notes", "country", "created_at", "description",
      "foundation_year", "id", "members_count", "name", "premium_until", "seo_url", "social_links",
-     "status", "tags", "updated_at", "short_description", "title", "city", "state"]
+     "status", "tags", "updated_at", "short_description", "title", "city", "state", "service_tags"]
   end
 
   
@@ -177,6 +180,12 @@ class Provider < ApplicationRecord
     else
       Analytic.monthly_summary(id)
     end
+  end
+
+  ransacker :service_tags, formatter: proc { |v|
+    Arel.sql("tags @> ARRAY[#{ActiveRecord::Base.connection.quote(v)}]")
+  } do |parent|
+    parent.table[:tags]
   end
 
   # Approval methods

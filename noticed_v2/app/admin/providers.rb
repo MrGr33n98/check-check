@@ -7,11 +7,12 @@ ActiveAdmin.register Provider do
                 :premium_effect_active, social_links: [], tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
-  scope :all, default: true
+  scope :all
   scope :pending
   scope :active
   scope :rejected
   scope :suspended
+  scope :in_featured_categories, default: true, label: "Em Categorias Destacadas"
 
   action_item :approve, only: :show, if: proc{ resource.can_be_approved? } do
     button_to "Aprovar Empresa", approve_admin_provider_path(resource), 
@@ -94,6 +95,14 @@ ActiveAdmin.register Provider do
   filter :created_at
   filter :city_cont, as: :string, label: "Cidade (contém)"
   filter :state_cont, as: :string, label: "Estado (UF) (contém)"
+  filter :service_tags, as: :select, collection: [
+    ['Instalação Residencial', 'instalacao-residencial'],
+    ['Instalação Comercial', 'instalacao-comercial'],
+    ['Manutenção', 'manutencao'],
+    ['Monitoramento', 'monitoramento'],
+    ['Energia Off-Grid', 'energia-off-grid'],
+    ['Consultoria Técnica', 'consultoria-tecnica']
+  ], label: "Serviços"
 
   form do |f|
     f.inputs "Informações da Empresa" do
