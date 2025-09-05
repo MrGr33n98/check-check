@@ -98,9 +98,9 @@ const EnhancedHeader: React.FC = () => {
   useEffect(() => {
     const controller = new AbortController();
 
-    const fetchCategories = async () => {
+    const fetchCategories = async (signal: AbortSignal) => {
       try {
-        const apiCategories = await apiService.getCategories(controller.signal);
+        const apiCategories = await apiService.getCategories(signal);
         
         // Recursive function to map API data and add icons
         const mapApiData = (apiCats: ApiCategory[]): Category[] => {
@@ -115,22 +115,19 @@ const EnhancedHeader: React.FC = () => {
 
         setCategories(mapApiData(apiCategories));
       } catch (error: any) {
-        if (error.name === 'AbortError') {
-          return Promise.resolve(); // Explicitly return a resolved promise
+        if (signal.aborted) {
+          // console.log('Fetch aborted as expected:', error.name);
+          return; // Do nothing if the fetch was intentionally aborted
         }
         console.error("Failed to fetch header categories:", error);
       }
     };
 
-    (async () => {
-      try {
-        await fetchCategories();
-      } catch (error) {
-        if (error.name !== 'AbortError') {
-          console.error("Unexpected error in useEffect's outer catch:", error);
-        }
-      }
-    })();
+    fetchCategories(controller.signal); // Pass the signal directly
+
+    return () => {
+      controller.abort();
+    };
 
     return () => {
       controller.abort();

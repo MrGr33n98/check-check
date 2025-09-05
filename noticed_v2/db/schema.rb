@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_09_04_141506) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_05_192728) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -242,6 +242,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_04_141506) do
     t.text "keywords"
     t.boolean "is_main_category"
     t.string "promotional_text"
+    t.string "title_color"
+    t.string "subtitle_color"
+    t.string "title_font_size"
+    t.string "subtitle_font_size"
     t.index ["active"], name: "index_categories_on_active"
     t.index ["parent_id"], name: "index_categories_on_parent_id"
     t.index ["position"], name: "index_categories_on_position"
@@ -602,11 +606,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_04_141506) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "product_id", null: false
-    t.integer "status", default: 0
     t.string "cliente"
+    t.jsonb "scores", default: {}
+    t.decimal "overall_score", precision: 3, scale: 2
+    t.boolean "featured", default: false
+    t.string "status", default: "pending"
+    t.bigint "provider_id"
     t.index ["product_id"], name: "index_reviews_on_product_id"
+    t.index ["provider_id"], name: "index_reviews_on_provider_id"
     t.index ["solution_id"], name: "index_reviews_on_solution_id"
-    t.index ["status"], name: "index_reviews_on_status"
     t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
@@ -733,6 +741,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_04_141506) do
   add_foreign_key "replies", "questions"
   add_foreign_key "replies", "users"
   add_foreign_key "reviews", "products"
+  add_foreign_key "reviews", "providers"
   add_foreign_key "reviews", "solutions"
   add_foreign_key "reviews", "users"
   add_foreign_key "solutions", "providers"

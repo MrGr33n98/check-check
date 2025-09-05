@@ -48,10 +48,11 @@ Rails.application.routes.draw do
       resources :sponsoreds
       resources :articles, param: :id
       resources :providers do
-        resources :analytics, only: [:index, :create, :update]
         collection do
           get :search
+          get 'by_slug/:slug', to: 'providers#by_slug'
         end
+        resources :analytics, only: [:index, :create, :update]
       end
       
       # Banner API routes

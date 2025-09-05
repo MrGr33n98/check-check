@@ -11,6 +11,7 @@ class Provider < ApplicationRecord
   }
 
   # Associations
+  has_many :reviews, dependent: :destroy
   has_many :campaigns, dependent: :destroy
   has_many :b2b_ads, dependent: :destroy
   has_many :company_members, dependent: :destroy
@@ -55,7 +56,7 @@ class Provider < ApplicationRecord
 
   # Ransack configuration for ActiveAdmin search
   def self.ransackable_associations(auth_object = nil)
-    ["approved_by", "b2b_ads", "campaigns", "company_members", "users", "solutions", "categories"]
+    ["reviews", "approved_by", "b2b_ads", "campaigns", "company_members", "users", "solutions", "categories"]
   end
 
   def self.ransackable_attributes(auth_object = nil)

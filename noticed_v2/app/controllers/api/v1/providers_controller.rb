@@ -175,6 +175,17 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     end
   end
 
+  # GET /api/v1/providers/by_slug/:slug
+  def by_slug
+    @provider = Provider.find_by(slug: params[:slug])
+
+    if @provider
+      render json: provider_json(@provider)
+    else
+      render json: { error: "Provider not found" }, status: :not_found
+    end
+  end
+
   def create
     # Existing params processing
     provider_params_with_tags = provider_params.except(
