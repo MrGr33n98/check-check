@@ -259,6 +259,10 @@ function EnhancedCategoryPage() {
         subtitle={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
         countBadge={totalCompanies > 0 ? `${totalCompanies} empresas encontradas` : 'Nenhuma empresa encontrada'}
         backgroundImageUrl={category.banner_image_url}
+        titleColor={category.title_color}
+        subtitleColor={category.subtitle_color}
+        titleFontSize={category.title_font_size}
+        subtitleFontSize={category.subtitle_font_size}
       />
 
       <div className="container mx-auto px-4 py-8">

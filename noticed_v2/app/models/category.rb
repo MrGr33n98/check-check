@@ -26,7 +26,11 @@ class Category < ApplicationRecord
 
   def as_json(options = {})
     super({
-      methods: [:photo_url, :banner_image_url]
+      methods: [:photo_url, :banner_image_url],
+      only: [
+        :id, :name, :slug, :description, :featured, :image_url, :banner_image_url,
+        :title_color, :subtitle_color, :title_font_size, :subtitle_font_size
+      ]
     }.merge(options))
   end
 

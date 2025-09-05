@@ -6,6 +6,10 @@ export interface Category {
   featured?: boolean;
   image_url?: string;
   banner_image_url?: string;
+  title_color?: string;
+  subtitle_color?: string;
+  title_font_size?: string;
+  subtitle_font_size?: string;
   children?: Category[];
 }
 
