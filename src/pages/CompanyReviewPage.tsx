@@ -1,261 +1,251 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Send } from 'lucide-react';
+import { Star, Send, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner'; // Assuming sonner for toasts
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import PromoBannerSidebar from '@/components/banners/PromoBannerSidebar';
+import { toast } from 'sonner';
+import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Define interfaces for form data and validation errors
-interface ReviewFormData {
-  company_slug: string;
-  rating_atendimento: number;
-  rating_agilidade: number;
-  rating_preco: number;
-  rating_qualidade: number;
-  rating_pos_venda: number;
-  comment: string;
-  user_name: string;
-  user_email: string;
-}
+const reviewCriteria = [
+  { key: 'tempo_atuacao', label: 'Tempo de atuação no mercado solar', description: 'Experiência e estabilidade da empresa no mercado de energia solar.' },
+  { key: 'confiabilidade_legal', label: 'Confiabilidade legal e regulatória', description: 'Reputação legal, histórico de litígios, e verificação de licenças e seguros.' },
+  { key: 'transparencia_orcamentos', label: 'Transparência de orçamentos e contratos', description: 'Clareza e honestidade nas propostas e termos contratuais.' },
+  { key: 'qualidade_painel', label: 'Qualidade e garantia dos painéis solares', description: 'Qualidade dos equipamentos e materiais utilizados, e termos de garantia.' },
+  { key: 'eficiencia_inversores', label: 'Eficiência dos inversores e sistemas', description: 'Desempenho e otimização da conversão de energia.' },
+  { key: 'padroes_instalacao', label: 'Padrões de instalação e engenharia', description: 'Qualidade técnica da instalação e conformidade com normas de engenharia.' },
+  { key: 'suporte_pos_venda', label: 'Suporte técnico e manutenção pós-venda', description: 'Disponibilidade e qualidade do suporte após a instalação.' },
+  { key: 'prazo_entrega', label: 'Prazo de entrega e cumprimento do cronograma', description: 'Adesão aos prazos acordados para entrega e instalação do projeto.' },
+  { key: 'custo_beneficio', label: 'Custo-benefício dos sistemas', description: 'Equilíbrio entre o investimento inicial e os benefícios a longo prazo.' },
+  { key: 'opcoes_financiamento', label: 'Opções de financiamento e condições de pagamento', description: 'Variedade e flexibilidade das soluções financeiras oferecidas.' },
+  { key: 'sustentabilidade_esg', label: 'Sustentabilidade e responsabilidade ambiental', description: 'Compromisso da empresa com práticas sustentáveis e critérios ESG.' },
+  { key: 'atendimento_cliente', label: 'Atendimento ao cliente e comunicação', description: 'Qualidade da interação e clareza na comunicação com o cliente.' },
+  { key: 'satisfacao_funcionarios', label: 'Satisfação e segurança dos funcionários', description: 'Cultura interna da empresa e bem-estar da equipe de trabalho.' },
+];
 
-interface ValidationErrors {
-  [key: string]: string;
+interface Scores { [key: string]: number; }
+
+interface Company {
+  id: number;
+  name: string;
+  logo_url?: string;
+  banner_image_url?: string;
 }
 
 const CompanyReviewPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState<ReviewFormData>({
-    company_slug: slug || '',
-    rating_atendimento: 0,
-    rating_agilidade: 0,
-    rating_preco: 0,
-    rating_qualidade: 0,
-    rating_pos_venda: 0,
-    comment: '',
-    user_name: '',
-    user_email: '',
-  });
-
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [company, setCompany] = useState<Company | null>(null);
+  const [scores, setScores] = useState<Scores>({});
+  const [comment, setComment] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update slug if it changes (e.g., if component is reused)
   useEffect(() => {
-    if (slug && formData.company_slug !== slug) {
-      setFormData(prev => ({ ...prev, company_slug: slug }));
-    }
-  }, [slug, formData.company_slug]);
-
-  const handleRatingChange = (criterion: keyof ReviewFormData, value: number) => {
-    setFormData(prev => ({ ...prev, [criterion]: value }));
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[criterion as string];
-      return newErrors;
-    });
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[name];
-      return newErrors;
-    });
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
-
-    if (!formData.comment.trim()) {
-      newErrors.comment = 'O comentário é obrigatório.';
-    }
-    if (!formData.user_name.trim()) {
-      newErrors.user_name = 'Seu nome é obrigatório.';
-    }
-    if (!formData.user_email.trim()) {
-      newErrors.user_email = 'Seu e-mail é obrigatório.';
-    } else if (!/\S+@\S+\.\S+/.test(formData.user_email)) {
-      newErrors.user_email = 'E-mail inválido.';
-    }
-
-    // Check if all rating fields are greater than 0
-    const ratingCriteria: (keyof ReviewFormData)[] = [
-      'rating_atendimento', 'rating_agilidade', 'rating_preco',
-      'rating_qualidade', 'rating_pos_venda'
-    ];
-    ratingCriteria.forEach(criterion => {
-      if (formData[criterion] === 0) {
-        newErrors[criterion as string] = 'Por favor, avalie este critério.';
+    const fetchCompany = async () => {
+      try {
+        const response = await axios.get(`/api/v1/providers/by_slug/${slug}`);
+        setCompany({
+          id: response.data.id,
+          name: response.data.name,
+          logo_url: response.data.logo_url,
+          banner_image_url: response.data.banner_image_url
+        });
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+        toast.error("Não foi possível carregar os dados da empresa.");
+        navigate('/');
       }
-    });
+    };
+    if (slug) fetchCompany();
+  }, [slug, navigate]);
 
+  const overallScore = useMemo(() => {
+    const validScores = Object.values(scores).filter(s => s > 0);
+    if (!validScores.length) return 0;
+    const sum = validScores.reduce((acc, s) => acc + s, 0);
+    return parseFloat((sum / validScores.length).toFixed(2));
+  }, [scores]);
+
+  const handleRatingChange = (key: string, value: number) =>
+    setScores(prev => ({ ...prev, [key]: value }));
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (Object.keys(scores).length !== reviewCriteria.length) newErrors.form = "Por favor, avalie todos os critérios.";
+    if (comment.length < 30 || comment.length > 2000) newErrors.comment = "O comentário deve ter entre 30 e 2000 caracteres.";
+    if (!consent) newErrors.consent = "Você deve confirmar que a avaliação reflete sua experiência.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const { user } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error('Por favor, preencha todos os campos obrigatórios e avaliações.');
-      return;
-    }
+    if (!validateForm()) { toast.error("Por favor, corrija os erros antes de enviar."); return; }
+    if (!user) { toast.error("Você precisa estar logado para enviar uma avaliação."); navigate('/login'); return; }
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/reviews`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const overallRating = overallScore > 0 ? parseFloat(overallScore.toFixed(1)) : 0;
+      await axios.post('/api/v1/reviews', {
+        review: {
+          provider_id: company?.id,
+          user_id: user.id,
+          rating: overallRating,
+          title: comment.substring(0, 100),
+          comment,
+          scores,
+          overall_score: overallRating,
+          status: 'pending',
+          featured: false,
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao enviar avaliação.');
-      }
-
-      toast.success('Avaliação enviada com sucesso! Aguardando moderação.');
-      navigate(`/company/${slug}`); // Redirect back to company profile page
-    } catch (error: any) {
-      console.error('Erro ao enviar avaliação:', error);
-      toast.error(`Erro: ${error.message || 'Não foi possível enviar sua avaliação.'}`);
+      toast.success("Seu review foi enviado e aguarda aprovação.");
+      navigate(`/empresas/${slug}`);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error("Ocorreu um erro ao enviar seu review.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const renderStarRating = (criterion: keyof ReviewFormData, currentRating: number) => (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map(starValue => (
-        <Star
-          key={starValue}
-          className={`w-6 h-6 cursor-pointer transition-colors ${
-            starValue <= currentRating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-          }`}
-          onClick={() => handleRatingChange(criterion, starValue)}
-        />
-      ))}
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Avalie a Empresa {slug ? `"${slug}"` : ''}
-            </CardTitle>
-            <p className="text-center text-gray-600 mt-2">
-              Sua opinião é muito importante para nós e para outros usuários!
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Rating Criteria */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-800">Sua Avaliação:</h3>
-                {[                  { key: 'rating_atendimento', label: 'Atendimento' },
-                  { key: 'rating_agilidade', label: 'Agilidade' },
-                  { key: 'rating_preco', label: 'Preço' },
-                  { key: 'rating_qualidade', label: 'Qualidade do serviço' },
-                  { key: 'rating_pos_venda', label: 'Pós-venda' },
-                ].map(item => (
-                  <div key={item.key} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-0">
-                      {item.label}:
-                    </label>
-                    {renderStarRating(item.key as keyof ReviewFormData, formData[item.key as keyof ReviewFormData] as number)}
-                    {errors[item.key] && (
-                      <p className="text-red-500 text-xs mt-1 sm:ml-4">{errors[item.key]}</p>
-                    )}
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="w-full max-w-7xl pr-4 pl-4 lg:pl-6 xl:pl-8 mr-auto">
+          {/* ⬇️ Grid invertido: formulário (1fr) à esquerda, sidebar (280px) à direita */}
+          <div className="grid grid-cols-1 md:[grid-template-columns:1fr_280px] gap-6 md:gap-6 items-start">
+            {/* SECTION: Formulário à ESQUERDA */}
+            <section className="w-full">
+              <Card>
+                <CardHeader className="relative overflow-hidden p-0">
+                  <div
+                    className="relative h-28 md:h-32"
+                    style={{
+                      backgroundImage: company?.banner_image_url ? `url(${company.banner_image_url})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-black/40" />
+                    <div className="absolute left-4 -bottom-6 z-10">
+                      <div className="p-[2px] rounded-full bg-gradient-to-br from-sky-400 via-blue-500 to-purple-500">
+                        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-white border-2 border-slate-200 shadow-sm overflow-hidden flex items-center justify-center">
+                          {company?.logo_url ? (
+                            <img src={company.logo_url} alt={`${company?.name} logo`} className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-blue-600 font-bold text-lg">{company?.name?.charAt(0)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {/* General Comment */}
-              <div>
-                <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
-                  Comentário Geral: *
-                </label>
-                <Textarea
-                  id="comment"
-                  name="comment"
-                  value={formData.comment}
-                  onChange={handleInputChange}
-                  rows={4}
-                  placeholder="Descreva sua experiência com a empresa..."
-                  className={errors.comment ? 'border-red-500' : ''}
-                />
-                {errors.comment && (
-                  <p className="text-red-500 text-xs mt-1">{errors.comment}</p>
-                )}
-              </div>
+                  <div className="pt-10 px-5 pb-4 relative z-20">
+                    <CardTitle className="text-2xl font-bold text-gray-900 mb-2">
+                      Avalie {company?.name || 'a Empresa'}
+                    </CardTitle>
+                    <CardDescription>Sua opinião é fundamental para a comunidade.</CardDescription>
+                  </div>
+                </CardHeader>
 
-              {/* User Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="user_name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Seu Nome: *
-                  </label>
-                  <Input
-                    type="text"
-                    id="user_name"
-                    name="user_name"
-                    value={formData.user_name}
-                    onChange={handleInputChange}
-                    placeholder="Seu nome completo"
-                    className={errors.user_name ? 'border-red-500' : ''}
-                  />
-                  {errors.user_name && (
-                    <p className="text-red-500 text-xs mt-1">{errors.user_name}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="user_email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Seu E-mail: *
-                  </label>
-                  <Input
-                    type="email"
-                    id="user_email"
-                    name="user_email"
-                    value={formData.user_email}
-                    onChange={handleInputChange}
-                    placeholder="seu.email@example.com"
-                    className={errors.user_email ? 'border-red-500' : ''}
-                  />
-                  {errors.user_email && (
-                    <p className="text-red-500 text-xs mt-1">{errors.user_email}</p>
-                  )}
-                </div>
-              </div>
+                <CardContent className="px-5">
+                  <form onSubmit={handleSubmit} className="space-y-8">
+                    {errors.form && (
+                      <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {errors.form}
+                      </div>
+                    )}
 
-              {/* Submit Button */}
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Send className="w-4 h-4 mr-2 animate-pulse" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Enviar Avaliação
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                    <div className="space-y-6">
+                      {reviewCriteria.map(({ key, label, description }) => (
+                        <div key={key} className="flex items-center justify-between gap-4">
+                          <div className="flex items-center">
+                            <label className="font-medium text-sm mr-2">{label}</label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="w-4 h-4 text-gray-400 cursor-pointer" aria-label={`Ajuda: ${label}`} />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs text-sm">{description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((starValue) => (
+                              <Star
+                                key={starValue}
+                                role="radio"
+                                aria-checked={starValue === (scores[key] || 0)}
+                                aria-label={`${label}: ${starValue} estrela(s)`}
+                                className={`w-5 h-5 cursor-pointer transition-transform hover:scale-125 ${
+                                  starValue <= (scores[key] || 0)
+                                    ? 'text-yellow-400 fill-yellow-400'
+                                    : 'text-gray-300'
+                                }`}
+                                onClick={() => handleRatingChange(key, starValue)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-4 bg-gray-100 rounded-lg text-center">
+                      <h3 className="text-lg font-semibold">Nota Geral</h3>
+                      <p className="text-4xl font-bold text-blue-600">{overallScore.toFixed(2)}</p>
+                    </div>
+
+                    <div>
+                      <Textarea
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Escreva seu comentário (mínimo 30 caracteres)"
+                        rows={6}
+                        className={errors.comment ? 'border-red-500' : ''}
+                      />
+                      <p className="text-sm text-gray-500 mt-1">{comment.length} / 2000 caracteres</p>
+                      {errors.comment && <p className="text-red-500 text-xs mt-1">{errors.comment}</p>}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="consent"
+                        checked={consent}
+                        onCheckedChange={(checked) => setConsent(Boolean(checked))}
+                      />
+                      <label htmlFor="consent" className="text-sm">
+                        Confirmo que esta avaliação reflete minha experiência e concordo com os termos de uso.
+                      </label>
+                    </div>
+                    {errors.consent && <p className="text-red-500 text-xs">{errors.consent}</p>}
+
+                    <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
+                      {isSubmitting ? 'Enviando...' : 'Enviar Avaliação'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* ASIDE: SidebarBanners à DIREITA */}
+            <aside className="md:order-last md:sticky md:top-24">
+              <PromoBannerSidebar />
+            </aside>
+          </div>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };
 

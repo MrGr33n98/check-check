@@ -105,24 +105,24 @@ const PromoBannerSidebar: React.FC = () => {
             )}
             {banner.button_secondary_text && (
                 <Link to={banner.button_secondary_url || '#'} className="w-full py-2 px-4 rounded-lg font-semibold transition-transform transform hover:scale-105" style={buttonStyle(false)}>
-                    {banner.button_secondary_text}
-                </Link>
-            )}
-        </div>
-      </div>
+                          {banner.button_secondary_text}
+                      </Link>
+                  )}
+              </div>
+            </div>
 
-      {banners.length > 1 && (
-        <>
-          <button onClick={goToPrevious} className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
-            <ChevronLeft size={20} />
-          </button>
-          <button onClick={goToNext} className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
-            <ChevronRight size={20} />
-          </button>
-        </>
-      )}
-    </div>
-  );
+            {banners.length > 1 && (
+              <>
+                <button onClick={goToPrevious} className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
+                  <ChevronLeft size={20} />
+                </button>
+                <button onClick={goToNext} className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+          </div>
+        );
 };
 
 export default PromoBannerSidebar;

@@ -118,19 +118,19 @@ function EnhancedCategoryPage() {
     const reqId = ++lastReqId.current;
     const controller = new AbortController();
     
-    const fetchData = async () => {
+    const fetchData = async (signal: AbortSignal) => {
       setLoading(true);
 
       try {
         const [fetchedCategory, providersResponse] = await Promise.all([
-          apiService.getCategoryBySlug(slug, controller.signal),
+          apiService.getCategoryBySlug(slug, signal),
           apiService.getProviders({
             category_slug: slug,
             
             
             
             
-            }, controller.signal)
+            }, signal)
         ]);
 
         if (reqId !== lastReqId.current) {
@@ -163,11 +163,9 @@ function EnhancedCategoryPage() {
         setLoading(false);
 
       } catch (err: unknown) {
-        if ((err instanceof DOMException && err.name === 'AbortError') || (err instanceof Error && 'code' in err && err.code === 'ERR_CANCELED')) {
-          if (reqId === lastReqId.current) {
-            setLoading(false);
-          }
-          return Promise.resolve(); // Explicitly return a resolved promise
+        if (signal.aborted) {
+          // console.log('Fetch aborted as expected:', err);
+          return; // Do nothing if the fetch was intentionally aborted
         }
 
         if (reqId === lastReqId.current) {
@@ -180,15 +178,11 @@ function EnhancedCategoryPage() {
       }
     };
 
-    (async () => {
-      try {
-        await fetchData();
-      } catch (error) {
-        if (error instanceof Error && error.name !== 'AbortError') {
-          console.error("Unexpected error in useEffect's outer catch:", error);
-        }
-      }
-    })();
+    fetchData(controller.signal); // Pass the signal directly
+
+    return () => {
+      controller.abort();
+    };
 
     return () => {
       controller.abort();
