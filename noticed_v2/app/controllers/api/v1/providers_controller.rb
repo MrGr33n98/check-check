@@ -7,11 +7,27 @@ class Api::V1::ProvidersController < Api::V1::BaseController
                          .with_attached_cover_image
                          .with_attached_banner_image
     
-    # Filter by category
-    if params[:category_id].present?
-      @providers = @providers.joins(:categories).where(categories: { id: params[:category_id] })
-    elsif params[:category_slug].present?
-      @providers = @providers.joins(:categories).where(categories: { slug: params[:category_slug] })
+    # Filter by category and visible_in_all_categories
+    if params[:category_slug].present?
+      category_slug = params[:category_slug]
+      
+      @providers = @providers.left_joins(:categories)
+                             .where(
+                               Provider.arel_table[:visible_in_all_categories].eq(true)
+                               .or(
+                                 categories: { slug: category_slug }
+                               )
+                             ).distinct
+    elsif params[:category_id].present?
+      category_id = params[:category_id]
+      
+      @providers = @providers.left_joins(:categories)
+                             .where(
+                               Provider.arel_table[:visible_in_all_categories].eq(true)
+                               .or(
+                                 categories: { id: category_id }
+                               )
+                             ).distinct
     end
     
     # Filter by rating (minimum rating)

@@ -4,7 +4,7 @@ ActiveAdmin.register Provider do
   permit_params :name, :seo_url, :title, :short_description, :country, :address, 
                 :phone, :members_count, :foundation_year, :premium_until, :revenue,
                 :status, :approval_notes, :logo, :cover_image, :banner_image, :city, :state,
-                :premium_effect_active, social_links: [], tags: [], category_ids: [], subcategory_ids: []
+                :premium_effect_active, :visible_in_all_categories, social_links: [], tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
   scope :all
@@ -60,6 +60,9 @@ ActiveAdmin.register Provider do
     column :premium_effect_active
     column "Aprovado por" do |provider|
       provider.approved_by&.email if provider.approved_at
+    end
+    column :categories do |provider|
+      provider.categories.map(&:name).join(", ")
     end
     column :created_at do |provider|
       time_ago_in_words(provider.created_at) + " atrás"
@@ -133,6 +136,7 @@ ActiveAdmin.register Provider do
     end
 
     f.inputs "Categorias Principais" do
+      f.input :visible_in_all_categories, as: :boolean, label: "Visível em todas as categorias"
       f.input :categories, as: :check_boxes, collection: Category.all.map { |c| [c.name, c.id] }
     end
 
