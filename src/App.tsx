@@ -1,5 +1,6 @@
 import { Outlet, RouteObject } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import PageBackground from '@/components/ui/PageBackground';
 import EnhancedHomePage from '@/pages/EnhancedHomePage';
 import CompanyDetail from '@/pages/CompanyDetail';
@@ -33,9 +34,11 @@ export const routes: RouteObject[] = [
     element: (
       <>
         <PageBackground />
-        <Layout>
-          <Outlet /> {/* This is where nested routes will render */}
-        </Layout>
+        <ErrorBoundary>
+          <Layout>
+            <Outlet /> {/* This is where nested routes will render */}
+          </Layout>
+        </ErrorBoundary>
       </>
     ),
     children: [
