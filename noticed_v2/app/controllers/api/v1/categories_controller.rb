@@ -6,6 +6,8 @@ class Api::V1::CategoriesController < Api::V1::BaseController
     cache_key = "categories/index/#{params[:featured]}"
     @categories = Rails.cache.fetch(cache_key, expires_in: 12.hours) do
       categories = Category.where(active: true, parent_id: nil)
+                           .with_attached_photo
+                           .with_attached_banner_image
       categories = categories.where(featured: params[:featured]) if params[:featured].present?
       categories.includes(children: :children).order(:name).to_a
     end
@@ -49,8 +51,14 @@ class Api::V1::CategoriesController < Api::V1::BaseController
   private
   
   def set_category
-    @category = Category.includes(children: :children).find_by(slug: params[:id])
-    @category ||= Category.includes(children: :children).find(params[:id])
+    @category = Category.with_attached_photo
+                        .with_attached_banner_image
+                        .includes(children: :children)
+                        .find_by(slug: params[:id])
+    @category ||= Category.with_attached_photo
+                          .with_attached_banner_image
+                          .includes(children: :children)
+                          .find(params[:id])
   end
   
   def category_params
