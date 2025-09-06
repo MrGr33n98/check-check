@@ -116,13 +116,23 @@ function EnhancedCategoryPage() {
       setLoading(true);
       const normalizedSlug = normalizeSlug(slug ?? '');
 
+      const providerParams: Record<string, any> = { category_slug: normalizedSlug };
+      if (currentFilters) {
+        if (currentFilters.query) providerParams.query = currentFilters.query;
+        if (currentFilters.location) providerParams.location = currentFilters.location;
+        if (currentFilters.rating) providerParams.rating = currentFilters.rating;
+        if (currentFilters.services?.length) providerParams.services = currentFilters.services.join(',');
+        if (currentFilters.certifications?.length) providerParams.certifications = currentFilters.certifications.join(',');
+        if (currentFilters.experience?.length) providerParams.experience = currentFilters.experience.join(',');
+      }
+
       let catRes: any;
       let provRes: any;
 
       try {
         [catRes, provRes] = await Promise.all([
           apiService.getCategoryBySlug(normalizedSlug, controller.signal),
-          apiService.getProviders({ category_slug: normalizedSlug }, controller.signal),
+          apiService.getProviders(providerParams, controller.signal),
         ]);
       } catch (err: any) {
         if (err?.name === 'AbortError') {
@@ -183,12 +193,15 @@ function EnhancedCategoryPage() {
 
     return () => {
       cancelled = true;
-      // Only abort if the controller is not already aborted
-      if (controller.signal && !controller.signal.aborted) {
-        controller.abort();
+      try {
+        if (controller.signal && !controller.signal.aborted) {
+          controller.abort();
+        }
+      } catch (e) {
+        console.debug('Abort controller cleanup failed', e);
       }
     };
-  }, [slug, filtersKey, mapProviderToCompany, currentFilters?.certifications, currentFilters?.experience, currentFilters?.ratings]);
+  }, [slug, filtersKey, mapProviderToCompany]);
 
 
 

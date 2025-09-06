@@ -139,9 +139,12 @@ const EnhancedHeader: React.FC = () => {
 
     return () => {
       cancelled = true;
-      // Only abort if the controller is not already aborted
-      if (controller.signal && !controller.signal.aborted) {
-        controller.abort();
+      try {
+        if (controller.signal && !controller.signal.aborted) {
+          controller.abort();
+        }
+      } catch (e) {
+        console.debug('Abort controller cleanup failed', e);
       }
     };
   }, []);

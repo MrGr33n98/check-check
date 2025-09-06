@@ -222,7 +222,13 @@ function CategoriesPage() {
 
     return () => {
       cancelled = true;
-      controller.abort();
+      try {
+        if (!controller.signal.aborted) {
+          controller.abort();
+        }
+      } catch (e) {
+        console.debug('Abort controller cleanup failed', e);
+      }
     };
   }, []);
 
