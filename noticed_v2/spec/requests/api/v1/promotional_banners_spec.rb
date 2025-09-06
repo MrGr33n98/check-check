@@ -35,4 +35,32 @@ RSpec.describe 'Promotional Banners API', type: :request do
       expect(json['data']['id']).to eq(banner.id)
     end
   end
+
+  describe 'api_data' do
+    it 'does not execute additional queries when associations are preloaded' do
+      provider = Provider.create!(
+        name: 'Provider',
+        country: 'US',
+        foundation_year: 2000,
+        members_count: 10,
+        status: 'active',
+        city: 'NY',
+        state: 'NY'
+      )
+
+      PromotionalBanner.create!(valid_attributes.merge(provider: provider))
+
+      banners = PromotionalBanner.active.includes(:provider, icon_attachment: :blob).to_a
+      queries = []
+      callback = lambda do |_, _, _, _, payload|
+        queries << payload[:sql] unless payload[:name] == 'SCHEMA'
+      end
+
+      ActiveSupport::Notifications.subscribed(callback, 'sql.active_record') do
+        banners.map(&:api_data)
+      end
+
+      expect(queries).to be_empty
+    end
+  end
 end

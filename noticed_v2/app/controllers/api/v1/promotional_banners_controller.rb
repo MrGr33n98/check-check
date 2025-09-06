@@ -4,12 +4,14 @@ class Api::V1::PromotionalBannersController < ApplicationController
   
   # GET /api/v1/promotional_banners
   def index
-    @promotional_banners = PromotionalBanner.active.ordered
-    
+    @promotional_banners = PromotionalBanner.active
+                                          .includes(:provider, icon_attachment: :blob)
+                                          .ordered
+
     render json: {
       success: true,
       data: @promotional_banners.map(&:api_data),
-      count: @promotional_banners.count
+      count: @promotional_banners.size
     }
   rescue => e
     render json: {
@@ -21,12 +23,15 @@ class Api::V1::PromotionalBannersController < ApplicationController
   
   # GET /api/v1/promotional_banners/active
   def active
-    @promotional_banners = PromotionalBanner.active.ordered.limit(5)
-    
+    @promotional_banners = PromotionalBanner.active
+                                          .includes(:provider, icon_attachment: :blob)
+                                          .ordered
+                                          .limit(5)
+
     render json: {
       success: true,
       data: @promotional_banners.map(&:api_data),
-      count: @promotional_banners.count
+      count: @promotional_banners.size
     }
   rescue => e
     render json: {
@@ -39,12 +44,15 @@ class Api::V1::PromotionalBannersController < ApplicationController
   # GET /api/v1/promotional_banners/by_position/:position
   def by_position
     position = params[:position]
-    @promotional_banners = PromotionalBanner.active.by_position(position).ordered
-    
+    @promotional_banners = PromotionalBanner.active
+                                          .by_position(position)
+                                          .includes(:provider, icon_attachment: :blob)
+                                          .ordered
+
     render json: {
       success: true,
       data: @promotional_banners.map(&:api_data),
-      count: @promotional_banners.count,
+      count: @promotional_banners.size,
       position: position
     }
   rescue => e
