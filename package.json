@@ -10,9 +10,9 @@
     "build:prod": "tsc && cp index.prod.html dist/index.html && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "build:noticed": "npx tsc -p noticed_v2/tsconfig.json",
-    "build:ui": "npm run build --workspace @internal/ui",
-    "test": "vitest"
+
+    "pre-commit": "lint-staged",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
@@ -54,6 +54,12 @@
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
     "vite": "^4.5.0",
+    "husky": "^9.0.7",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.3.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,md}": "prettier --write"
     "@sentry/vite-plugin": "^2.0.0",
     "vitest": "^1.6.0",
     "@testing-library/react": "^14.2.1",
