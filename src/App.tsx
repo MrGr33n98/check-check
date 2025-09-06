@@ -1,102 +1,89 @@
+import React, { Suspense, lazy } from 'react';
 import { Outlet, RouteObject } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
-import PageBackground from '@/components/ui/PageBackground';
-import EnhancedHomePage from '@/pages/EnhancedHomePage';
-import CompanyDetail from '@/pages/CompanyDetail';
-import BlogPage from '@/pages/BlogPage';
-import BlogArticlePage from '@/pages/BlogArticlePage';
-import CompanyRegistrationPage from '@/pages/CompanyRegistrationPage';
-import SearchPage from '@/pages/SearchPage';
-import ReviewsPage from '@/pages/ReviewsPage';
-import CompanyReviewPage from '@/pages/CompanyReviewPage'; // New import
-import AboutPage from '@/pages/AboutPage';
-import HowItWorksPage from '@/pages/HowItWorksPage';
-import FAQPage from '@/pages/FAQPage';
-import ContactPage from '@/pages/ContactPage';
-import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
-import TermsOfServicePage from '@/pages/TermsOfServicePage';
-import CategoriesPage from '@/pages/CategoriesPage';
-import EnhancedCategoryPage from '@/pages/EnhancedCategoryPage';
-import LoginPage from '@/pages/LoginPage';
-import ProtectedRoute from '@/components/layout/ProtectedRoute';
-import DashboardPage from '@/pages/DashboardPage';
-import AnalyticsDashboard from '@/pages/AnalyticsDashboard';
-import CompanyCustomizationPage from '@/pages/CompanyCustomizationPage';
-import LeadsManagementPage from '@/pages/LeadsManagementPage';
-import PendingApprovalPage from '@/pages/PendingApprovalPage';
-import BannerManager from '@/components/admin/BannerManager';
+import Spinner from '@/components/ui/spinner';
+import ErrorBoundary from '@/components/ErrorBoundary';
+
+const Layout = lazy(() => import('@/components/layout/Layout'));
+const PageBackground = lazy(() => import('@/components/ui/PageBackground'));
+const EnhancedHomePage = lazy(() => import('@/pages/EnhancedHomePage'));
+const CompanyDetail = lazy(() => import('@/pages/CompanyDetail'));
+const BlogPage = lazy(() => import('@/pages/BlogPage'));
+const BlogArticlePage = lazy(() => import('@/pages/BlogArticlePage'));
+const CompanyRegistrationPage = lazy(() => import('@/pages/CompanyRegistrationPage'));
+const SearchPage = lazy(() => import('@/pages/SearchPage'));
+const ReviewsPage = lazy(() => import('@/pages/ReviewsPage'));
+const CompanyReviewPage = lazy(() => import('@/pages/CompanyReviewPage'));
+const AboutPage = lazy(() => import('@/pages/AboutPage'));
+const HowItWorksPage = lazy(() => import('@/pages/HowItWorksPage'));
+const FAQPage = lazy(() => import('@/pages/FAQPage'));
+const ContactPage = lazy(() => import('@/pages/ContactPage'));
+const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('@/pages/TermsOfServicePage'));
+const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'));
+const EnhancedCategoryPage = lazy(() => import('@/pages/EnhancedCategoryPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const ProtectedRoute = lazy(() => import('@/components/layout/ProtectedRoute'));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
+const AnalyticsDashboard = lazy(() => import('@/pages/AnalyticsDashboard'));
+const CompanyCustomizationPage = lazy(() => import('@/pages/CompanyCustomizationPage'));
+const LeadsManagementPage = lazy(() => import('@/pages/LeadsManagementPage'));
+const PendingApprovalPage = lazy(() => import('@/pages/PendingApprovalPage'));
+const BannerManager = lazy(() => import('@/components/admin/BannerManager'));
+
+type LazyComponent = React.LazyExoticComponent<React.ComponentType<any>>;
+
+const loadable = (Component: LazyComponent) => (
+  <Suspense fallback={<Spinner />}>
+    <Component />
+  </Suspense>
+);
+
+const protectedLoadable = (Component: LazyComponent, requiredRole: string) => (
+  <Suspense fallback={<Spinner />}>
+    <ProtectedRoute requiredRole={requiredRole}>
+      <Component />
+    </ProtectedRoute>
+  </Suspense>
+);
 
 // Define routes as an array of objects
 export const routes: RouteObject[] = [
   {
     path: '/',
     element: (
-      <>
+      <Suspense fallback={<Spinner />}>
         <PageBackground />
-        <Layout>
-          <Outlet /> {/* This is where nested routes will render */}
-        </Layout>
-      </>
+        <ErrorBoundary>
+          <Layout>
+            <Outlet /> {/* This is where nested routes will render */}
+          </Layout>
+        </ErrorBoundary>
+      </Suspense>
     ),
     children: [
-      { index: true, element: <EnhancedHomePage /> }, // Render EnhancedHomePage at the root path
-      { path: 'login', element: <LoginPage /> },
-      { path: 'categorias', element: <CategoriesPage /> },
-      { path: 'categorias/:slug', element: <EnhancedCategoryPage /> },
-      { path: 'company/:id', element: <CompanyDetail /> },
-      { path: 'company/:companyId/reviews', element: <ReviewsPage /> },
-      { path: 'empresas/:slug/avaliar', element: <CompanyReviewPage /> }, // New route
-      { path: 'blog', element: <BlogPage /> },
-      { path: 'blog/:id', element: <BlogArticlePage /> },
-      { path: 'empresa/cadastro', element: <CompanyRegistrationPage /> },
-      { path: 'busca-avancada', element: <SearchPage /> },
-      { path: 'sobre', element: <AboutPage /> },
-      { path: 'como-funciona', element: <HowItWorksPage /> },
-      { path: 'faq', element: <FAQPage /> },
-      { path: 'contato', element: <ContactPage /> },
-      { path: 'privacidade', element: <PrivacyPolicyPage /> },
-      { path: 'termos', element: <TermsOfServicePage /> },
-      {
-        path: 'empresa/dashboard',
-        element: (
-          <ProtectedRoute requiredRole="empresa">
-            <DashboardPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'empresa/analytics',
-        element: (
-          <ProtectedRoute requiredRole="empresa">
-            <AnalyticsDashboard />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'empresa/customizar',
-        element: (
-          <ProtectedRoute requiredRole="empresa">
-            <CompanyCustomizationPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'empresa/leads',
-        element: (
-          <ProtectedRoute requiredRole="empresa">
-            <LeadsManagementPage />
-          </ProtectedRoute>
-        ),
-      },
-      { path: 'empresa/pending', element: <PendingApprovalPage /> },
-      {
-        path: 'admin/banners',
-        element: (
-          <ProtectedRoute requiredRole="empresa">
-            <BannerManager />
-          </ProtectedRoute>
-        ),
-      },
+      { index: true, element: loadable(EnhancedHomePage) }, // Render EnhancedHomePage at the root path
+      { path: 'login', element: loadable(LoginPage) },
+      { path: 'categorias', element: loadable(CategoriesPage) },
+      { path: 'categorias/:slug', element: loadable(EnhancedCategoryPage) },
+      { path: 'company/:id', element: loadable(CompanyDetail) },
+      { path: 'company/:companyId/reviews', element: loadable(ReviewsPage) },
+      { path: 'empresas/:slug/avaliar', element: loadable(CompanyReviewPage) }, // New route
+      { path: 'blog', element: loadable(BlogPage) },
+      { path: 'blog/:id', element: loadable(BlogArticlePage) },
+      { path: 'empresa/cadastro', element: loadable(CompanyRegistrationPage) },
+      { path: 'busca-avancada', element: loadable(SearchPage) },
+      { path: 'sobre', element: loadable(AboutPage) },
+      { path: 'como-funciona', element: loadable(HowItWorksPage) },
+      { path: 'faq', element: loadable(FAQPage) },
+      { path: 'contato', element: loadable(ContactPage) },
+      { path: 'privacidade', element: loadable(PrivacyPolicyPage) },
+      { path: 'termos', element: loadable(TermsOfServicePage) },
+      { path: 'empresa/dashboard', element: protectedLoadable(DashboardPage, 'empresa') },
+      { path: 'empresa/analytics', element: protectedLoadable(AnalyticsDashboard, 'empresa') },
+      { path: 'empresa/customizar', element: protectedLoadable(CompanyCustomizationPage, 'empresa') },
+      { path: 'empresa/leads', element: protectedLoadable(LeadsManagementPage, 'empresa') },
+      { path: 'empresa/pending', element: loadable(PendingApprovalPage) },
+      { path: 'admin/banners', element: protectedLoadable(BannerManager, 'empresa') },
     ],
   },
 ];

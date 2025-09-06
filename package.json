@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
     "build:prod": "tsc && cp index.prod.html dist/index.html && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:noticed": "npx tsc -p noticed_v2/tsconfig.json",
+    "build:ui": "npm run build --workspace @internal/ui",
+    "test": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
@@ -31,7 +35,8 @@
     "recharts": "^2.8.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@tanstack/react-query": "^5.51.1"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
@@ -47,6 +52,10 @@
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
-    "vite": "^4.5.0"
+    "vite": "^4.5.0",
+    "vitest": "^1.6.0",
+    "@testing-library/react": "^14.2.1",
+    "@testing-library/jest-dom": "^6.4.2",
+    "jsdom": "^24.0.0"
   }
 }
