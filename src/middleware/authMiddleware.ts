@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { toast } from 'sonner';
 
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
@@ -103,6 +104,9 @@ class AuthMiddleware {
         if (error.response?.status === 401) {
           this.clearTokens();
           window.location.href = '/login';
+        } else {
+          const message = (error.response?.data as any)?.message || 'Ocorreu um erro inesperado.';
+          toast.error(message);
         }
         return Promise.reject(error);
       }
