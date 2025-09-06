@@ -191,7 +191,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
           rating: rating,
           review_count: review_count,
           price: calculate_mock_price(provider),
-          experience: "#{Date.current.year - provider.foundation_year} anos",
+          experience: provider.foundation_year ? "#{Date.current.year - provider.foundation_year} anos" : nil,
           services: extract_services_from_tags(tags),
           certifications: extract_certifications_from_tags(tags)
         })
@@ -393,16 +393,16 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   def calculate_mock_rating(provider)
     # Calculate rating based on company characteristics
     base_rating = 3.5
-    
+
     # Bonus for older companies (more experience)
-    age_bonus = [(Date.current.year - provider.foundation_year) * 0.05, 1.0].min
-    
+    age_bonus = provider.foundation_year ? [(Date.current.year - provider.foundation_year) * 0.05, 1.0].min : 0
+
     # Bonus for larger companies
-    size_bonus = [provider.members_count / 500.0, 0.5].min
-    
+    size_bonus = provider.members_count ? [provider.members_count / 500.0, 0.5].min : 0
+
     # Bonus for more tags (more services/specialties)
     service_bonus = [Array(provider.tags).length * 0.02, 0.3].min
-    
+
     rating = base_rating + age_bonus + size_bonus + service_bonus
     [rating, 5.0].min.round(1)
   end
@@ -410,22 +410,22 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   def calculate_mock_review_count(provider)
     # Calculate review count based on company size and age
     base_reviews = 10
-    age_factor = Date.current.year - provider.foundation_year
-    size_factor = provider.members_count / 10
-    
+    age_factor = provider.foundation_year ? Date.current.year - provider.foundation_year : 0
+    size_factor = provider.members_count ? provider.members_count / 10 : 0
+
     (base_reviews + age_factor * 3 + size_factor).to_i
   end
 
   def calculate_mock_price(provider)
     # Calculate starting price based on company characteristics
     base_price = 15000
-    
+
     # Larger companies might charge more
-    size_multiplier = 1 + (provider.members_count / 1000.0)
-    
+    size_multiplier = 1 + (provider.members_count ? provider.members_count / 1000.0 : 0)
+
     # Older companies might charge premium
-    experience_multiplier = 1 + [(Date.current.year - provider.foundation_year) * 0.02, 0.3].min
-    
+    experience_multiplier = 1 + (provider.foundation_year ? [(Date.current.year - provider.foundation_year) * 0.02, 0.3].min : 0)
+
     (base_price * size_multiplier * experience_multiplier).to_i
   end
 
