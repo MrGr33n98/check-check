@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Card, CardContent } from './card';
 import { CheckCircle } from 'lucide-react';
 

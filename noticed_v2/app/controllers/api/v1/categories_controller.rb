@@ -62,6 +62,6 @@ class Api::V1::CategoriesController < Api::V1::BaseController
   end
   
   def category_params
-    params.require(:category).permit(:name, :description, :featured, :photo)
+    params.require(:category).permit(:name, :description, :featured, :photo, :banner_image)
   end
 end

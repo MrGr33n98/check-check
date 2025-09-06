@@ -14,12 +14,7 @@ Sentry.init({
 })
 
 // Create the router instance with future flags
-const router = createBrowserRouter(routes, {
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
-  },
-});
+const router = createBrowserRouter(routes);
 
 const queryClient = new QueryClient()
 

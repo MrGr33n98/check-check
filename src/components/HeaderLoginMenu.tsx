@@ -50,7 +50,7 @@ export default function HeaderLoginMenu() {
           <div className="absolute -top-2 right-6 h-4 w-4 rotate-45 bg-white ring-1 ring-slate-200 rounded-sm" aria-hidden />
 
           <Menu.Item>
-            {({ active }) => (
+            {({ active }: { active: boolean }) => (
               <button
                 onClick={onLinkedIn}
                 className={`w-full text-left ${active ? 'bg-slate-50' : ''} flex items-center gap-3 p-3 rounded-lg`}
@@ -67,7 +67,7 @@ export default function HeaderLoginMenu() {
           <div className="my-1 h-px bg-slate-100" />
 
           <Menu.Item>
-            {({ active }) => (
+            {({ active }: { active: boolean }) => (
               <button
                 onClick={onGoogle}
                 className={`w-full text-left ${active ? 'bg-slate-50' : ''} flex items-center gap-3 p-3 rounded-lg`}

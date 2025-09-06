@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,10 +99,11 @@ const EnhancedHeader: React.FC = () => {
     const controller = new AbortController();
 
     const fetchCategories = async (signal: AbortSignal) => {
-      try {
-        const apiCategories = await apiService.getCategories(signal);
-        
-        // Recursive function to map API data and add icons
+      const result = await apiService.getCategories(signal);
+
+      if (result && 'aborted' in result && result.aborted) return;
+
+      if (result && 'ok' in result && result.ok) {
         const mapApiData = (apiCats: ApiCategory[]): Category[] => {
           return apiCats.map(cat => ({
             id: cat.id,
@@ -112,14 +113,11 @@ const EnhancedHeader: React.FC = () => {
             children: cat.children ? mapApiData(cat.children) : [],
           }));
         };
-
-        setCategories(mapApiData(apiCategories));
-      } catch (error: any) {
-        if (signal.aborted) {
-          // console.log('Fetch aborted as expected:', error.name);
-          return; // Do nothing if the fetch was intentionally aborted
+        if ('data' in result && Array.isArray(result.data)) {
+          setCategories(mapApiData(result.data));
         }
-        console.error("Failed to fetch header categories:", error);
+      } else {
+        console.debug('Failed to fetch header categories:', 'error' in result ? result.error : result);
       }
     };
 

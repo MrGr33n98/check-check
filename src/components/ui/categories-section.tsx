@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Card } from './card';
 import { Button } from './button';
 

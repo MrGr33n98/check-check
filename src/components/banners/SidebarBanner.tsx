@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { usePromoBanners } from '../../hooks/usePromoBanners';
 import PromoBanner from './PromoBanner';
 

@@ -1,156 +1,126 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
-import StarRating from '../ui/star-rating';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import StarRating from '@/components/ui/star-rating';
+import { toast } from 'sonner';
+import { api } from '@/middleware/authMiddleware';
+import { Loader2, Send, CheckCircle, AlertTriangle } from 'lucide-react';
 
-interface ReviewFormData {
-  rating: number;
-  title: string;
-  comment: string;
-  reviewerName: string;
-  reviewerEmail: string;
-}
+const reviewSchema = z.object({
+  rating: z.number().min(1, "Rating is required.").max(5),
+  comment: z.string().min(20, "Comment must be at least 20 characters.").max(1000),
+  would_recommend: z.boolean().default(true),
+});
+
+type ReviewFormValues = z.infer<typeof reviewSchema>;
 
 interface CreateReviewFormProps {
-  companyId?: number;
-  companyName?: string;
-  onSubmit?: (data: ReviewFormData) => void;
-  onCancel?: () => void;
+  companyId: number;
+  onReviewSubmit: () => void; // Callback to refresh reviews list
 }
 
-const CreateReviewForm: React.FC<CreateReviewFormProps> = ({ 
-  onSubmit, 
-  onCancel 
-}) => {
-  const [formData, setFormData] = useState<ReviewFormData>({
-    rating: 0,
-    title: '',
-    comment: '',
-    reviewerName: '',
-    reviewerEmail: ''
+const CreateReviewForm: React.FC<CreateReviewFormProps> = ({ companyId, onReviewSubmit }) => {
+  const { register, handleSubmit, formState: { errors, isSubmitting }, reset, setValue, watch } = useForm<ReviewFormValues>({
+    resolver: zodResolver(reviewSchema),
+    defaultValues: {
+      rating: 0,
+      would_recommend: true,
+    }
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const ratingValue = watch('rating');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.rating === 0) {
-      alert('Por favor, selecione uma avaliação');
-      return;
-    }
+  useEffect(() => {
+    register('rating');
+  }, [register]);
 
-    setIsSubmitting(true);
+  const handleRatingChange = (newRating: number) => {
+    setValue('rating', newRating, { shouldValidate: true });
+  };
+
+  const onSubmit: SubmitHandler<ReviewFormValues> = async (data) => {
     try {
-      await onSubmit?.(formData);
-      // Reset form after successful submission
-      setFormData({
-        rating: 0,
-        title: '',
-        comment: '',
-        reviewerName: '',
-        reviewerEmail: ''
-      });
-    } catch (error) {
-      console.error('Erro ao enviar avaliação:', error);
-    } finally {
-      setIsSubmitting(false);
+      const payload = {
+        review: {
+          ...data,
+          provider_id: companyId,
+        }
+      };
+      
+      await api.post('/reviews', payload);
+      
+      setSubmissionStatus('success');
+      toast.success("Thank you for your review!");
+      reset();
+      onReviewSubmit(); // Trigger refresh
+      setTimeout(() => setSubmissionStatus('idle'), 5000);
+
+    } catch (error: any) {
+      setSubmissionStatus('error');
+      const errorMessage = error.response?.data?.errors?.join(', ') || "An unexpected error occurred.";
+      toast.error(errorMessage);
+      console.error("Review submission failed:", error);
     }
   };
 
-  const handleInputChange = (field: keyof ReviewFormData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  if (submissionStatus === 'success') {
+    return (
+      <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
+        <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-3" />
+        <h3 className="text-md font-semibold text-green-800">Review Submitted!</h3>
+        <p className="text-green-700 text-sm">Thanks for sharing your feedback.</p>
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Escrever Avaliação</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Sua avaliação *</Label>
-            <div className="mt-2">
-              <StarRating
-                rating={formData.rating}
-                readonly={false}
-                onRatingChange={(rating) => handleInputChange('rating', rating)}
-                size="lg"
-              />
-            </div>
-          </div>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <h3 className="text-lg font-semibold text-gray-800">Write a Review</h3>
+      
+      {submissionStatus === 'error' && (
+        <div className="p-3 bg-red-50 text-red-700 rounded-md flex items-center gap-2 text-sm">
+          <AlertTriangle className="w-5 h-5" />
+          <span>Failed to submit review. Please try again.</span>
+        </div>
+      )}
 
-          <div>
-            <Label htmlFor="title">Título da avaliação *</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="Resuma sua experiência"
-              required
-            />
-          </div>
+      <div>
+        <label className="font-medium text-sm">Your Rating *</label>
+        <StarRating rating={ratingValue} onRatingChange={handleRatingChange} />
+        {errors.rating && <p className="text-red-500 text-xs mt-1">{errors.rating.message}</p>}
+      </div>
 
-          <div>
-            <Label htmlFor="comment">Comentário *</Label>
-            <Textarea
-              id="comment"
-              value={formData.comment}
-              onChange={(e) => handleInputChange('comment', e.target.value)}
-              placeholder="Conte-nos sobre sua experiência com esta empresa"
-              rows={4}
-              required
-            />
-          </div>
+      <div>
+        <Textarea {...register("comment")} placeholder="Share details of your own experience with this company *" rows={4} />
+        {errors.comment && <p className="text-red-500 text-xs mt-1">{errors.comment.message}</p>}
+      </div>
 
-          <div>
-            <Label htmlFor="reviewerName">Seu nome *</Label>
-            <Input
-              id="reviewerName"
-              value={formData.reviewerName}
-              onChange={(e) => handleInputChange('reviewerName', e.target.value)}
-              placeholder="Como você gostaria de aparecer"
-              required
-            />
-          </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox id="recommend" {...register("would_recommend")} defaultChecked={true} />
+        <label htmlFor="recommend" className="text-sm font-medium leading-none">
+          I would recommend this company
+        </label>
+      </div>
 
-          <div>
-            <Label htmlFor="reviewerEmail">Seu email *</Label>
-            <Input
-              id="reviewerEmail"
-              type="email"
-              value={formData.reviewerEmail}
-              onChange={(e) => handleInputChange('reviewerEmail', e.target.value)}
-              placeholder="Não será exibido publicamente"
-              required
-            />
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="flex-1"
-            >
-              {isSubmitting ? 'Enviando...' : 'Publicar Avaliação'}
-            </Button>
-            {onCancel && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onCancel}
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-            )}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <Button type="submit" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Submitting...
+          </>
+        ) : (
+          <>
+            <Send className="mr-2 h-4 w-4" />
+            Submit Review
+          </>
+        )}
+      </Button>
+    </form>
   );
 };
 

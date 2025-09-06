@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+from 'react';
 import { X, MapPin, Star, Award, ExternalLink } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

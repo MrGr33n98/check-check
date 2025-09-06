@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Shield, Award, Users, Clock } from 'lucide-react';
 
 const TrustIndicatorsSection: React.FC = () => {

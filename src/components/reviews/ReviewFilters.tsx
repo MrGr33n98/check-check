@@ -1,88 +1,113 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import type { ReviewFilters } from '../../types/reviews';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Star, X } from 'lucide-react';
 
-interface ReviewFiltersProps {
-  onFiltersChange?: (filters: ReviewFilters) => void;
+export interface FilterState {
+  sortBy: 'recent' | 'helpful' | 'rating_high' | 'rating_low';
+  rating: number; // 0 for all
+  keyword: string;
 }
 
-const ReviewFilters: React.FC<ReviewFiltersProps> = ({ onFiltersChange }) => {
-  const [filters, setFilters] = useState<ReviewFilters>({
-    sortBy: 'newest'
-  });
+interface ReviewFiltersProps {
+  initialFilters: FilterState;
+  onFilterChange: (filters: FilterState) => void;
+}
 
-  const handleFilterChange = (key: keyof ReviewFilters, value: string | number | boolean) => {
-    const newFilters = { ...filters, [key]: value };
+const ReviewFilters: React.FC<ReviewFiltersProps> = ({ initialFilters, onFilterChange }) => {
+  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const keywordTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSortChange = (value: FilterState['sortBy']) => {
+    const newFilters = { ...filters, sortBy: value };
     setFilters(newFilters);
-    onFiltersChange?.(newFilters);
+    onFilterChange(newFilters);
   };
 
-  const clearFilters = () => {
-    const clearedFilters: ReviewFilters = { rating: '', sortBy: 'newest', dateRange: 'all' };
-    setFilters(clearedFilters);
-    onFiltersChange?.(clearedFilters);
+  const handleRatingChange = (value: string) => {
+    const rating = parseInt(value, 10);
+    const newFilters = { ...filters, rating };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
   };
+
+  const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const keyword = e.target.value;
+    setFilters(prev => ({ ...prev, keyword }));
+
+    if (keywordTimeoutRef.current) {
+      clearTimeout(keywordTimeoutRef.current);
+    }
+
+    keywordTimeoutRef.current = setTimeout(() => {
+      onFilterChange({ ...filters, keyword });
+    }, 300); // Debounce keyword search
+  };
+  
+  const clearKeyword = () => {
+    const newFilters = { ...filters, keyword: '' };
+    setFilters(newFilters);
+    onFilterChange(newFilters);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (keywordTimeoutRef.current) {
+        clearTimeout(keywordTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Filtros</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Avaliação mínima</label>
-          <Select value={filters.rating} onValueChange={(value) => handleFilterChange('rating', value)} placeholder="Todas as avaliações">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas as avaliações</SelectItem>
-              <SelectItem value="5">5 estrelas</SelectItem>
-              <SelectItem value="4">4+ estrelas</SelectItem>
-              <SelectItem value="3">3+ estrelas</SelectItem>
-              <SelectItem value="2">2+ estrelas</SelectItem>
-              <SelectItem value="1">1+ estrelas</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="p-4 bg-gray-50 rounded-lg border mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+        {/* Keyword Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            placeholder="Search reviews..."
+            value={filters.keyword}
+            onChange={handleKeywordChange}
+            className="pl-10"
+          />
+          {filters.keyword && (
+            <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0" onClick={clearKeyword}>
+              <X className="w-4 h-4" />
+            </Button>
+          )}
         </div>
 
-        <div>
-          <label className="text-sm font-medium mb-2 block">Ordenar por</label>
-          <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)} placeholder="Mais recentes">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Mais recentes</SelectItem>
-              <SelectItem value="oldest">Mais antigas</SelectItem>
-              <SelectItem value="highest">Maior avaliação</SelectItem>
-              <SelectItem value="lowest">Menor avaliação</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Sort By */}
+        <Select value={filters.sortBy} onValueChange={handleSortChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Most Recent</SelectItem>
+            <SelectItem value="helpful">Most Helpful</SelectItem>
+            <SelectItem value="rating_high">Highest Rating</SelectItem>
+            <SelectItem value="rating_low">Lowest Rating</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <div>
-          <label className="text-sm font-medium mb-2 block">Período</label>
-          <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange('dateRange', value)} placeholder="Todos os períodos">
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os períodos</SelectItem>
-              <SelectItem value="week">Última semana</SelectItem>
-              <SelectItem value="month">Último mês</SelectItem>
-              <SelectItem value="year">Último ano</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button variant="outline" onClick={clearFilters} className="w-full">
-          Limpar filtros
-        </Button>
-      </CardContent>
-    </Card>
+        {/* Filter by Rating */}
+        <Select value={String(filters.rating)} onValueChange={handleRatingChange}>
+          <SelectTrigger>
+            <Star className="w-4 h-4 mr-2 text-yellow-400" />
+            <SelectValue placeholder="Filter by rating" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">All Ratings</SelectItem>
+            <SelectItem value="5">5 Stars</SelectItem>
+            <SelectItem value="4">4 Stars & up</SelectItem>
+            <SelectItem value="3">3 Stars & up</SelectItem>
+            <SelectItem value="2">2 Stars & up</SelectItem>
+            <SelectItem value="1">1 Star & up</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
   );
 };
 

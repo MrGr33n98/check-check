@@ -1,45 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StarRatingProps {
   rating: number;
   maxRating?: number;
-  size?: 'sm' | 'md' | 'lg';
   readonly?: boolean;
   onRatingChange?: (rating: number) => void;
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
 const StarRating: React.FC<StarRatingProps> = ({
   rating,
   maxRating = 5,
-  size = 'md',
-  readonly = true,
+  readonly = false,
   onRatingChange,
-  className
+  size = 'md',
+  className,
 }) => {
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const handleMouseEnter = (index: number) => {
+    if (!readonly) {
+      setHoverRating(index);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!readonly) {
+      setHoverRating(0);
+    }
+  };
+
+  const handleClick = (index: number) => {
+    if (!readonly && onRatingChange) {
+      onRatingChange(index);
+    }
+  };
+
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
-    lg: 'w-6 h-6'
+    lg: 'w-6 h-6',
   };
 
   return (
-    <div className={cn('flex items-center space-x-1', className)}>
-      {Array.from({ length: maxRating }, (_, index) => {
-        const starValue = index + 1;
-        const isFilled = starValue <= rating;
+    <div className={cn("flex items-center gap-0.5", className)}>
+      {[...Array(maxRating)].map((_, i) => {
+        const index = i + 1;
+        const isFilled = (hoverRating || rating) >= index;
         
         return (
           <Star
             key={index}
             className={cn(
               sizeClasses[size],
-              isFilled ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300',
-              !readonly && 'cursor-pointer hover:text-yellow-400'
+              isFilled ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300',
+              !readonly && 'cursor-pointer transition-transform hover:scale-110'
             )}
-            onClick={() => !readonly && onRatingChange?.(starValue)}
+            onMouseEnter={() => handleMouseEnter(index)}
+            onMouseLeave={handleMouseLeave}
+            onClick={() => handleClick(index)}
           />
         );
       })}

@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 
 interface AdminDashboardProps {
   // Adicione as props necessárias aqui

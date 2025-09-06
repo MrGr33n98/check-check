@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+from 'react';
 import { Star } from 'lucide-react';
 
 interface BannerCompany {

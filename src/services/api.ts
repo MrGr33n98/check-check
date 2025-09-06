@@ -57,18 +57,18 @@ export interface ApiResponse<T> {
 }
 
 class ApiService {
-  async getCategories(signal?: AbortSignal): Promise<Category[]> {
+  async getCategories(signal?: AbortSignal) {
     try {
       const response = await api.get('/categories', { signal });
       const data = response.data;
       // The API might return the data nested, e.g., { data: [...] }. Adjust if needed.
-      return Array.isArray(data) ? data : [];
+      return { ok: true, data: Array.isArray(data) ? data : [] };
     } catch (error: any) {
       if (error.name === 'CanceledError') {
-        throw error;
+        return { aborted: true };
       }
       console.error("Error fetching categories:", error);
-      return []; // Return empty array on other errors
+      return { ok: false, error }; // Return empty array on other errors
     }
   }
 

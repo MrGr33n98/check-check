@@ -39,7 +39,7 @@ class AuthMiddleware {
 
   private setupInterceptors(): void {
     this.axiosInstance.interceptors.request.use(
-      (config: ExtendedAxiosRequestConfig) => {
+      (config: InternalAxiosRequestConfig) => {
         if (this.tokens) {
           config.headers = {
             ...config.headers,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+from 'react';
 import { Link } from 'react-router-dom';
 
 interface CtaBannerData {

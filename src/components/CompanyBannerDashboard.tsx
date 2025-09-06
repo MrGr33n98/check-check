@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+from 'react';
 import { Eye, Plus, AlertCircle, TrendingUp, MousePointer, BarChart3, ExternalLink } from 'lucide-react';
 
 interface PromotionalBanner {

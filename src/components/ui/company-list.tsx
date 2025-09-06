@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Card, CardContent, CardTitle } from './card';
 import { Button } from './button';
 import { Badge } from './badge';

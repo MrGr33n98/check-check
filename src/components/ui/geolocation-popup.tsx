@@ -1,122 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
-import { Button } from './button';
-import { Input } from './input';
-import { Label } from './label';
-import { MapPin } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from '@/contexts/LocationContext';
+import { Button } from '@/components/ui/button';
+import { MapPin, X } from 'lucide-react';
 
-interface GeolocationPopupProps {
-  onLocationSelect: (location: string) => void;
-}
-
-const GeolocationPopup: React.FC<GeolocationPopupProps> = ({ onLocationSelect }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [location, setLocation] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const GeolocationPopup: React.FC = () => {
+  const { userLocation, isLocating, requestLocation, clearLocation } = useLocation();
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Verificar se o usuário já selecionou uma localização
-    const savedLocation = localStorage.getItem('user-location');
-    if (!savedLocation) {
-      // Aguardar um pouco antes de mostrar o popup para melhor UX
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1000);
+    // Show the popup only if location is not set and has not been dismissed before
+    const dismissed = sessionStorage.getItem('geolocation_popup_dismissed');
+    if (!userLocation && !isLocating && !dismissed) {
+      const timer = setTimeout(() => setIsVisible(true), 2000); // Delay popup
       return () => clearTimeout(timer);
-    } else {
-      // Se já tem localização salva, notificar o componente pai
-      onLocationSelect(savedLocation);
     }
-  }, [onLocationSelect]);
+  }, [userLocation, isLocating]);
 
-  const handleConfirm = async () => {
-    if (!location.trim()) return;
-    
-    setIsLoading(true);
-    
-    try {
-      // Salvar no localStorage
-      localStorage.setItem('user-location', location.trim());
-      
-      // Notificar o componente pai
-      onLocationSelect(location.trim());
-      
-      // Fechar o popup
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Erro ao salvar localização:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleAllow = () => {
+    requestLocation();
+    setIsVisible(false);
   };
 
-  const handleSkip = () => {
-    // Usar São Paulo como fallback
-    const fallbackLocation = 'São Paulo, SP';
-    localStorage.setItem('user-location', fallbackLocation);
-    onLocationSelect(fallbackLocation);
-    setIsOpen(false);
+  const handleDismiss = () => {
+    setIsVisible(false);
+    sessionStorage.setItem('geolocation_popup_dismissed', 'true');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleConfirm();
-    }
-  };
+  if (!isVisible) {
+    return null;
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-center">
-            <MapPin className="h-5 w-5 text-orange-500" />
-            Encontre empresas perto de você
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground text-center">
-            Para mostrar empresas perto de você, informe sua cidade ou CEP
-          </p>
-          
-          <div className="space-y-2">
-            <Label htmlFor="location">Cidade ou CEP</Label>
-            <Input
-              id="location"
-              placeholder="Ex: São Paulo, SP ou 01310-100"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="w-full"
-              autoFocus
-            />
+    <div className="fixed bottom-4 right-4 w-full max-w-sm z-50">
+      <div className="bg-white rounded-lg shadow-lg p-4 border animate-in slide-in-from-bottom-10 fade-in-50 duration-300">
+        <button onClick={handleDismiss} className="absolute top-2 right-2 p-1 text-gray-400 hover:text-gray-600">
+          <X className="w-4 h-4" />
+        </button>
+        <div className="flex items-start gap-4">
+          <div className="p-2 bg-blue-100 rounded-full">
+            <MapPin className="w-6 h-6 text-blue-600" />
           </div>
-          
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={handleConfirm}
-              disabled={!location.trim() || isLoading}
-              className="flex-1"
-            >
-              {isLoading ? 'Confirmando...' : 'Confirmar'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleSkip}
-              className="flex-1"
-            >
-              Pular
-            </Button>
+          <div>
+            <h4 className="font-semibold text-gray-800">Personalize sua busca</h4>
+            <p className="text-sm text-gray-600 mt-1">
+              Permita o acesso à sua localização para ver empresas perto de você.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button onClick={handleAllow} size="sm">Permitir</Button>
+              <Button onClick={handleDismiss} size="sm" variant="ghost">Agora não</Button>
+            </div>
           </div>
-          
-          <p className="text-xs text-muted-foreground text-center">
-            Você pode alterar sua localização a qualquer momento
-          </p>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 };
 
-export { GeolocationPopup };
 export default GeolocationPopup;

@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
 import { BookOpen, Video, FileText, Users } from 'lucide-react';

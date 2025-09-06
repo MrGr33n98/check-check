@@ -1,128 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { usePromoBanners } from '@/hooks/usePromoBanners';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { X, ExternalLink } from 'lucide-react';
+import { utmTracker, UTMParameters } from '../../utils/utmTracking';
 
-const PromoBannerSidebar: React.FC = () => {
-  const { banners, loading, error } = usePromoBanners('sidebar');
-  const [currentIndex, setCurrentIndex] = useState(0);
+interface PromotionalBanner {
+  id: number;
+  title: string;
+  description: string;
+  cta_text: string;
+  url: string;
+  image_url: string;
+  background_color: string;
+  text_color: string;
+  provider_name?: string;
+  provider_logo?: string;
+  final_url: string;
+  is_external: boolean;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+}
 
-  // Ensure banners is an array before using it in useEffect
+interface PromoBannerSidebarProps {
+  position: string;
+  className?: string;
+}
+
+const PromoBannerSidebar: React.FC<PromoBannerSidebarProps> = ({ position, className = '' }) => {
+  const [banner, setBanner] = useState<PromotionalBanner | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!Array.isArray(banners) || banners.length <= 1) return;
+    const fetchBanner = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/v1/promotional_banners/by_position/${position}?limit=1`);
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+          setBanner(data.data[0]);
+          setError(null);
+        } else {
+          setBanner(null);
+          setError(data.error || 'No banner available for this position');
+        }
+      } catch (err) {
+        console.error(`Error fetching banner for position ${position}:`, err);
+        setError('Failed to load banner');
+        setBanner(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length);
-    }, 5000); // Change slide every 5 seconds
+    fetchBanner();
+  }, [position]);
 
-    return () => clearInterval(interval);
-  }, [banners]);
+  useEffect(() => {
+    if (banner) {
+      const registerImpression = async () => {
+        try {
+          await fetch(`/api/v1/promotional_banners/${banner.id}/impression`, { method: 'POST' });
+          const utmParams: UTMParameters = {
+            utm_source: banner.utm_source,
+            utm_medium: banner.utm_medium,
+            utm_campaign: banner.utm_campaign,
+            utm_term: banner.utm_term,
+            utm_content: banner.utm_content
+          };
+          utmTracker.trackImpression(banner.id, banner.title, banner.provider_name, utmParams);
+        } catch (err) {
+          console.error('Error registering impression:', err);
+        }
+      };
+      registerImpression();
+    }
+  }, [banner]);
 
-  // Conditional rendering for loading, error, and empty states
-  if (loading) {
-    return (
-      <div className="relative w-full p-6 rounded-xl overflow-hidden flex flex-col items-center justify-center aspect-square max-w-sm mx-auto bg-gray-200 animate-pulse">
-        <p className="text-center font-semibold mb-2">Carregando banners...</p>
-        <div className="h-8 w-3/4 bg-gray-300 rounded"></div>
-        <div className="h-4 w-1/2 bg-gray-300 rounded mt-4"></div>
-      </div>
-    );
+  const handleBannerClick = async () => {
+    if (!banner) return;
+    try {
+      const response = await fetch(`/api/v1/promotional_banners/${banner.id}/click`, { method: 'POST' });
+      const data = await response.json();
+      const finalUrl = data.success && data.redirect_url ? data.redirect_url : banner.final_url;
+      
+      const utmParams: UTMParameters = {
+        utm_source: banner.utm_source,
+        utm_medium: banner.utm_medium,
+        utm_campaign: banner.utm_campaign,
+        utm_term: banner.utm_term,
+        utm_content: banner.utm_content
+      };
+      utmTracker.trackClick(banner.id, banner.title, finalUrl, banner.provider_name, utmParams);
+
+      if (banner.is_external) {
+        window.open(finalUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = finalUrl;
+      }
+    } catch (err) {
+      console.error('Error registering click:', err);
+      // Fallback navigation
+      if (banner.is_external) {
+        window.open(banner.final_url, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = banner.final_url;
+      }
+    }
+  };
+
+  const closeBanner = () => {
+    setIsVisible(false);
+    sessionStorage.setItem(`promo-banner-${position}-closed`, 'true');
+  };
+
+  useEffect(() => {
+    const wasClosed = sessionStorage.getItem(`promo-banner-${position}-closed`);
+    if (wasClosed === 'true') {
+      setIsVisible(false);
+    }
+  }, [position]);
+
+  if (!isVisible || isLoading || error || !banner) {
+    return null;
   }
-
-  if (error) {
-    return (
-      <div className="relative w-full p-6 rounded-xl overflow-hidden flex flex-col items-center justify-center aspect-square max-w-sm mx-auto bg-red-100 text-red-700">
-        <p className="text-center font-semibold mb-2">Erro ao carregar banners.</p>
-        <p className="text-center text-sm">{error}</p>
-      </div>
-    );
-  }
-
-  if (!Array.isArray(banners) || banners.length === 0) {
-    return (
-      <div className="relative w-full p-6 rounded-xl overflow-hidden flex flex-col items-center justify-center aspect-square max-w-sm mx-auto bg-gray-100 text-gray-600">
-        <p className="text-center font-semibold mb-2">Nenhum banner disponível.</p>
-        <p className="text-center text-sm">Verifique as configurações ou adicione novos banners.</p>
-      </div>
-    );
-  }
-
-  // If we reach here, banners is guaranteed to be a non-empty array
-  const banner = banners[currentIndex];
-
-  const goToPrevious = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? banners.length - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const goToNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const isLastSlide = currentIndex === banners.length - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
-  };
-
-  const containerStyle: React.CSSProperties = {
-    backgroundColor: banner.background_color,
-    backgroundImage: banner.background_image_url
-      ? `url(${banner.background_image_url})`
-      : `linear-gradient(135deg, ${banner.background_color || '#667eea'} 0%, ${banner.background_color || '#764ba2'} 100%)`, // Fallback gradient
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    color: banner.text_color,
-    textAlign: banner.text_align as React.CSSProperties['textAlign'],
-  };
-
-  const overlayStyle: React.CSSProperties = {
-    display: banner.overlay_enabled ? 'block' : 'none',
-    position: 'absolute',
-    inset: 0,
-    backgroundColor: banner.overlay_color,
-    opacity: banner.overlay_opacity / 100,
-    zIndex: 1,
-    borderRadius: 'inherit',
-  };
-
-  const buttonStyle = (isPrimary: boolean): React.CSSProperties => ({
-    backgroundColor: isPrimary ? banner.text_color : 'transparent',
-    color: isPrimary ? banner.background_color : banner.text_color,
-    border: `2px solid ${banner.text_color}`,
-  });
 
   return (
-    <div style={containerStyle} className="relative w-full p-6 rounded-xl overflow-hidden flex flex-col items-center justify-center aspect-square max-w-sm mx-auto">
-      <div style={overlayStyle}></div>
-      <div className="relative z-10 flex flex-col h-full text-center">
-        {banner.show_title && <h3 className="text-xl font-bold mb-2">{banner.title}</h3>}
-        {banner.show_subtitle && <p className="text-sm opacity-90 mb-4 flex-grow">{banner.subtitle}</p>}
-        <div className="mt-auto flex flex-col space-y-2 w-full">
-            {banner.button_text && (
-                <Link to={banner.button_url || '#'} className="w-full py-2 px-4 rounded-lg font-semibold transition-transform transform hover:scale-105" style={buttonStyle(true)}>
-                    {banner.button_text}
-                </Link>
-            )}
-            {banner.button_secondary_text && (
-                <Link to={banner.button_secondary_url || '#'} className="w-full py-2 px-4 rounded-lg font-semibold transition-transform transform hover:scale-105" style={buttonStyle(false)}>
-                          {banner.button_secondary_text}
-                      </Link>
-                  )}
-              </div>
-            </div>
-
-            {banners.length > 1 && (
-              <>
-                <button onClick={goToPrevious} className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
-                  <ChevronLeft size={20} />
-                </button>
-                <button onClick={goToNext} className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/30 text-white p-1 rounded-full z-20 hover:bg-black/50">
-                  <ChevronRight size={20} />
-                </button>
-              </>
-            )}
+    <div className={`relative rounded-lg overflow-hidden shadow-lg ${className}`} style={{ backgroundColor: banner.background_color, color: banner.text_color }}>
+      <button
+        onClick={closeBanner}
+        className="absolute top-2 right-2 p-1 rounded-full bg-black/20 hover:bg-black/40 transition-colors z-10"
+        aria-label="Close banner"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      
+      <div className="cursor-pointer" onClick={handleBannerClick}>
+        {banner.image_url && (
+          <img src={banner.image_url} alt={banner.title} className="w-full h-32 object-cover" />
+        )}
+        <div className="p-4">
+          <h4 className="font-bold text-lg">{banner.title}</h4>
+          <p className="text-sm mt-1 mb-3">{banner.description}</p>
+          <div className="inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold" style={{ backgroundColor: banner.text_color, color: banner.background_color }}>
+            {banner.cta_text}
+            {banner.is_external && <ExternalLink className="w-4 h-4 ml-2" />}
           </div>
-        );
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default PromoBannerSidebar;

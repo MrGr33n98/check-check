@@ -142,25 +142,28 @@ function CategoriesPage() {
       try {
         setLoading(true);
         const [categoriesRes, heroRes] = await Promise.all([
-          fetch('/api/v1/categories', { signal: controller.signal }),
+          apiService.getCategories(controller.signal),
           fetch('/api/v1/promotional_banners/by_position/categories_hero', { signal: controller.signal })
         ]);
 
         if (!active || controller.signal.aborted) return; // Ignore if component unmounted or request aborted
 
         // Process categories response
-        if (!categoriesRes.ok) throw new Error(`HTTP ${categoriesRes.status}`);
-        const apiCategories: ApiCategory[] = await categoriesRes.json();
-        if (!Array.isArray(apiCategories)) throw new Error('Formato inesperado: a resposta da API não é um array.');
-        const mappedCategories: Category[] = apiCategories.map(c => ({
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          description: c.description || '',
-          featured: c.featured || false,
-          banner_image_url: c.banner_image_url
-        }));
-        setCategories(mappedCategories.length > 0 ? mappedCategories : mockCategories);
+        if (categoriesRes.ok) {
+          const apiCategories: ApiCategory[] = categoriesRes.data;
+          if (!Array.isArray(apiCategories)) throw new Error('Formato inesperado: a resposta da API não é um array.');
+          const mappedCategories: Category[] = apiCategories.map(c => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description || '',
+            featured: c.featured || false,
+            banner_image_url: c.banner_image_url
+          }));
+          setCategories(mappedCategories.length > 0 ? mappedCategories : mockCategories);
+        } else {
+            throw new Error('Failed to fetch categories');
+        }
 
         // Process hero config response
         if (heroRes.ok) {

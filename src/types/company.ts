@@ -15,6 +15,7 @@ export interface Company {
   reviewCount: number;
   createdAt: string;
   updatedAt: string;
+  verified?: boolean;
 }
 
 export interface CompanyFormData {

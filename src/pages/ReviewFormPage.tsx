@@ -90,8 +90,9 @@ const ReviewFormPage: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    const ratingNum = Math.min(5, Math.max(1, Number(rating))) as 1 | 2 | 3 | 4 | 5;
     const reviewPayload: ReviewPayload = {
-      rating,
+      rating: ratingNum,
       title: title || undefined,
       body,
       pros: pros || undefined,

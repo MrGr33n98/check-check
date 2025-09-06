@@ -1,4 +1,4 @@
-import React from 'react';
+from 'react';
 import { Card, CardContent } from './card';
 import { Button } from './button';
 import { ArrowRight } from 'lucide-react';
