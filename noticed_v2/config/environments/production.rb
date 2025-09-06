@@ -1,5 +1,12 @@
 require "active_support/core_ext/integer/time"
 
+if ENV["SENTRY_DSN"].present?
+  Sentry.init do |config|
+    config.dsn = ENV["SENTRY_DSN"]
+    config.environment = Rails.env
+  end
+end
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -87,6 +94,9 @@ Rails.application.configure do
     logger.formatter = config.log_formatter
     config.logger    = ActiveSupport::TaggedLogging.new(logger)
   end
+
+  # Use Lograge for structured logging
+  config.lograge.enabled = true
 
   # Do not dump schema after migrations.
   config.active_record.dump_schema_after_migration = false
