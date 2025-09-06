@@ -1,3 +1,5 @@
+import { api } from '@/middleware/authMiddleware';
+
 export interface Category {
   id: number;
   name: string;
@@ -57,15 +59,12 @@ export interface ApiResponse<T> {
 class ApiService {
   async getCategories(signal?: AbortSignal): Promise<Category[]> {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories`, { signal });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const response = await api.get('/categories', { signal });
+      const data = response.data;
       // The API might return the data nested, e.g., { data: [...] }. Adjust if needed.
       return Array.isArray(data) ? data : [];
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'CanceledError') {
         throw error;
       }
       console.error("Error fetching categories:", error);
@@ -75,18 +74,14 @@ class ApiService {
 
   async getCategoryBySlug(slug: string, signal?: AbortSignal): Promise<Category | null> {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${slug}`, { signal });
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null; // Category not found
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data; // Assuming the backend returns the category object directly
+      const response = await api.get(`/categories/${slug}`, { signal });
+      return response.data; // Assuming the backend returns the category object directly
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'CanceledError') {
         throw error; // Re-throw abort errors so the calling component can handle them
+      }
+      if (error.response?.status === 404) {
+        return null; // Category not found
       }
       console.error("Error fetching category by slug:", error);
       throw error; // Re-throw other errors as well
@@ -108,11 +103,8 @@ class ApiService {
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.page) queryParams.append('page', params.page.toString());
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/providers/search?${queryParams.toString()}`, { signal });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const response = await api.get(`/providers/search?${queryParams.toString()}`, { signal });
+      const data = response.data;
       return {
         providers: data.results || [],
         total: data.pagination?.total_count || 0,
@@ -121,7 +113,7 @@ class ApiService {
         total_pages: data.pagination?.total_pages || 0,
       };
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.name === 'CanceledError') {
         throw error; // Re-throw abort errors
       }
       console.error("Error fetching providers:", error);
