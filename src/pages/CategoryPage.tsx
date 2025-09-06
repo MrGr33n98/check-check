@@ -8,17 +8,6 @@ interface Category {
   slug: string;
   description?: string;
   featured?: boolean;
-  solutions?: Solution[]; // Added
-}
-
-interface Solution {
-  id: number;
-  name: string;
-  company: string; // Assuming this is the solution's company name
-  description?: string;
-  rating?: number;
-  slug?: string;
-  provider?: Provider; // Added
 }
 
 interface Provider {
@@ -34,6 +23,7 @@ interface Provider {
 function CategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const [category, setCategory] = useState<Category | null>(null);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +56,7 @@ function CategoryPage() {
         
         const data = await response.json();
         console.log('CategoryPage: API response data:', data);
-        
+
         if (isMounted) {
           setCategory(data);
 
@@ -83,6 +73,18 @@ function CategoryPage() {
           if (data.description) {
             metaDescription.setAttribute('content', data.description);
           }
+        }
+
+        console.log('CategoryPage: Fetching providers for category slug:', slug);
+        const providersResponse = await fetch(`http://localhost:3000/api/v1/providers?category_slug=${slug}`);
+        if (!providersResponse.ok) {
+          const errorText = await providersResponse.text();
+          console.log('CategoryPage: Providers API error response:', errorText);
+          throw new Error(`Erro ao buscar empresas. Status: ${providersResponse.status}`);
+        }
+        const providersData = await providersResponse.json();
+        if (isMounted) {
+          setProviders(providersData);
         }
       } catch (error: any) {
         console.error('CategoryPage: Error fetching category data:', error);
@@ -142,38 +144,26 @@ function CategoryPage() {
           <p className="text-lg text-gray-500 mb-12">Nenhuma descrição disponível para esta categoria.</p>
         )}
         
-        {/* Section for Associated Companies/Solutions */}
+        {/* Section for Associated Companies */}
         <section className="mt-12 bg-gray-50 p-6 rounded-lg shadow-inner">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Empresas e Soluções nesta Categoria</h2>
-          
-          {category.solutions && category.solutions.length > 0 ? (
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Empresas nesta Categoria</h2>
+
+          {providers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {category.solutions.map(solution => (
-                <div key={solution.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-                  <h3 className="text-xl font-semibold text-blue-700 mb-2">{solution.name}</h3>
-                  {solution.provider && (
-                    <p className="text-gray-700 text-sm mb-2">
-                      <span className="font-medium">Empresa:</span> {solution.provider.name}
-                      {solution.provider.country && ` (${solution.provider.country})`}
-                    </p>
+              {providers.map(provider => (
+                <div key={provider.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                  <h3 className="text-xl font-semibold text-blue-700 mb-2">{provider.name}</h3>
+                  {provider.short_description && (
+                    <p className="text-gray-600 text-sm line-clamp-3">{provider.short_description}</p>
                   )}
-                  {solution.description && (
-                    <p className="text-gray-600 text-sm line-clamp-3">{solution.description}</p>
-                  )}
-                  {solution.rating && (
-                    <p className="text-gray-600 text-sm mt-2">Avaliação: {solution.rating}/5</p>
-                  )}
-                  {/* Link to solution or provider detail page */}
-                  {solution.provider && (
-                    <Link to={`/company/${solution.provider.id}`} className="mt-4 inline-block text-blue-600 hover:underline text-sm font-medium">
-                      Ver detalhes da empresa &rarr;
-                    </Link>
-                  )}
+                  <Link to={`/company/${provider.id}`} className="mt-4 inline-block text-blue-600 hover:underline text-sm font-medium">
+                    Ver detalhes da empresa &rarr;
+                  </Link>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-600">Nenhuma solução ou empresa associada encontrada para esta categoria ainda.</p>
+            <p className="text-gray-600">Nenhuma empresa associada encontrada para esta categoria ainda.</p>
           )}
         </section>
       </main>

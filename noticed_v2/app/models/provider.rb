@@ -183,9 +183,9 @@ class Provider < ApplicationRecord
   end
 
   ransacker :service_tags, formatter: proc { |v|
-    Arel.sql("tags @> ARRAY[#{ActiveRecord::Base.connection.quote(v)}]")
+    Arel.sql("service_tags @> ARRAY[#{ActiveRecord::Base.connection.quote(v)}]::varchar[]")
   } do |parent|
-    parent.table[:tags]
+    parent.table[:service_tags]
   end
 
   # Approval methods
