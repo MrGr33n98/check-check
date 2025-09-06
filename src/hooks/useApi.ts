@@ -6,21 +6,24 @@ import { useState, useEffect } from 'react';
  * @param params Os parâmetros a serem passados para a função de API.
  */
 export function useApi<T, P extends any[]>(
-  apiCall: (...params: P) => Promise<T | null>,
-  params: P
+  apiCall: (...params: P) => Promise<T>,
+  params?: P
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Usamos JSON.stringify para memoizar os parâmetros. 
+  // Usamos JSON.stringify para memoizar os parâmetros.
   // Isso garante que o useEffect só será executado quando os valores dos parâmetros mudarem.
-  const paramsKey = JSON.stringify(params);
+  const actualParams = (params ?? []) as P;
+  const paramsKey = JSON.stringify(actualParams);
 
   useEffect(() => {
     // Alguns parâmetros podem ser undefined inicialmente (ex: slug da URL).
     // Verificamos se todos os parâmetros necessários estão presentes.
-    const hasMissingParams = params.some(p => p === undefined || p === null);
+    const hasMissingParams = actualParams.some(
+      p => p === undefined || p === null
+    );
     if (hasMissingParams) {
       setLoading(false);
       return;
@@ -30,7 +33,7 @@ export function useApi<T, P extends any[]>(
       setLoading(true);
       setError(null);
       try {
-        const result = await apiCall(...params);
+        const result = await apiCall(...actualParams);
         setData(result);
       } catch (err: any) {
         setError(err.message || 'Ocorreu um erro desconhecido.');
