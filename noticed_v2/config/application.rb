@@ -25,8 +25,11 @@ module ReviewsCore
     
     # Load custom locale files
     config.i18n.load_path += Dir[Rails.root.join('config', 'locales', '**', '*.{rb,yml}')]
-    
+
     # ActiveAdmin configuration
     config.active_record.default_timezone = :local
+
+    # Background job queue adapter
+    config.active_job.queue_adapter = :sidekiq
   end
 end

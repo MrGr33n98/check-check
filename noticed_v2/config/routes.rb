@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  mount Rswag::Ui::Engine => '/api-docs'
+  mount Rswag::Api::Engine => '/api-docs'
   devise_for :admin_users, ActiveAdmin::Devise.config
   ActiveAdmin.routes(self)
   get 'users/profile'
@@ -37,6 +39,10 @@ Rails.application.routes.draw do
   # API routes
   namespace :api do
     namespace :v1 do
+      mount_devise_token_auth_for 'User', at: 'auth', controllers: {
+        registrations: 'api/v1/auth/registrations',
+        sessions: 'api/v1/auth/sessions'
+      }
       resources :categories
       resources :solutions do
         resources :leads, shallow: true

@@ -1,66 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useApi } from './useApi';
+import { BannersService, type Banner, type BannerList } from '@/lib/api';
 import BannerService from '@/services/bannerService';
 
-export interface PromoBanner {
-  id: number;
-  title: string;
-  subtitle?: string;
-  button_text?: string;
-  button_url?: string;
-  button_secondary_text?: string;
-  button_secondary_url?: string;
-  background_color: string;
-  text_color: string;
-  position: 'sidebar' | 'header' | 'footer';
-  priority: number;
-  background_image_url?: string;
-  // New fields
-  show_title: boolean;
-  show_subtitle: boolean;
-  overlay_enabled: boolean;
-  overlay_color: string;
-  overlay_opacity: number;
-  text_align: 'left' | 'center' | 'right';
-}
+export type PromoBanner = Banner;
 
-export const usePromoBanners = (position?: string) => {
-  const [banners, setBanners] = useState<PromoBanner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const usePromoBanners = (position?: Banner['position']) => {
+  const apiCall = async (): Promise<{ banners: PromoBanner[]; error: string | null }> => {
+    try {
+      // Chamada principal usando o cliente gerado (OpenAPI)
+      const res: BannerList = position
+        ? await BannersService.getBannersByPosition(position)
+        : await BannersService.getBanners();
 
-  useEffect(() => {
-    const fetchBanners = async () => {
-      setLoading(true);
-      const apiUrl = import.meta.env.VITE_API_URL;
-
-      const url = apiUrl
-        ? position
-          ? `${apiUrl.replace('/api/v1', '')}/banners/by_position/${position}`
-          : `${apiUrl.replace('/api/v1', '')}/banners`
-        : '';
-
+      const banners = res?.data ?? [];
+      return { banners, error: null };
+    } catch (err) {
+      // Fallback: tenta carregar banners mockados
       try {
-        if (!apiUrl) {
-          throw new Error('VITE_API_URL não configurada');
-        }
-
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error('Falha ao carregar banners');
-        }
-
-        const data = await response.json();
-        const mappedBanners = data.data.map((banner: any) => ({
-          ...banner,
-          background_image_url: banner.image_url,
-        }));
-        setBanners(mappedBanners);
-      } catch (err) {
-        console.error('Error fetching banners:', err);
-        try {
-          const mock = await BannerService.getAllBanners();
-          const mapped: PromoBanner[] = mock.map((b, index) => ({
+        const mock = await BannerService.getAllBanners();
+        const mapped: PromoBanner[] = mock.map((b: any, index: number) =>
+          ({
             id: Number(b.id) || index,
             title: b.title,
             subtitle: b.description,
@@ -68,7 +27,12 @@ export const usePromoBanners = (position?: string) => {
             button_url: b.ctaLink,
             background_color: b.backgroundColor,
             text_color: b.textColor,
-            position: b.position === 'top' ? 'header' : b.position === 'center' ? 'sidebar' : 'footer',
+            position:
+              b.position === 'top'
+                ? 'header'
+                : b.position === 'center'
+                ? 'sidebar'
+                : 'footer',
             priority: b.isPremium ? 1 : 0,
             background_image_url: b.companyLogo,
             show_title: true,
@@ -76,47 +40,54 @@ export const usePromoBanners = (position?: string) => {
             overlay_enabled: false,
             overlay_color: '#000000',
             overlay_opacity: 0.5,
-            text_align: 'left'
-          }));
-          setBanners(mapped);
-          setError('Exibindo banners mockados');
-        } catch (mockErr) {
-          console.error('Error loading mock banners:', mockErr);
-          setBanners([
-            {
-              id: 0,
-              title: 'Confira nossas ofertas',
-              background_color: '#f3f3f3',
-              text_color: '#333333',
-              position: position === 'header' || position === 'footer' ? position : 'sidebar',
-              priority: 0,
-              show_title: true,
-              show_subtitle: false,
-              overlay_enabled: false,
-              overlay_color: '#000000',
-              overlay_opacity: 0.5,
-              text_align: 'left'
-            }
-          ]);
-          setError('Não foi possível carregar os banners. Exibindo banner padrão.');
-        }
-      } finally {
-        setLoading(false);
+            text_align: 'left',
+          } as PromoBanner)
+        );
+
+        return { banners: mapped, error: 'Exibindo banners mockados' };
+      } catch {
+        // Último fallback: banner padrão mínimo
+        const fallback: PromoBanner = {
+          id: 0,
+          title: 'Confira nossas ofertas',
+          subtitle: undefined as any,
+          button_text: undefined as any,
+          button_url: undefined as any,
+          background_color: '#f3f3f3',
+          text_color: '#333333',
+          position: (position === 'header' || position === 'footer' ? position : 'sidebar') as PromoBanner['position'],
+          priority: 0,
+          background_image_url: undefined as any,
+          show_title: true,
+          show_subtitle: false,
+          overlay_enabled: false,
+          overlay_color: '#000000',
+          overlay_opacity: 0.5,
+          text_align: 'left',
+        } as PromoBanner;
+
+        return {
+          banners: [fallback],
+          error: 'Não foi possível carregar os banners. Exibindo banner padrão.',
+        };
       }
-    };
-
-    fetchBanners();
-  }, [position]);
-
-  const getBannerByPosition = (pos: string): PromoBanner | undefined => {
-    return banners.find(banner => banner.position === pos);
+    }
   };
+
+  const { data, loading, error } = useApi<{ banners: PromoBanner[]; error: string | null }, []>(
+    apiCall,
+    []
+  );
+
+  const banners = data?.banners ?? [];
+
+  const getBannerByPosition = (pos: Banner['position']): PromoBanner | undefined =>
+    banners.find(b => b.position === pos);
 
   return {
     banners,
     loading,
-    error,
-    getBannerByPosition
+    error: error ?? data?.error ?? null,
+    getBannerByPosition,
   };
 };
-

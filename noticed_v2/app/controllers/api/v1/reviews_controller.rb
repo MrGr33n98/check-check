@@ -15,12 +15,12 @@ class Api::V1::ReviewsController < Api::V1::BaseController
     
     @reviews = @reviews.order(featured: :desc, created_at: :desc)
     
-    render json: @reviews, include: [:solution, :user]
+    render json: @reviews, each_serializer: Api::V1::ReviewSerializer
   end
   
   # GET /api/v1/reviews/:id
   def show
-    render json: @review, include: [:solution, :user]
+    render json: @review, serializer: Api::V1::ReviewSerializer
   end
   
   # POST /api/v1/reviews
@@ -29,7 +29,7 @@ class Api::V1::ReviewsController < Api::V1::BaseController
     @review.status = :pending # Ensure status is pending on creation
     
     if @review.save
-      render json: @review, status: :created, include: [:solution, :user]
+      render json: @review, serializer: Api::V1::ReviewSerializer, status: :created
     else
       render json: { errors: @review.errors }, status: :unprocessable_entity
     end
@@ -38,7 +38,7 @@ class Api::V1::ReviewsController < Api::V1::BaseController
   # PUT/PATCH /api/v1/reviews/:id
   def update
     if @review.update(review_params)
-      render json: @review, include: [:solution, :user]
+      render json: @review, serializer: Api::V1::ReviewSerializer
     else
       render json: { errors: @review.errors }, status: :unprocessable_entity
     end

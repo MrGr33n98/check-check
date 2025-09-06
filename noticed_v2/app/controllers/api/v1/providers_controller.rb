@@ -54,7 +54,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     # Limit results
     @providers = @providers.limit(params[:limit] || 50)
     
-    render json: @providers.map { |provider| provider_json(provider) }
+    render json: @providers, each_serializer: Api::V1::ProviderSerializer
   end
 
   # GET /api/v1/providers/search
@@ -152,7 +152,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
     # Add mock ratings and additional data for frontend
     results = @providers.map do |provider|
-      provider_data = provider_json(provider)
+      provider_data = Api::V1::ProviderSerializer.new(provider).as_json
 
       # Add mock rating based on company characteristics
       rating = calculate_mock_rating(provider)
@@ -185,7 +185,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     @provider ||= Provider.find_by(id: params[:id]) # If not found by slug, try finding by ID
 
     if @provider
-      render json: provider_json(@provider)
+      render json: @provider, serializer: Api::V1::ProviderSerializer
     else
       render json: { error: "Provider not found" }, status: :not_found
     end
@@ -196,7 +196,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     @provider = Provider.find_by(slug: params[:slug])
 
     if @provider
-      render json: provider_json(@provider)
+      render json: @provider, serializer: Api::V1::ProviderSerializer
     else
       render json: { error: "Provider not found" }, status: :not_found
     end
@@ -293,53 +293,6 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
   private
 
-  def provider_json(provider)
-    {
-      id: provider.id,
-      name: provider.name,
-      slug: provider.slug,
-      short_description: provider.short_description,
-      description: provider.short_description,
-      country: provider.country,
-      address: provider.address,
-      phone: provider.phone,
-      foundation_year: provider.foundation_year,
-      members_count: provider.members_count,
-      status: provider.status,
-      premium: provider.premium?,
-      premium_effect_active: provider.premium_effect_active,
-      tags: provider.tags,
-      social_links: provider.social_links,
-      categories: provider.categories.map { |cat| { id: cat.id, name: cat.name, slug: cat.slug } },
-      logo_url: provider.logo.attached? ? url_for(provider.logo) : nil,
-      cover_image_url: provider.cover_image.attached? ? url_for(provider.cover_image) : nil,
-      banner_image_url: provider.banner_image.attached? ? url_for(provider.banner_image) : nil,
-      rating: provider.overall_average_rating,
-      review_count: provider.overall_reviews_count,
-      installed_capacity_mw: extract_capacity_from_tags(provider.tags),
-      location: extract_location_from_tags(provider.tags),
-      specialties: extract_specialties_from_tags(provider.tags)
-    }
-  end
-
-  def extract_capacity_from_tags(tags)
-    capacity_tag = tags.find { |tag| tag.start_with?('capacity:') }
-    return 0 unless capacity_tag
-    capacity_tag.gsub('capacity:', '').gsub('MW', '').to_f
-  end
-
-  def extract_location_from_tags(tags)
-    location_tag = tags.find { |tag| tag.start_with?('location:') }
-    return '' unless location_tag
-    location_tag.gsub('location:', '')
-  end
-
-  def extract_specialties_from_tags(tags)
-    # Filter out system tags and return relevant specialties
-    system_prefixes = ['employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
-    tags.reject { |tag| system_prefixes.any? { |prefix| tag.start_with?(prefix) } }
-  end
-
   def extract_services_from_tags(tags)
     service_keywords = ['residencial', 'comercial', 'industrial', 'rural', 'sustentabilidade', 'energia solar', 'fotovoltaica']
     tags.select { |tag| service_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
@@ -397,18 +350,5 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       business_type: [], service_areas: [], services_offered: [], specialties: [], certifications: [],
       social_media: [:facebook, :instagram, :linkedin]
     )
-  end
-end
-
-def current
-  if current_user && current_user.provider
-    provider = current_user.provider
-    if provider.status == 'active'
-      render json: provider
-    else
-      render json: { error: 'Company not approved' }, status: :forbidden
-    end
-  else
-    render json: { error: 'No company associated' }, status: :not_found
   end
 end
