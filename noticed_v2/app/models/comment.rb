@@ -19,11 +19,8 @@ class Comment < ApplicationRecord
   private
 
   def notify_recipient
-    CommentNotifier.with(record: self, post:).deliver_later(post.user)
-    # Using deliver_later will execute a background job when you hit 'post' for your comment.
-    # This means that it won't stall the interface while the job is being processed.
-    # You can simply post your comment and continue with your tasks, while in the background,
-    # the Rails system takes care of delivering the comment in the background.
+    CommentNotificationWorker.perform_async(id)
+    # The worker will handle delivering the notification asynchronously
   end
 
   def cleanup_notifications
