@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import BannerService from '@/services/bannerService';
+import { useQuery } from '@tanstack/react-query';
 
 export interface PromoBanner {
   id: number;
@@ -24,15 +24,10 @@ export interface PromoBanner {
 }
 
 export const usePromoBanners = (position?: string) => {
-  const [banners, setBanners] = useState<PromoBanner[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchBanners = async () => {
-      setLoading(true);
+  const query = useQuery({
+    queryKey: ['promoBanners', position],
+    queryFn: async (): Promise<{ banners: PromoBanner[]; error: string | null }> => {
       const apiUrl = import.meta.env.VITE_API_URL;
-
       const url = apiUrl
         ? position
           ? `${apiUrl.replace('/api/v1', '')}/banners/by_position/${position}`
@@ -55,7 +50,7 @@ export const usePromoBanners = (position?: string) => {
           ...banner,
           background_image_url: banner.image_url,
         }));
-        setBanners(mappedBanners);
+        return { banners: mappedBanners, error: null };
       } catch (err) {
         console.error('Error fetching banners:', err);
         try {
@@ -78,45 +73,42 @@ export const usePromoBanners = (position?: string) => {
             overlay_opacity: 0.5,
             text_align: 'left'
           }));
-          setBanners(mapped);
-          setError('Exibindo banners mockados');
+          return { banners: mapped, error: 'Exibindo banners mockados' };
         } catch (mockErr) {
           console.error('Error loading mock banners:', mockErr);
-          setBanners([
-            {
-              id: 0,
-              title: 'Confira nossas ofertas',
-              background_color: '#f3f3f3',
-              text_color: '#333333',
-              position: position === 'header' || position === 'footer' ? position : 'sidebar',
-              priority: 0,
-              show_title: true,
-              show_subtitle: false,
-              overlay_enabled: false,
-              overlay_color: '#000000',
-              overlay_opacity: 0.5,
-              text_align: 'left'
-            }
-          ]);
-          setError('Não foi possível carregar os banners. Exibindo banner padrão.');
+          return {
+            banners: [
+              {
+                id: 0,
+                title: 'Confira nossas ofertas',
+                background_color: '#f3f3f3',
+                text_color: '#333333',
+                position: position === 'header' || position === 'footer' ? position : 'sidebar',
+                priority: 0,
+                show_title: true,
+                show_subtitle: false,
+                overlay_enabled: false,
+                overlay_color: '#000000',
+                overlay_opacity: 0.5,
+                text_align: 'left'
+              }
+            ],
+            error: 'Não foi possível carregar os banners. Exibindo banner padrão.',
+          };
         }
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchBanners();
-  }, [position]);
+    },
+  });
 
   const getBannerByPosition = (pos: string): PromoBanner | undefined => {
-    return banners.find(banner => banner.position === pos);
+    return query.data?.banners.find(banner => banner.position === pos);
   };
 
   return {
-    banners,
-    loading,
-    error,
-    getBannerByPosition
+    banners: query.data?.banners ?? [],
+    loading: query.isLoading,
+    error: query.error ? query.error.message : query.data?.error ?? null,
+    getBannerByPosition,
   };
 };
 
