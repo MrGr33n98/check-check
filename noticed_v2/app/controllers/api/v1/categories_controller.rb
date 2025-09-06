@@ -3,18 +3,21 @@ class Api::V1::CategoriesController < Api::V1::BaseController
   
   # GET /api/v1/categories
   def index
-    @categories = Category.where(active: true, parent_id: nil)
-    if params[:featured].present?
-      @categories = @categories.where(featured: params[:featured])
+    cache_key = "categories/index/#{params[:featured]}"
+    @categories = Rails.cache.fetch(cache_key, expires_in: 12.hours) do
+      categories = Category.where(active: true, parent_id: nil)
+      categories = categories.where(featured: params[:featured]) if params[:featured].present?
+      categories.includes(children: :children).order(:name).to_a
     end
-    @categories = @categories.order(:name)
-    
-    render json: @categories.as_json(include: { children: { include: :children } })
+
+    render json: @categories
   end
-  
+
   # GET /api/v1/categories/:id
   def show
-    render json: @category
+    cache_key = "categories/#{@category.cache_key_with_version}"
+    category = Rails.cache.fetch(cache_key, expires_in: 12.hours) { @category }
+    render json: category
   end
   
   # POST /api/v1/categories
@@ -46,7 +49,8 @@ class Api::V1::CategoriesController < Api::V1::BaseController
   private
   
   def set_category
-    @category = Category.find_by!(slug: params[:id]) || Category.find(params[:id])
+    @category = Category.includes(children: :children).find_by(slug: params[:id])
+    @category ||= Category.includes(children: :children).find(params[:id])
   end
   
   def category_params
