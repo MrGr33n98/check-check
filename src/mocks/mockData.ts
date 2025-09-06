@@ -1,5 +1,7 @@
 // Mock data based on the provided seed data
-export const mockUsers = [
+const useMocks = import.meta.env.DEV && import.meta.env.VITE_USE_MOCKS === "true";
+
+export const mockUsers = useMocks ? [
   {
     id: 1,
     name: 'Admin User',
@@ -30,9 +32,9 @@ export const mockUsers = [
     created_at: '2024-01-02T00:00:00Z',
     companyId: 2
   }
-];
+] : [];
 
-export const mockCompanies = [
+export const mockCompanies = useMocks ? [
   {
     id: 1,
     name: 'Solar Paulista',
@@ -321,9 +323,9 @@ export const mockCompanies = [
     state: 'SP',
     cep: '01310-200'
   }
-];
+] : [];
 
-export const mockReviews = [
+export const mockReviews = useMocks ? [
   {
     id: 1,
     solar_company_id: 1,
@@ -424,9 +426,9 @@ export const mockReviews = [
     created_at: '2024-03-01T00:00:00Z',
     user_name: 'Carlos Eduardo'
   }
-];
+] : [];
 
-export const mockCategories = [
+export const mockCategories = useMocks ? [
   {
     id: 1,
     name: 'Solar Guides'
@@ -447,9 +449,9 @@ export const mockCategories = [
     id: 5,
     name: 'Technology'
   }
-];
+] : [];
 
-export const mockContent = [
+export const mockContent = useMocks ? [
   {
     id: 1,
     solar_company_id: 1,
@@ -530,9 +532,9 @@ export const mockContent = [
     category_id: 3,
     created_at: '2024-02-15T00:00:00Z'
   }
-];
+] : [];
 
-export const mockBadges = [
+export const mockBadges = useMocks ? [
   {
     id: 1,
     name: 'Top Contributor',
@@ -568,9 +570,9 @@ export const mockBadges = [
     badgeable_type: 'Company',
     badgeable_id: 4
   }
-];
+] : [];
 
-export const mockCampaigns = [
+export const mockCampaigns = useMocks ? [
   {
     id: 1,
     solar_company_id: 1,
@@ -598,10 +600,10 @@ export const mockCampaigns = [
     end_date: '2024-11-30T00:00:00Z',
     created_at: '2024-08-15T00:00:00Z'
   }
-];
+] : [];
 
 // Additional mock data for conversion points
-export const mockConversionPoints = [
+export const mockConversionPoints = useMocks ? [
   {
     id: 'guide',
     title: 'Guia Completo de Energia Solar',
@@ -638,5 +640,5 @@ export const mockConversionPoints = [
     cta: 'Inscrever-se',
     leadMagnet: 'Acesso ao Webinar + Material Complementar'
   }
-];
+] : [];
 
