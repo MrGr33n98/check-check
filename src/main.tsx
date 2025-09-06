@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom' // Import these
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { routes } from './App.tsx' // Import routes from App.tsx
 import ErrorBoundary from './components/ErrorBoundary.tsx'
 import { AuthProvider } from './contexts/AuthContext.tsx'
@@ -20,11 +21,15 @@ const router = createBrowserRouter(routes, {
   },
 });
 
+const queryClient = new QueryClient()
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <RouterProvider router={router} /> {/* Render RouterProvider */}
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} /> {/* Render RouterProvider */}
+        </QueryClientProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>,
