@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/services/api';
+import { api } from '@/middleware/authMiddleware';
 import { Company, CompanyFormData } from '@/types/company';
 
 export const useCompanyService = () => {

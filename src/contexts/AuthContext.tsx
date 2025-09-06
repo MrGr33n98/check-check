@@ -1,8 +1,10 @@
 // AuthContext.tsx
 import React, { createContext, useState, useEffect, ReactNode, useCallback, useMemo, useContext } from 'react';
-import { mockCompanies } from '../data/mockData';
+import { mockCompanies, mockUsers } from '@/mocks/mockData';
 import { User } from '../data/types';
 import { getUserFromLocalStorage, saveUserToLocalStorage, removeUserFromLocalStorage } from '../data/storage';
+
+const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
 
 // Define the shape of our auth context
 interface AuthContextType {
@@ -61,10 +63,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // Login function
-  const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
+    const login = useCallback(async (email: string, password: string): Promise<LoginResult> => {
     console.log('AuthProvider: Attempting login for', email);
-    
-    // Try backend API first
+
+    if (useMocks) {
+      return mockLogin(email, password);
+    }
+
     try {
       const response = await fetch('http://localhost:3000/api/v1/users/sign_in', {
         method: 'POST',
@@ -78,7 +83,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           },
         }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         const loggedInUser: User = {
@@ -97,7 +102,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const companyResponse = await fetch('http://localhost:3000/api/v1/current_company', {
               method: 'GET',
               headers: {
-                'Authorization': `Bearer ${data.token}`,
+                'Authorization': 'Bearer ' + data.token,
                 'Content-Type': 'application/json',
               },
             });
@@ -122,137 +127,46 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, error: errorData.error || 'Credenciais inválidas.' };
       }
     } catch (error) {
-      console.error('AuthProvider: Backend not available, trying mock data', error);
-      
-      // Fallback to mock data when backend is not available
-      // Mock data fallback
-      const mockUsers: Array<{
-        id: number;
-        name: string;
-        email: string;
-        role: 'admin' | 'moderator' | 'user' | 'empresa';
-        created_at: string;
-        corporate_email: boolean;
-        company_name: string;
-        position: string;
-        approved: boolean;
-        companyId?: number;
-      }> = [
-        {
-          id: 1,
-          name: 'Admin User',
-          email: 'admin@solarenergy.com',
-          role: 'admin' as const,
-          created_at: '2024-01-01T00:00:00Z',
-          corporate_email: false,
-          company_name: '',
-          position: '',
-          approved: false,
-          companyId: undefined
-        },
-        {
-          id: 2,
-          name: 'Moderator User',
-          email: 'moderator@solarenergy.com',
-          role: 'moderator' as const,
-          created_at: '2024-01-01T00:00:00Z',
-          corporate_email: false,
-          company_name: '',
-          position: '',
-          approved: false,
-          companyId: undefined
-        },
-        {
-          id: 3,
-          name: 'Regular User',
-          email: 'user@solarenergy.com',
-          role: 'user' as const,
-          created_at: '2024-01-01T00:00:00Z',
-          corporate_email: false,
-          company_name: '',
-          position: '',
-          approved: false,
-          companyId: undefined
-        },
-        {
-          id: 4,
-          name: 'João Silva',
-          email: 'empresa@solarpro.com',
-          role: 'empresa' as const,
-          created_at: '2024-01-01T00:00:00Z',
-          corporate_email: true,
-          company_name: 'Solar Pro Energia',
-          position: 'Diretor Comercial',
-          approved: true,
-          companyId: 1
-        },
-        {
-          id: 5,
-          name: 'Maria Santos',
-          email: 'pending@solartech.com',
-          role: 'empresa' as const,
-          created_at: '2024-01-01T00:00:00Z',
-          corporate_email: true,
-          company_name: 'Solar Tech Solutions',
-          position: 'Gerente de Vendas',
-          approved: false,
-          companyId: undefined
-        }
-      ];
-      
-      const mockUser = mockUsers.find(user => user.email === email);
-      
-      if (mockUser && password === 'password') { // Default password for all mock users
-        const loggedInUser: User = {
-          id: mockUser.id,
-          name: mockUser.name,
-          email: mockUser.email,
-          role: mockUser.role,
-          created_at: mockUser.created_at,
-          corporate_email: mockUser.corporate_email,
-          company_name: mockUser.company_name,
-          position: mockUser.position,
-          approved: mockUser.approved,
-          companyId: mockUser.companyId,
-        };
-        
-        // If user is a moderator, add company data
-        if (mockUser.role === 'moderator' && mockUser.companyId) {
-          const company = mockCompanies.find(c => c.id === mockUser.companyId);
-          if (company) {
-            loggedInUser.company = {
-              id: company.id,
-              name: company.name,
-              status: company.status,
-              location: company.location,
-              description: company.description,
-              phone: company.phone,
-              website: company.website,
-              rating: company.rating,
-              review_count: company.review_count,
-              specialties: company.specialties,
-              certifications: company.certifications,
-              service_areas: company.service_areas,
-              foundedYear: company.foundedYear,
-              employeeCount: company.employeeCount,
-              logo: company.logo,
-              coverImage: company.coverImage,
-              installed_capacity_mw: company.installed_capacity_mw,
-              user_id: company.user_id,
-              created_at: company.created_at
-            };
-          }
-        }
-        
-        setUser(loggedInUser);
-        saveUserToLocalStorage(loggedInUser);
-        console.log('AuthProvider: Mock login successful for', loggedInUser.email);
-        return { success: true, user: loggedInUser };
+      console.error('AuthProvider: Backend not available', error);
+      if (useMocks) {
+        return mockLogin(email, password);
       }
-      
-      return { success: false, error: 'Credenciais inválidas. Use password como senha para usuários de teste.' };
+      return { success: false, error: 'Erro de conexão com o servidor.' };
     }
-  }, []);
+  }, [useMocks]);
+
+  const mockLogin = (email: string, password: string): LoginResult => {
+    const mockUser = mockUsers.find(user => user.email === email);
+
+    if (mockUser && password === 'password') {
+      const loggedInUser: User = {
+        id: mockUser.id,
+        name: mockUser.name,
+        email: mockUser.email,
+        role: mockUser.role,
+        created_at: mockUser.created_at,
+        corporate_email: mockUser.corporate_email,
+        company_name: mockUser.company_name,
+        position: mockUser.position,
+        approved: mockUser.approved,
+        companyId: mockUser.companyId,
+      };
+
+      if (mockUser.role === 'moderator' && mockUser.companyId) {
+        const company = mockCompanies.find(c => c.id === mockUser.companyId);
+        if (company) {
+          loggedInUser.company = { ...company };
+        }
+      }
+
+      setUser(loggedInUser);
+      saveUserToLocalStorage(loggedInUser);
+      console.log('AuthProvider: Mock login successful for', loggedInUser.email);
+      return { success: true, user: loggedInUser };
+    }
+
+    return { success: false, error: 'Credenciais inválidas. Use password como senha para usuários de teste.' };
+  };
 
   // Logout function
   const logout = useCallback(() => {
