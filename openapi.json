@@ -1,0 +1,70 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "SolarFinder API", "version": "1.0.0" },
+  "paths": {
+    "/banners": {
+      "get": {
+        "summary": "Get all promotional banners",
+        "responses": {
+          "200": {
+            "description": "List of banners",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BannerList" } }
+            }
+          }
+        }
+      }
+    },
+    "/banners/by_position/{position}": {
+      "get": {
+        "summary": "Get banners by position",
+        "parameters": [
+          { "name": "position", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of banners filtered by position",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/BannerList" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Banner": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "subtitle": { "type": "string", "nullable": true },
+          "button_text": { "type": "string", "nullable": true },
+          "button_url": { "type": "string", "nullable": true },
+          "button_secondary_text": { "type": "string", "nullable": true },
+          "button_secondary_url": { "type": "string", "nullable": true },
+          "background_color": { "type": "string" },
+          "text_color": { "type": "string" },
+          "position": { "type": "string", "enum": ["sidebar", "header", "footer"] },
+          "priority": { "type": "integer" },
+          "background_image_url": { "type": "string", "nullable": true },
+          "show_title": { "type": "boolean" },
+          "show_subtitle": { "type": "boolean" },
+          "overlay_enabled": { "type": "boolean" },
+          "overlay_color": { "type": "string" },
+          "overlay_opacity": { "type": "number", "format": "float" },
+          "text_align": { "type": "string", "enum": ["left", "center", "right"] }
+        },
+        "required": ["id","title","background_color","text_color","position","priority","show_title","show_subtitle","overlay_enabled","overlay_color","overlay_opacity","text_align"]
+      },
+      "BannerList": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Banner" } }
+        },
+        "required": ["data"]
+      }
+    }
+  }
+}
