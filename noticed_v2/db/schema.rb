@@ -267,6 +267,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
     t.bigint "sponsored_id", null: false
   end
 
+  create_table "certifications", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "comments", force: :cascade do |t|
     t.bigint "post_id", null: false
     t.bigint "user_id", null: false
@@ -337,6 +343,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "start_date"
+    t.date "end_date"
     t.index ["active", "display_order"], name: "index_dynamic_banners_on_active_and_order"
     t.index ["active"], name: "index_dynamic_banners_on_active"
     t.index ["display_order"], name: "index_dynamic_banners_on_display_order"
@@ -528,6 +536,26 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
     t.index ["start_date", "end_date"], name: "index_promotional_banners_date_range"
   end
 
+  create_table "provider_categories", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_provider_categories_on_category_id"
+    t.index ["provider_id", "category_id"], name: "index_provider_categories_on_provider_id_and_category_id", unique: true
+    t.index ["provider_id"], name: "index_provider_categories_on_provider_id"
+  end
+
+  create_table "provider_certifications", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "certification_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["certification_id"], name: "index_provider_certifications_on_certification_id"
+    t.index ["provider_id", "certification_id"], name: "idx_prov_cert_on_prov_id_and_cert_id", unique: true
+    t.index ["provider_id"], name: "index_provider_certifications_on_provider_id"
+  end
+
   create_table "providers", force: :cascade do |t|
     t.string "name", null: false
     t.string "seo_url"
@@ -688,14 +716,14 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
     t.datetime "updated_at", null: false
     t.string "name"
     t.integer "views", default: 0
-    t.string "provider", default: "email", null: false
-    t.string "uid", default: "", null: false
-    t.json "tokens"
+    t.integer "role", default: 0
+    t.boolean "approved"
     t.boolean "corporate_email", default: false
     t.string "company_name"
     t.string "position"
-    t.integer "role", default: 0
-    t.boolean "approved"
+    t.string "provider", default: "email", null: false
+    t.string "uid", default: "", null: false
+    t.json "tokens"
     t.index ["company_name"], name: "index_users_on_company_name"
     t.index ["corporate_email"], name: "index_users_on_corporate_email"
     t.index ["email"], name: "index_users_on_email", unique: true
@@ -735,6 +763,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
   add_foreign_key "product_users", "products"
   add_foreign_key "product_users", "users"
   add_foreign_key "promotional_banners", "providers"
+  add_foreign_key "provider_categories", "categories"
+  add_foreign_key "provider_categories", "providers"
+  add_foreign_key "provider_certifications", "certifications"
+  add_foreign_key "provider_certifications", "providers"
   add_foreign_key "providers", "admin_users", column: "approved_by_id"
   add_foreign_key "questions", "categories"
   add_foreign_key "questions", "products"

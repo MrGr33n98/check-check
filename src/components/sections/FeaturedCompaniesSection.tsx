@@ -103,7 +103,7 @@ const FeaturedCompaniesSection: React.FC = () => {
     else if (apiCompany.members_count > 200) priceRange = 'high';
 
     // Usar logo da API se disponível
-    const logoUrl = apiCompany.logo_url ? `http://localhost:3000${apiCompany.logo_url}` : undefined;
+    const logoUrl = apiCompany.logo_url ? `${import.meta.env.VITE_API_URL}${apiCompany.logo_url}` : undefined;
 
     return {
       id: apiCompany.id.toString(),
@@ -124,7 +124,7 @@ const FeaturedCompaniesSection: React.FC = () => {
       completedProjects: Math.floor(Math.random() * 800) + 200,
       yearsExperience,
       priceRange,
-      bannerImage: apiCompany.banner_image_url ? `http://localhost:3000${apiCompany.banner_image_url}` : undefined
+      bannerImage: apiCompany.banner_image_url ? `${import.meta.env.VITE_API_URL}${apiCompany.banner_image_url}` : undefined
     };
   };
 
@@ -132,9 +132,10 @@ const FeaturedCompaniesSection: React.FC = () => {
   const loadCompanies = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/providers');
-      // A API de providers retorna um array direto
-      const apiCompanies = Array.isArray(response.data) ? response.data : [];
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/providers`);
+      // A API de providers retorna um objeto com um array de providers
+      const apiCompanies = Array.isArray(response.data) ? response.data : 
+                          (response.data && Array.isArray(response.data.providers)) ? response.data.providers : [];
       const convertedCompanies = apiCompanies.map(convertApiToCompany);
       setCompanies(convertedCompanies);
       setFilteredCompanies(convertedCompanies);

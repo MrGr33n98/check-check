@@ -8,6 +8,7 @@ import { CompanyCard } from '@/components/company/CompanyCard';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
 import apiService, { Category, Provider } from '@/services/api';
 import { getPlaceholderImage } from '@/utils/imageFallback';
+import { normalizeSlug } from '@/utils/slugUtils';
 
 // Interface para os filtros de busca (copiado de SearchPage.tsx)
 interface SearchFilters {
@@ -108,84 +109,84 @@ function EnhancedCategoryPage() {
   const filtersKey = JSON.stringify(currentFilters);
 
   useEffect(() => {
-    if (!slug) {
-      setLoading(false);
-      setCategory(null);
-      setCompanies([]);
-      return;
-    }
-
-    const reqId = ++lastReqId.current;
     const controller = new AbortController();
-    
-    const fetchData = async (signal: AbortSignal) => {
+    let cancelled = false;
+
+    const run = async () => {
       setLoading(true);
+      const normalizedSlug = normalizeSlug(slug ?? '');
+
+      let catRes: any;
+      let provRes: any;
 
       try {
-        const [fetchedCategory, providersResponse] = await Promise.all([
-          apiService.getCategoryBySlug(slug, signal),
-          apiService.getProviders({
-            category_slug: slug,
-            
-            
-            
-            
-            }, signal)
+        [catRes, provRes] = await Promise.all([
+          apiService.getCategoryBySlug(normalizedSlug, controller.signal),
+          apiService.getProviders({ category_slug: normalizedSlug }, controller.signal),
         ]);
-
-        if (reqId !== lastReqId.current) {
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
           return;
         }
-
-        setError(null);
-
-        if (fetchedCategory) {
-          setCategory(fetchedCategory);
-          document.title = `${fetchedCategory.name} | SolarFinder`;
-          let metaDescription = document.querySelector('meta[name="description"]');
-          if (!metaDescription) {
-            metaDescription = document.createElement('meta');
-            metaDescription.setAttribute('name', 'description');
-            document.head.appendChild(metaDescription);
-          }
-          if (fetchedCategory.description) {
-            metaDescription.setAttribute('content', fetchedCategory.description);
-          }
-        } else {
-          setError('Categoria não encontrada');
-          setCategory(null);
-        }
-
-        if (providersResponse) {
-          setCompanies(providersResponse.providers.map(mapProviderToCompany));
-          setTotalCompanies(providersResponse.total);
-        }
-        setLoading(false);
-
-      } catch (err: unknown) {
-        if (signal.aborted) {
-          // console.log('Fetch aborted as expected:', err);
-          return; // Do nothing if the fetch was intentionally aborted
-        }
-
-        if (reqId === lastReqId.current) {
-          console.error('Falha ao carregar categoria/provedores:', err);
-          setError('Falha ao carregar dados. Tente novamente.');
-          setCategory(null);
-          setCompanies([]);
-          setLoading(false);
-        }
+        throw err;
       }
+
+      // Check if the component is still mounted
+      if (cancelled) return;
+
+      // Handle abort signals
+      if ((catRes && catRes.aborted) || (provRes && provRes.aborted)) return;
+
+      // Handle errors
+      if (!catRes || !catRes.ok || !provRes || !provRes.ok) {
+        console.debug('Falha ao carregar categoria/provedores:', catRes?.error || provRes?.error);
+        setError('Não foi possível carregar os provedores. Tente novamente.');
+        setCategory(null);
+        setCompanies([]);
+        setTotalCompanies(0);
+        setLoading(false);
+        return;
+      }
+
+      // Category data handling
+      if (catRes.data) {
+        setCategory(catRes.data);
+        document.title = `${catRes.data.name} | SolarFinder`;
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.setAttribute('name', 'description');
+          document.head.appendChild(metaDescription);
+        }
+        if (catRes.data.description) {
+          metaDescription.setAttribute('content', catRes.data.description);
+        }
+      } else {
+        setError('Categoria não encontrada');
+        setCategory(null);
+      }
+
+      // Providers data handling
+      if (provRes.data) {
+        setCompanies(provRes.data.providers.map(mapProviderToCompany));
+        setTotalCompanies(provRes.data.total);
+      } else {
+        setCompanies([]);
+        setTotalCompanies(0);
+      }
+      
+      setError(null);
+      setLoading(false);
     };
 
-    fetchData(controller.signal); // Pass the signal directly
+    run();
 
     return () => {
-      controller.abort();
-    };
-
-    return () => {
-      controller.abort();
+      cancelled = true;
+      // Only abort if the controller is not already aborted
+      if (controller.signal && !controller.signal.aborted) {
+        controller.abort();
+      }
     };
   }, [slug, filtersKey, mapProviderToCompany, currentFilters?.certifications, currentFilters?.experience, currentFilters?.ratings]);
 

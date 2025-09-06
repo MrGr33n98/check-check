@@ -503,7 +503,7 @@ const CompanyRegistrationPage: React.FC = () => {
       formData.portfolioImages.forEach(image => data.append('portfolioImages[]', image));
 
 
-      const response = await fetch('http://localhost:3000/api/v1/providers', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/providers`, {
         method: 'POST',
         body: data, // FormData will automatically set Content-Type to multipart/form-data
       });

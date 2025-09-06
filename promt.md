@@ -1,114 +1,272 @@
- Aqui está um **prompt (em texto)** para ajustar o **posicionamento do formulário de avaliação** e da **sidebar de banners** na página mostrada:
-
----
-
-````
-# Ajustar posicionamento do formulário de avaliação + sidebar esquerda (layout responsivo)
-
-## Problema
-O formulário de avaliação aparece mal posicionado/fora de alinhamento no desktop, conforme screenshot. A coluna principal (formulário) não está alinhada verticalmente com a sidebar de banners e a largura/centralização do layout precisa ser padronizada.
-
-## Objetivo
-- Implementar um layout de duas colunas estável:
-  - Sidebar esquerda fixa (largura estável ~320px) com banners (sticky).
-  - Coluna principal fluida para o formulário, centralizada e alinhada ao topo da sidebar.
-- Garantir bom comportamento no mobile (empilhar: banners acima, formulário abaixo).
-- Evitar deslocamentos causados pelo header do card (banner + logo absoluto).
-
-## Diretrizes de layout (Tailwind)
-- Container central com largura máxima controlada.
-- Grid com colunas explícitas para evitar “saltos”:
-  - Desktop: `grid-cols-[320px,1fr]`
-  - Gap consistente: `gap-8`
-- Sidebar sticky: `md:sticky md:top-24`
-- Remover margens desnecessárias que empurram o card.
-- Garantir que o header com logo absoluto não cause sobreposição: compensar com `pt-12` adequado (ou ajustar o offset do logo).
-
-## Alterações solicitadas no arquivo `CompanyReviewPage.tsx`
-
-1) Substituir a marcação do container e grid:
-- Trocar o wrapper por:
-```tsx
-<div className="min-h-screen bg-gray-50 py-10">
-  <div className="mx-auto w-full max-w-6xl px-4">
-    <div className="grid grid-cols-1 md:[grid-template-columns:320px_1fr] gap-8 items-start">
-      {/* Sidebar esquerda */}
-      <aside className="order-1 md:order-none md:sticky md:top-24">
-        <SidebarBanners slug={slug} />
-      </aside>
-
-      {/* Coluna principal */}
-      <section className="w-full">
-        {/* Card do formulário permanece aqui */}
-      </section>
-    </div>
-  </div>
-</div>
-````
-
-* Motivo: usar colunas explícitas impede que o navegador tente redistribuir a largura e “empurre” o card. `items-start` alinha topo com topo.
-
-2. Ajustar o `CardHeader` para evitar deslocamento vertical do conteúdo:
-
-* No bloco do banner/logo dentro do `CardHeader`, garantir que o “logo flutuante” não corte a área do título:
-
-  * Se usar `-bottom-8` no logo, garanta `pt-12` (ou `pt-14`) suficiente no wrapper do título.
-  * Alternativa: reduzir o offset do logo para `-bottom-6` e usar `pt-10`.
-* Exemplo:
-
-```tsx
-<CardHeader className="relative overflow-hidden p-0">
-  <div className="relative h-32">
-    {/* background image + overlay */}
-  </div>
-  <div className="pt-12 px-6 pb-4 relative z-10">
-    <CardTitle className="text-2xl font-bold text-gray-900">Avalie {company?.name ?? 'a Empresa'}</CardTitle>
-    <CardDescription>Sua opinião é fundamental para a comunidade.</CardDescription>
-  </div>
-</CardHeader>
-```
-
-3. Garantir que o formulário ocupe a largura total da coluna principal:
-
-* Manter o `Card` sem `max-w-3xl` internos quando houver grid pai.
-* Evitar `mx-auto` dentro da coluna principal (pode recentralizar indevidamente).
-
-4. Remover o `BannerSlider` do topo do card (já existe sidebar):
-
-* Se necessário mantê-lo, restringir a outra posição (ex.: `position="company_review_header"`) sem quebrar a hierarquia visual do formulário.
-
-5. Ajustes de responsividade:
-
-* Mobile: manter `grid-cols-1` e ordenar `SidebarBanners` antes do formulário com `order-1`.
-* Espaçamentos verticais consistentes: `py-10`, `gap-8`, `space-y-8` no form.
-
-## Critérios de aceite
-
-* Em desktop, a sidebar aparece à esquerda (320px) e o formulário à direita, ambos alinhados ao topo.
-* Em mobile, os banners aparecem antes do formulário, empilhados corretamente.
-* O card do formulário não “sangra” nem é empurrado lateralmente pelo grid.
-* O header com logo não sobrepõe o título; o espaço superior está correto (sem saltos).
-* Sem regressões de overflow horizontal.
-
-## Snippet final (trecho aplicado no wrapper)
-
-```tsx
-<div className="min-h-screen bg-gray-50 py-10">
-  <div className="mx-auto w-full max-w-6xl px-4">
-    <div className="grid grid-cols-1 md:[grid-template-columns:320px_1fr] gap-8 items-start">
-      <aside className="order-1 md:order-none md:sticky md:top-24">
-        <SidebarBanners slug={slug} />
-      </aside>
-      <section className="w-full">
-        {/* <Card> ... formulário existente ... </Card> */}
-      </section>
-    </div>
-  </div>
-</div>
-```
-
-
-
-
-```
-```
+EnhancedHeader.tsx:142 Uncaught (in promise) AbortError: signal is aborted without reason
+    at EnhancedHeader.tsx:142:18
+    at safelyCallDestroy (chunk-WALXKXZM.js?v=9738aa4a:16769:13)
+    at commitHookEffectListUnmount (chunk-WALXKXZM.js?v=9738aa4a:16896:19)
+    at invokePassiveEffectUnmountInDEV (chunk-WALXKXZM.js?v=9738aa4a:18391:19)
+    at invokeEffectsInDev (chunk-WALXKXZM.js?v=9738aa4a:19729:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-WALXKXZM.js?v=9738aa4a:19710:15)
+    at flushPassiveEffectsImpl (chunk-WALXKXZM.js?v=9738aa4a:19531:13)
+    at flushPassiveEffects (chunk-WALXKXZM.js?v=9738aa4a:19475:22)
+    at performSyncWorkOnRoot (chunk-WALXKXZM.js?v=9738aa4a:18896:11)
+    at flushSyncCallbacks (chunk-WALXKXZM.js?v=9738aa4a:9135:30)
+(anonymous) @ EnhancedHeader.tsx:142
+safelyCallDestroy @ chunk-WALXKXZM.js?v=9738aa4a:16769
+commitHookEffectListUnmount @ chunk-WALXKXZM.js?v=9738aa4a:16896
+invokePassiveEffectUnmountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18391
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19710
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Promise.then
+e @ frame_ant.js:2
+u @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+c @ frame_ant.js:2
+s @ frame_ant.js:2
+window.fetch @ frame_ant.js:2
+request @ api.ts:67
+getCategories @ api.ts:87
+run @ EnhancedHeader.tsx:104
+(anonymous) @ EnhancedHeader.tsx:138
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+commitPassiveMountOnFiber @ chunk-WALXKXZM.js?v=9738aa4a:18184
+commitPassiveMountEffects_complete @ chunk-WALXKXZM.js?v=9738aa4a:18157
+commitPassiveMountEffects_begin @ chunk-WALXKXZM.js?v=9738aa4a:18147
+commitPassiveMountEffects @ chunk-WALXKXZM.js?v=9738aa4a:18137
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19518
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Show 32 more frames
+Show lessUnderstand this error
+frame_ant.js:2 
+        
+        
+       GET http://localhost:3000/banners/by_position/sidebar 404 (Not Found)
+window.fetch @ frame_ant.js:2
+fetchBanners @ usePromoBanners.ts:47
+(anonymous) @ usePromoBanners.ts:108
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+commitPassiveMountOnFiber @ chunk-WALXKXZM.js?v=9738aa4a:18184
+commitPassiveMountEffects_complete @ chunk-WALXKXZM.js?v=9738aa4a:18157
+commitPassiveMountEffects_begin @ chunk-WALXKXZM.js?v=9738aa4a:18147
+commitPassiveMountEffects @ chunk-WALXKXZM.js?v=9738aa4a:18137
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19518
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Show 16 more frames
+Show lessUnderstand this error
+usePromoBanners.ts:60 Error fetching banners: Error: Falha ao carregar banners
+    at fetchBanners (usePromoBanners.ts:50:17)
+fetchBanners @ usePromoBanners.ts:60
+await in fetchBanners
+(anonymous) @ usePromoBanners.ts:108
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+commitPassiveMountOnFiber @ chunk-WALXKXZM.js?v=9738aa4a:18184
+commitPassiveMountEffects_complete @ chunk-WALXKXZM.js?v=9738aa4a:18157
+commitPassiveMountEffects_begin @ chunk-WALXKXZM.js?v=9738aa4a:18147
+commitPassiveMountEffects @ chunk-WALXKXZM.js?v=9738aa4a:18137
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19518
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Show 16 more frames
+Show lessUnderstand this error
+frame_ant.js:2 
+        
+        
+       GET http://localhost:3000/banners/by_position/sidebar 404 (Not Found)
+window.fetch @ frame_ant.js:2
+fetchBanners @ usePromoBanners.ts:47
+(anonymous) @ usePromoBanners.ts:108
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+invokePassiveEffectMountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18352
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19714
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Show 15 more frames
+Show lessUnderstand this error
+usePromoBanners.ts:60 Error fetching banners: Error: Falha ao carregar banners
+    at fetchBanners (usePromoBanners.ts:50:17)
+fetchBanners @ usePromoBanners.ts:60
+await in fetchBanners
+(anonymous) @ usePromoBanners.ts:108
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+invokePassiveEffectMountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18352
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19714
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18896
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19460
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+finishConcurrentRender @ chunk-WALXKXZM.js?v=9738aa4a:18833
+performConcurrentWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18746
+workLoop @ chunk-WALXKXZM.js?v=9738aa4a:197
+flushWork @ chunk-WALXKXZM.js?v=9738aa4a:176
+performWorkUntilDeadline @ chunk-WALXKXZM.js?v=9738aa4a:384
+Show 15 more frames
+Show lessUnderstand this error
+EnhancedCategoryPage.tsx:186 Uncaught (in promise) AbortError: signal is aborted without reason
+    at EnhancedCategoryPage.tsx:186:18
+    at safelyCallDestroy (chunk-WALXKXZM.js?v=9738aa4a:16769:13)
+    at commitHookEffectListUnmount (chunk-WALXKXZM.js?v=9738aa4a:16896:19)
+    at invokePassiveEffectUnmountInDEV (chunk-WALXKXZM.js?v=9738aa4a:18391:19)
+    at invokeEffectsInDev (chunk-WALXKXZM.js?v=9738aa4a:19729:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-WALXKXZM.js?v=9738aa4a:19710:15)
+    at flushPassiveEffectsImpl (chunk-WALXKXZM.js?v=9738aa4a:19531:13)
+    at flushPassiveEffects (chunk-WALXKXZM.js?v=9738aa4a:19475:22)
+    at commitRootImpl (chunk-WALXKXZM.js?v=9738aa4a:19444:13)
+    at commitRoot (chunk-WALXKXZM.js?v=9738aa4a:19305:13)
+(anonymous) @ EnhancedCategoryPage.tsx:186
+safelyCallDestroy @ chunk-WALXKXZM.js?v=9738aa4a:16769
+commitHookEffectListUnmount @ chunk-WALXKXZM.js?v=9738aa4a:16896
+invokePassiveEffectUnmountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18391
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19710
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19444
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18923
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+(anonymous) @ chunk-WALXKXZM.js?v=9738aa4a:18655
+Promise.then
+e @ frame_ant.js:2
+u @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+s @ frame_ant.js:2
+window.fetch @ frame_ant.js:2
+request @ api.ts:67
+getCategoryBySlug @ api.ts:97
+run @ EnhancedCategoryPage.tsx:124
+(anonymous) @ EnhancedCategoryPage.tsx:182
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+commitPassiveMountOnFiber @ chunk-WALXKXZM.js?v=9738aa4a:18184
+commitPassiveMountEffects_complete @ chunk-WALXKXZM.js?v=9738aa4a:18157
+commitPassiveMountEffects_begin @ chunk-WALXKXZM.js?v=9738aa4a:18147
+commitPassiveMountEffects @ chunk-WALXKXZM.js?v=9738aa4a:18137
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19518
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19444
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18923
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+(anonymous) @ chunk-WALXKXZM.js?v=9738aa4a:18655
+Show 24 more frames
+Show lessUnderstand this error
+EnhancedCategoryPage.tsx:186 Uncaught (in promise) AbortError: signal is aborted without reason
+    at EnhancedCategoryPage.tsx:186:18
+    at safelyCallDestroy (chunk-WALXKXZM.js?v=9738aa4a:16769:13)
+    at commitHookEffectListUnmount (chunk-WALXKXZM.js?v=9738aa4a:16896:19)
+    at invokePassiveEffectUnmountInDEV (chunk-WALXKXZM.js?v=9738aa4a:18391:19)
+    at invokeEffectsInDev (chunk-WALXKXZM.js?v=9738aa4a:19729:19)
+    at commitDoubleInvokeEffectsInDEV (chunk-WALXKXZM.js?v=9738aa4a:19710:15)
+    at flushPassiveEffectsImpl (chunk-WALXKXZM.js?v=9738aa4a:19531:13)
+    at flushPassiveEffects (chunk-WALXKXZM.js?v=9738aa4a:19475:22)
+    at commitRootImpl (chunk-WALXKXZM.js?v=9738aa4a:19444:13)
+    at commitRoot (chunk-WALXKXZM.js?v=9738aa4a:19305:13)
+(anonymous) @ EnhancedCategoryPage.tsx:186
+safelyCallDestroy @ chunk-WALXKXZM.js?v=9738aa4a:16769
+commitHookEffectListUnmount @ chunk-WALXKXZM.js?v=9738aa4a:16896
+invokePassiveEffectUnmountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18391
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19710
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19444
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18923
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+(anonymous) @ chunk-WALXKXZM.js?v=9738aa4a:18655
+Promise.then
+e @ frame_ant.js:2
+u @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+(anonymous) @ frame_ant.js:2
+s @ frame_ant.js:2
+window.fetch @ frame_ant.js:2
+request @ api.ts:67
+getProviders @ api.ts:123
+run @ EnhancedCategoryPage.tsx:125
+(anonymous) @ EnhancedCategoryPage.tsx:182
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+commitPassiveMountOnFiber @ chunk-WALXKXZM.js?v=9738aa4a:18184
+commitPassiveMountEffects_complete @ chunk-WALXKXZM.js?v=9738aa4a:18157
+commitPassiveMountEffects_begin @ chunk-WALXKXZM.js?v=9738aa4a:18147
+commitPassiveMountEffects @ chunk-WALXKXZM.js?v=9738aa4a:18137
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19518
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19444
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18923
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+(anonymous) @ chunk-WALXKXZM.js?v=9738aa4a:18655
+Show 24 more frames
+Show lessUnderstand this error
+frame_ant.js:2 
+        
+        
+       GET http://localhost:3000/api/v1/providers/search?category_slug=armazenamento-de-energia 422 (Unprocessable Entity)
+window.fetch @ frame_ant.js:2
+request @ api.ts:67
+getProviders @ api.ts:123
+run @ EnhancedCategoryPage.tsx:125
+(anonymous) @ EnhancedCategoryPage.tsx:182
+commitHookEffectListMount @ chunk-WALXKXZM.js?v=9738aa4a:16936
+invokePassiveEffectMountInDEV @ chunk-WALXKXZM.js?v=9738aa4a:18352
+invokeEffectsInDev @ chunk-WALXKXZM.js?v=9738aa4a:19729
+commitDoubleInvokeEffectsInDEV @ chunk-WALXKXZM.js?v=9738aa4a:19714
+flushPassiveEffectsImpl @ chunk-WALXKXZM.js?v=9738aa4a:19531
+flushPassiveEffects @ chunk-WALXKXZM.js?v=9738aa4a:19475
+commitRootImpl @ chunk-WALXKXZM.js?v=9738aa4a:19444
+commitRoot @ chunk-WALXKXZM.js?v=9738aa4a:19305
+performSyncWorkOnRoot @ chunk-WALXKXZM.js?v=9738aa4a:18923
+flushSyncCallbacks @ chunk-WALXKXZM.js?v=9738aa4a:9135
+(anonymous) @ chunk-WALXKXZM.js?v=9738aa4a:18655
+Show 11 more frames
+Show lessUnderstand this error

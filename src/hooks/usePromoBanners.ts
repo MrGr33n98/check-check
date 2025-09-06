@@ -35,8 +35,8 @@ export const usePromoBanners = (position?: string) => {
 
       const url = apiUrl
         ? position
-          ? `${apiUrl.replace('/api/v1', '')}/banners/by_position/${position}`
-          : `${apiUrl.replace('/api/v1', '')}/banners`
+          ? `${apiUrl}/promotional_banners/by_position/${position}`
+          : `${apiUrl}/promotional_banners`
         : '';
 
       try {

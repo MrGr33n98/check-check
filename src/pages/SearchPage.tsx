@@ -135,7 +135,7 @@ const SearchPage: React.FC = () => {
   const loadCompanies = useCallback(async (searchParams: Record<string, string | number>, page = 1, perPage = companiesPerPage, retries = 3, delay = 1000) => {
     setIsLoading(true);
     try {
-      const response = await axios.get<SearchResponse>('http://localhost:3000/api/v1/providers/search', {
+      const response = await axios.get<SearchResponse>(`${import.meta.env.VITE_API_URL}/providers/search`, {
         params: { ...searchParams, page, per_page: perPage }
       });
       const companies = Array.isArray(response.data.results)

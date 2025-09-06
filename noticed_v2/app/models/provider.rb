@@ -16,11 +16,12 @@ class Provider < ApplicationRecord
   has_many :b2b_ads, dependent: :destroy
   has_many :company_members, dependent: :destroy
   has_many :users, through: :company_members
-  has_many :analytics, dependent: :destroy
+  # has_many :analytics, dependent: :destroy # Temporarily commented out to debug Ransack issue
   has_many :solutions, dependent: :destroy
   belongs_to :approved_by, class_name: 'AdminUser', optional: true
 
-  has_and_belongs_to_many :categories
+  has_many :provider_categories, dependent: :destroy
+  has_many :categories, through: :provider_categories
 
   has_one_attached :logo
   has_one_attached :cover_image
@@ -28,6 +29,9 @@ class Provider < ApplicationRecord
   has_many_attached :documents
   has_many_attached :licenses
   has_many_attached :portfolio_images
+
+  has_many :provider_certifications, dependent: :destroy
+  has_many :certifications, through: :provider_certifications
 
   # Validations
   validates :name, presence: true, uniqueness: true
@@ -45,27 +49,78 @@ class Provider < ApplicationRecord
   after_create :notify_admins_of_new_provider
   after_update :send_status_notification, if: :saved_change_to_status?
 
-  # Scopes
-  scope :premium, -> { where('premium_until >= ?', Date.current) }
-  scope :by_country, ->(country) { where('country = ?', country) }
-  scope :by_tag, ->(tag) { where('? = ANY(tags)', tag) }
-  scope :founded_after, ->(year) { where('foundation_year >= ?', year) }
-  scope :founded_before, ->(year) { where('foundation_year <= ?', year) }
-  scope :by_city, ->(city) { where('LOWER(city) = ?', city.downcase) }
-  scope :by_state, ->(state) { where('LOWER(state) = ?', state.downcase) }
-  scope :in_featured_categories, -> {
-    joins(:categories).where(categories: { featured: true }).distinct
+  # ---- SCOPES DE FILTRO ----
+  scope :by_city,  ->(city)  { where(city: city) if city.present? }
+  scope :by_state, ->(uf)    { where(state: uf) if uf.present? }
+
+  # Categoria: inclui quem é visível em todas as categorias OU quem está linkado à categoria
+  scope :in_categories, ->(ids) {
+    return all if ids.blank?
+    left_outer_joins(:provider_categories)
+      .where("providers.visible_in_all_categories = TRUE OR provider_categories.category_id IN (?)", ids)
+      .distinct
   }
 
-  # Ransack configuration for ActiveAdmin search
-  def self.ransackable_associations(auth_object = nil)
-    ["reviews", "approved_by", "b2b_ads", "campaigns", "company_members", "users", "solutions", "categories"]
+  # Serviços/tags – supondo coluna `tags` ARRAY ou JSONB; ajuste conforme seu schema
+  # ARRAY (postgres): `tags text[]` 
+  scope :with_services, ->(slugs) {
+    return all if slugs.blank?
+    where("providers.tags && ARRAY[?]::varchar[]", Array(slugs))
+  }
+
+  # Nota mínima – se existir cache `average_rating`; senão, calcular via reviews
+  scope :with_min_rating, ->(min) {
+    return all if min.blank?
+    if column_names.include?("average_rating")
+      where("providers.average_rating >= ?", min.to_f)
+    else
+      left_outer_joins(:reviews)
+        .group("providers.id")
+        .having("COALESCE(AVG(reviews.rating), 0) >= ?", min.to_f)
+    end
+  }
+
+  # Experiência (anos de mercado) a partir de foundation_year
+  scope :with_experience, ->(range_key) {
+    return all if range_key.blank?
+    year = Date.current.year
+    case range_key.to_s
+    when "0-2"   then where("(? - foundation_year) BETWEEN 0 AND 2",  year)
+    when "3-5"   then where("(? - foundation_year) BETWEEN 3 AND 5",  year)
+    when "5-10"  then where("(? - foundation_year) BETWEEN 6 AND 10", year)
+    when "10+"   then where("(? - foundation_year) >= 11",           year)
+    else all
+    end
+  }
+
+  # Certificações (se tiver associação)
+  scope :with_certifications, ->(ids) {
+    return all if ids.blank?
+    left_outer_joins(:provider_certifications)
+      .where(provider_certifications: { certification_id: Array(ids) })
+      .group("providers.id")
+      .having("COUNT(DISTINCT provider_certifications.certification_id) >= 1")
+  }
+
+  accepts_nested_attributes_for :provider_categories, allow_destroy: true
+
+  # (Opcional) Ransack
+  def self.ransackable_attributes(_auth_object = nil)
+    super + %w[
+      approved_by_id
+      name country city state foundation_year members_count status
+      created_at updated_at premium_until
+      service_tags
+    ]
   end
 
-  def self.ransackable_attributes(auth_object = nil)
-    ["approved_at", "approved_by_id", "approval_notes", "country", "created_at", "description",
-     "foundation_year", "id", "members_count", "name", "premium_until", "seo_url", "social_links",
-     "status", "tags", "updated_at", "short_description", "title", "city", "state", "service_tags"]
+  def self.ransackable_associations(_auth_object = nil)
+    super + %w[approved_by categories provider_categories]
+  end
+
+  # Add a ransacker for analytics_id that always returns false, effectively disabling it
+  ransacker :analytics_id do |parent|
+    Arel::Nodes::SqlLiteral.new("false")
   end
 
   
@@ -121,7 +176,9 @@ class Provider < ApplicationRecord
   end
 
   def tags_list=(value)
-    self.tags = value.to_s.split(',').map(&:strip).reject(&:blank?)
+    # If value is an array (from checkboxes), use it directly.
+    # Otherwise, treat as a comma-separated string.
+    self.tags = Array(value).reject(&:blank?)
   end
 
   def company_age
@@ -183,7 +240,22 @@ class Provider < ApplicationRecord
   end
 
   ransacker :service_tags, formatter: proc { |v|
-    Arel.sql("tags @> ARRAY[#{ActiveRecord::Base.connection.quote(v)}]")
+    case v
+    when 'instalacao-residencial'
+      Arel.sql("tags @> ARRAY['residencial']")
+    when 'instalacao-comercial'
+      Arel.sql("tags @> ARRAY['comercial']")
+    when 'manutencao'
+      Arel.sql("tags @> ARRAY['manutencao']")
+    when 'monitoramento'
+      Arel.sql("tags @> ARRAY['monitoramento']")
+    when 'energia-off-grid'
+      Arel.sql("tags @> ARRAY['off-grid']")
+    when 'consultoria-tecnica'
+      Arel.sql("tags @> ARRAY['consultoria-tecnica']")
+    else
+      Arel.sql("tags @> ARRAY[#{ActiveRecord::Base.connection.quote(v)}]")
+    end
   } do |parent|
     parent.table[:tags]
   end

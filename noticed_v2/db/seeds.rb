@@ -47,7 +47,8 @@ categories_data = [
   { name: "Usinas Solares de Grande Porte", description: "Construção, gestão e operação de fazendas solares", featured: true },
   { name: "Armazenamento de Energia", description: "Baterias residenciais, industriais e sistemas híbridos", featured: true },
   { name: "Energia Off-Grid", description: "Soluções isoladas para áreas rurais ou sem acesso à rede elétrica", featured: false },
-  { name: "Eficiência Energética", description: "Tecnologias e softwares para reduzir desperdício e otimizar consumo", featured: false }
+  { name: "Eficiência Energética", description: "Tecnologias e softwares para reduzir desperdício e otimizar consumo", featured: false },
+  { name: "Carros Elétricos", description: "Soluções e infraestrutura para veículos elétricos e mobilidade sustentável", featured: false }
 ]
 
 categories_data.each do |cat_data|

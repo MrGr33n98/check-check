@@ -97,40 +97,52 @@ const EnhancedHeader: React.FC = () => {
 
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
 
-    const fetchCategories = async (signal: AbortSignal) => {
+    const run = async () => {
       try {
-        const apiCategories = await apiService.getCategories(signal);
-        
-        // Recursive function to map API data and add icons
-        const mapApiData = (apiCats: ApiCategory[]): Category[] => {
-          return apiCats.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            slug: cat.slug,
-            icon: getCategoryIcon(cat.slug),
-            children: cat.children ? mapApiData(cat.children) : [],
-          }));
-        };
+        const result = await apiService.getCategories(controller.signal);
 
-        setCategories(mapApiData(apiCategories));
-      } catch (error: any) {
-        if (signal.aborted) {
-          // console.log('Fetch aborted as expected:', error.name);
-          return; // Do nothing if the fetch was intentionally aborted
+        // Check if the component is still mounted
+        if (cancelled) return;
+
+        // Handle abort signal
+        if (result && result.aborted) {
+          return;
         }
-        console.error("Failed to fetch header categories:", error);
+
+        // Handle successful response
+        if (result && result.ok) {
+          // Recursive function to map API data and add icons
+          const mapApiData = (apiCats: ApiCategory[]): Category[] => {
+            return apiCats.map(cat => ({
+              id: cat.id,
+              name: cat.name,
+              slug: cat.slug,
+              icon: getCategoryIcon(cat.slug),
+              children: cat.children ? mapApiData(cat.children) : [],
+            }));
+          };
+          setCategories(mapApiData(result.data));
+        } else {
+          console.debug("Failed to fetch header categories:", result?.error);
+        }
+      } catch (err: any) {
+        // Only log non-abort errors
+        if (err?.name !== 'AbortError') {
+          console.debug('fetchCategories error', err);
+        }
       }
     };
 
-    fetchCategories(controller.signal); // Pass the signal directly
+    run();
 
     return () => {
-      controller.abort();
-    };
-
-    return () => {
-      controller.abort();
+      cancelled = true;
+      // Only abort if the controller is not already aborted
+      if (controller.signal && !controller.signal.aborted) {
+        controller.abort();
+      }
     };
   }, []);
 
