@@ -1,5 +1,12 @@
 require "active_support/core_ext/integer/time"
 
+if ENV["SENTRY_DSN"].present?
+  Sentry.init do |config|
+    config.dsn = ENV["SENTRY_DSN"]
+    config.environment = Rails.env
+  end
+end
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
@@ -86,6 +93,9 @@ Rails.application.configure do
   
   # Reduce preload warnings
   config.assets.unknown_asset_fallback = false
+
+  # Lograge for cleaner logs
+  config.lograge.enabled = true
 
   # Raises error for missing translations.
   # config.i18n.raise_on_missing_translations = true

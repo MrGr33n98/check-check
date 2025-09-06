@@ -1,5 +1,12 @@
 require "active_support/core_ext/integer/time"
 
+if ENV["SENTRY_DSN"].present?
+  Sentry.init do |config|
+    config.dsn = ENV["SENTRY_DSN"]
+    config.environment = Rails.env
+  end
+end
+
 # The test environment is used exclusively to run your application's
 # test suite. You never need to work with it otherwise. Remember that
 # your test database is "scratch space" for the test suite and is wiped
@@ -57,4 +64,7 @@ Rails.application.configure do
 
   # Annotate rendered view with file names.
   # config.action_view.annotate_rendered_view_with_filenames = true
+
+  # Enable lograge for consistency in tests
+  config.lograge.enabled = true
 end
