@@ -96,12 +96,11 @@ const EnhancedHeader: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    const controller = new AbortController();
     let cancelled = false;
 
     const run = async () => {
       try {
-        const result = await apiService.getCategories(controller.signal);
+        const result = await apiService.getCategories();
 
         // Check if the component is still mounted
         if (cancelled) return;
@@ -139,13 +138,6 @@ const EnhancedHeader: React.FC = () => {
 
     return () => {
       cancelled = true;
-      try {
-        if (controller.signal && !controller.signal.aborted) {
-          controller.abort();
-        }
-      } catch (e) {
-        console.debug('Abort controller cleanup failed', e);
-      }
     };
   }, []);
 
