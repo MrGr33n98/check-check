@@ -5,6 +5,12 @@ export interface Category {
   description?: string;
   featured?: boolean;
   image_url?: string;
+  banner_image_url?: string;
+  title_color?: string;
+  subtitle_color?: string;
+  title_font_size?: string;
+  subtitle_font_size?: string;
+  children?: Category[];
 }
 
 export interface Provider {
@@ -20,6 +26,7 @@ export interface Provider {
   members_count?: number;
   status: string;
   premium: boolean;
+  premium_effect_active?: boolean;
   tags: string[];
   social_links?: any;
   categories: Category[];
@@ -30,6 +37,8 @@ export interface Provider {
   installed_capacity_mw: number;
   location: string;
   specialties: string[];
+  banner_image_url?: string;
+  price?: number;
 }
 
 export interface ProvidersResponse {
@@ -40,32 +49,99 @@ export interface ProvidersResponse {
   total_pages: number;
 }
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
+// New ApiResult type
+type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number; error?: unknown } | { aborted: true };
+
+// New request function
+async function request<T>(path: string, opts?: { signal?: AbortSignal; params?: Record<string, string | number | undefined> }): Promise<ApiResult<T>> {
+  try {
+    const url = new URL(`${import.meta.env.VITE_API_URL}${path}`);
+    if (opts?.params) {
+      Object.entries(opts.params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          url.searchParams.append(key, String(value));
+        }
+      });
+    }
+
+    const response = await fetch(url.toString(), { signal: opts?.signal });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return { ok: false, status: response.status, error: errorText };
+    }
+
+    const data = await response.json();
+    return { ok: true, data: data as T };
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      return { aborted: true };
+    }
+    console.error(`Error in request to ${path}:`, error);
+    return { ok: false, status: 0, error: error }; // Generic error for unexpected issues
+  }
 }
 
 class ApiService {
-  async getCategories(): Promise<Category[]> {
-    return this.getMockCategories();
+  async getCategories(signal?: AbortSignal): Promise<ApiResult<Category[]>> {
+    const result = await request<Category[]>('/categories', { signal });
+    if (result.ok && Array.isArray(result.data)) {
+      return { ok: true, data: result.data };
+    } else if (result.ok) { // Data is not an array, but request was ok
+      return { ok: false, status: 500, error: "Unexpected data format" };
+    }
+    return result; // Propagate error or aborted status
   }
 
-  async getCategoryBySlug(slug: string): Promise<Category | null> {
-    const mockCategories = this.getMockCategories();
-    return mockCategories.find(category => category.slug === slug) || null;
+  async getCategoryBySlug(slug: string, signal?: AbortSignal): Promise<ApiResult<Category>> {
+    const result = await request<Category>(`/categories/${slug}`, { signal });
+    return result;
   }
 
-  async getProviders(params?: {
+  async getProviders(params: {
     category_id?: number;
     category_slug?: string;
     sort_by?: 'rating' | 'capacity' | 'reviews';
     limit?: number;
     page?: number;
-  }): Promise<ProvidersResponse> {
-    return this.getMockProviders(params);
+    [k: string]: string | number | undefined; // Allow other filter parameters
+  }, signal?: AbortSignal): Promise<ApiResult<ProvidersResponse>> {
+    const queryParams: Record<string, string | number | undefined> = {};
+    if (params?.category_id) queryParams.category_id = params.category_id.toString();
+    if (params?.category_slug) queryParams.category_slug = params.category_slug; // Removida a codificação
+    if (params?.sort_by) queryParams.sort_by = params.sort_by;
+    if (params?.limit) queryParams.limit = params.limit.toString();
+    if (params?.page) queryParams.page = params.page.toString();
+
+    // Add any other dynamic filter parameters
+    for (const key in params) {
+      if (key !== 'category_id' && key !== 'category_slug' && key !== 'sort_by' && key !== 'limit' && key !== 'page' && params[key] !== undefined) {
+        queryParams[key] = String(params[key]);
+      }
+    }
+
+    const result = await request<ProvidersResponse>('/providers/search', { params: queryParams, signal });
+    
+    if (result.ok) {
+      // Ensure the data structure matches ProvidersResponse
+      return {
+        ok: true,
+        data: {
+          providers: result.data.providers || [],
+          total: result.data.total || 0,
+          page: result.data.page || 1,
+          per_page: result.data.per_page || 0,
+          total_pages: result.data.total_pages || 0,
+        }
+      };
+    }
+    return result;
   }
 
   async getProviderBySlug(slug: string): Promise<Provider | null> {
+    // This method still uses mock data, as per original implementation.
+    // If it should use the API, it needs to be updated to use `request`
+    // and return ApiResult<Provider>.
     const mockProviders = this.getMockProviders();
     return mockProviders.providers.find(provider => provider.slug === slug) || null;
   }

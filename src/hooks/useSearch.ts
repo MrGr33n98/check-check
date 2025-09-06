@@ -60,7 +60,7 @@ export const useSearch = () => {
         };
 
         // Usar a API real de solar companies
-        const response = await fetch('http://localhost:3000/api/v1/solar_companies?' + new URLSearchParams(params));
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/solar_companies?` + new URLSearchParams(params));
         const data = await response.json();
         
         // Converter dados da API para o formato esperado

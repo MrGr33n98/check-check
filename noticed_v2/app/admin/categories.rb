@@ -1,5 +1,5 @@
 ActiveAdmin.register Category do
-  permit_params :name, :slug, :description, :featured, :photo, :meta_title, :meta_description, :keywords, :parent_id, :is_main_category, :banner_image, :promotional_text
+  permit_params :name, :slug, :description, :featured, :photo, :meta_title, :meta_description, :keywords, :parent_id, :is_main_category, :banner_image, :promotional_text, :title_color, :subtitle_color, :title_font_size, :subtitle_font_size
 
   filter :name
 
@@ -77,6 +77,10 @@ ActiveAdmin.register Category do
       f.input :description
       f.input :featured
       f.input :photo, as: :file
+      f.input :title_color, label: "Title Color (e.g., #FFFFFF or text-white)"
+      f.input :subtitle_color, label: "Subtitle Color (e.g., #CCCCCC or text-gray-300)"
+      f.input :title_font_size, label: "Title Font Size (e.g., text-2xl or text-4xl)"
+      f.input :subtitle_font_size, label: "Subtitle Font Size (e.g., text-base or text-lg)"
     end
 
     f.inputs "Hierarchy and Media" do

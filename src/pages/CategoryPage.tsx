@@ -53,9 +53,9 @@ function CategoryPage() {
 
       try {
         // First, let's check if we can reach the API
-        console.log('CategoryPage: Attempting to fetch from http://localhost:3000/api/v1/categories/' + slug);
+        console.log('CategoryPage: Attempting to fetch from ' + `${import.meta.env.VITE_API_URL}/categories/` + slug);
         
-        const response = await fetch(`http://localhost:3000/api/v1/categories/${slug}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/categories/${slug}`);
         console.log('CategoryPage: API response status:', response.status);
         
         if (!response.ok) {

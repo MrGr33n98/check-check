@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Zap, BatteryCharging, Lightbulb, DollarSign, Users, Globe, Rocket, TrendingUp, Shield, ArrowRight } from 'lucide-react'; // Example icons
+import apiService, { Category as ApiCategory } from '@/services/api';
+import { normalizeSlug } from '@/utils/slugUtils';
 
 // Definindo um tipo para os objetos de categoria vindos da API
 interface ApiCategory {
@@ -125,6 +127,9 @@ function CategoriesPage() {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
     // SEO
     document.title = "Todas as Categorias de Energia Solar | SolarFinder";
     let metaDescription = document.querySelector('meta[name="description"]');
@@ -135,41 +140,62 @@ function CategoriesPage() {
     }
     metaDescription.setAttribute('content', "Explore empresas por segmento do setor solar. Encontre empresas especializadas em geração, eficiência energética, armazenamento e muito mais.");
 
-    const controller = new AbortController();
+    const run = async () => {
+      setLoading(true);
+      let categoriesResult: any; // Use any for now, will be ApiResult<Category[]>
+      let heroResult: any; // Use any for now
 
-    // Buscar categorias reais da API (ActiveAdmin configurável via banner_image)
-    const fetchCategories = async () => {
       try {
-        setLoading(true);
-        const res = await fetch('/api/v1/categories', { signal: controller.signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: ApiCategory[] = await res.json();
-        if (!Array.isArray(data)) throw new Error('Formato inesperado');
-        const mapped: Category[] = data.map((c) => ({
+        [categoriesResult, heroResult] = await Promise.all([
+          apiService.getCategories(controller.signal),
+          // For now, direct fetch for hero banner, will need to adapt if apiService gets a method for it
+          // Wrap in try-catch to handle AbortError from direct fetch
+          (async () => {
+            try {
+              const response = await fetch(`${import.meta.env.VITE_API_URL}/promotional_banners/by_position/categories_hero`, { signal: controller.signal });
+              if (!response.ok) {
+                return { ok: false, status: response.status, statusText: response.statusText };
+              }
+              return { ok: true, data: await response.json() };
+            } catch (err: any) {
+              if (err?.name === 'AbortError') {
+                return { aborted: true };
+              }
+              throw err; // Re-throw other errors
+            }
+          })()
+        ]);
+      } catch (err: any) {
+        if (err?.name === 'AbortError') {
+          // Silently ignore AbortError from Promise.all
+          return;
+        }
+        throw err; // Re-throw other errors to be caught by the outer .catch
+      }
+
+      if (cancelled) return;
+
+      // Handle categories
+      if (categoriesResult && categoriesResult.aborted) return;
+      if (categoriesResult && categoriesResult.ok) {
+        const mappedCategories: Category[] = categoriesResult.data.map((c: ApiCategory) => ({
           id: c.id,
           name: c.name,
           slug: c.slug,
           description: c.description || '',
-          featured: c.featured,
-          banner_image_url: c.banner_image_url || null,
+          featured: c.featured || false,
+          banner_image_url: c.banner_image_url
         }));
-        setCategories(mapped.length > 0 ? mapped : mockCategories);
-      } catch (err) {
-        console.warn('Falha ao carregar categorias da API, usando mock:', err);
+        setCategories(mappedCategories.length > 0 ? mappedCategories : mockCategories);
+      } else {
+        console.warn('Falha ao carregar categorias, usando mock:', categoriesResult?.error);
         setCategories(mockCategories);
-      } finally {
-        setLoading(false);
       }
-    };
 
-    // Buscar configuração do hero via banner por posição (categories_hero)
-    const fetchHeroConfig = async () => {
-      try {
-        const res = await fetch('/api/v1/promotional_banners/by_position/categories_hero', { signal: controller.signal });
-        if (!res.ok) return; // mantém default
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) return;
-        const data = await res.json();
+      // Handle hero config response
+      if (heroResult && heroResult.aborted) return;
+      if (heroResult && heroResult.ok) {
+        const data = heroResult.data;
         if (data && Array.isArray(data.data) && data.data.length > 0) {
           const b = data.data[0];
           setHero((prev) => ({
@@ -178,15 +204,32 @@ function CategoriesPage() {
             backgroundImage: b.image_url || prev.backgroundImage,
           }));
         }
-      } catch (err) {
-        // silencioso: mantém default
-        console.warn('Hero config indisponível, usando padrão.');
+      } else if (heroResult && heroResult.status !== 404) { // Ignore 404 for hero banner
+        console.warn('Falha ao carregar configuração do hero:', heroResult.status, heroResult.statusText);
       }
+
+      setLoading(false);
     };
 
-    fetchCategories();
-    fetchHeroConfig();
-    return () => controller.abort();
+    run().catch(err => {
+      if (err?.name === 'AbortError') {
+        // Silently ignore AbortError
+        console.log('Fetch aborted in CategoriesPage, ignoring error.');
+        return;
+      }
+      console.debug('fetchCategoriesAndHero error', err);
+    });
+
+    return () => {
+      cancelled = true;
+      try {
+        if (!controller.signal.aborted) {
+          controller.abort();
+        }
+      } catch (e) {
+        console.debug('Abort controller cleanup failed', e);
+      }
+    };
   }, []);
 
   const filteredCategories = categories.filter(category =>

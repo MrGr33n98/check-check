@@ -4,6 +4,7 @@ import { Button } from './button';
 import { Badge } from './badge';
 import StarRating from './star-rating';
 import { MapPin, Phone } from 'lucide-react';
+import { getPlaceholderImage } from '@/utils/imageFallback';
 
 const FeaturedCompaniesSection: React.FC = () => {
   const companies = [
@@ -15,7 +16,7 @@ const FeaturedCompaniesSection: React.FC = () => {
       reviewCount: 127,
       location: 'São Paulo, SP',
       description: 'Especialista em sistemas fotovoltaicos residenciais e comerciais',
-      logo: '/api/placeholder/80/80',
+      logo: getPlaceholderImage(80, 80),
       featured: true,
       verified: true
     },
@@ -27,7 +28,7 @@ const FeaturedCompaniesSection: React.FC = () => {
       reviewCount: 89,
       location: 'Rio de Janeiro, RJ',
       description: 'Construção e reforma de imóveis residenciais e comerciais',
-      logo: '/api/placeholder/80/80',
+      logo: getPlaceholderImage(80, 80),
       featured: true,
       verified: true
     },
@@ -39,7 +40,7 @@ const FeaturedCompaniesSection: React.FC = () => {
       reviewCount: 156,
       location: 'Belo Horizonte, MG',
       description: 'Desenvolvimento de software e soluções digitais',
-      logo: '/api/placeholder/80/80',
+      logo: getPlaceholderImage(80, 80),
       featured: true,
       verified: true
     }

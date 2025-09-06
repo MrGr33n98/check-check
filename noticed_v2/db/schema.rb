@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
+ActiveRecord::Schema[7.0].define(version: 2025_09_05_205746) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -242,6 +242,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
     t.text "keywords"
     t.boolean "is_main_category"
     t.string "promotional_text"
+    t.string "title_color"
+    t.string "subtitle_color"
+    t.string "title_font_size"
+    t.string "subtitle_font_size"
     t.index ["active"], name: "index_categories_on_active"
     t.index ["parent_id"], name: "index_categories_on_parent_id"
     t.index ["position"], name: "index_categories_on_position"
@@ -261,6 +265,12 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
   create_table "categories_sponsoreds", id: false, force: :cascade do |t|
     t.bigint "category_id", null: false
     t.bigint "sponsored_id", null: false
+  end
+
+  create_table "certifications", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "comments", force: :cascade do |t|
@@ -526,6 +536,26 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
     t.index ["start_date", "end_date"], name: "index_promotional_banners_date_range"
   end
 
+  create_table "provider_categories", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "category_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_provider_categories_on_category_id"
+    t.index ["provider_id", "category_id"], name: "index_provider_categories_on_provider_id_and_category_id", unique: true
+    t.index ["provider_id"], name: "index_provider_categories_on_provider_id"
+  end
+
+  create_table "provider_certifications", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "certification_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["certification_id"], name: "index_provider_certifications_on_certification_id"
+    t.index ["provider_id", "certification_id"], name: "idx_prov_cert_on_prov_id_and_cert_id", unique: true
+    t.index ["provider_id"], name: "index_provider_certifications_on_provider_id"
+  end
+
   create_table "providers", force: :cascade do |t|
     t.string "name", null: false
     t.string "seo_url"
@@ -552,6 +582,8 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
     t.string "banner_image"
     t.string "city"
     t.string "state"
+    t.boolean "premium_effect_active", default: false
+    t.boolean "visible_in_all_categories"
     t.index ["approved_by_id"], name: "index_providers_on_approved_by_id"
     t.index ["city"], name: "index_providers_on_city"
     t.index ["country"], name: "index_providers_on_country"
@@ -603,11 +635,15 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.bigint "product_id", null: false
-    t.integer "status", default: 0
     t.string "cliente"
+    t.jsonb "scores", default: {}
+    t.decimal "overall_score", precision: 3, scale: 2
+    t.boolean "featured", default: false
+    t.string "status", default: "pending"
+    t.bigint "provider_id"
     t.index ["product_id"], name: "index_reviews_on_product_id"
+    t.index ["provider_id"], name: "index_reviews_on_provider_id"
     t.index ["solution_id"], name: "index_reviews_on_solution_id"
-    t.index ["status"], name: "index_reviews_on_status"
     t.index ["user_id"], name: "index_reviews_on_user_id"
   end
 
@@ -727,6 +763,10 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
   add_foreign_key "product_users", "products"
   add_foreign_key "product_users", "users"
   add_foreign_key "promotional_banners", "providers"
+  add_foreign_key "provider_categories", "categories"
+  add_foreign_key "provider_categories", "providers"
+  add_foreign_key "provider_certifications", "certifications"
+  add_foreign_key "provider_certifications", "providers"
   add_foreign_key "providers", "admin_users", column: "approved_by_id"
   add_foreign_key "questions", "categories"
   add_foreign_key "questions", "products"
@@ -734,6 +774,7 @@ ActiveRecord::Schema[7.0].define(version: 2025_09_02_192341) do
   add_foreign_key "replies", "questions"
   add_foreign_key "replies", "users"
   add_foreign_key "reviews", "products"
+  add_foreign_key "reviews", "providers"
   add_foreign_key "reviews", "solutions"
   add_foreign_key "reviews", "users"
   add_foreign_key "solutions", "providers"

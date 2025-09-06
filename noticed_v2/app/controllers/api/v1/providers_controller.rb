@@ -2,13 +2,28 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   # GET /api/v1/providers
   def index
     Rails.logger.info('API::V1::ProvidersController#index called')
-    @providers = Provider.active.includes(:categories)
+    @providers = Provider.active.includes(:categories, :solutions => :reviews)
+                         .with_attached_logo
+                         .with_attached_cover_image
+                         .with_attached_banner_image
     
-    # Filter by category
-    if params[:category_id].present?
-      @providers = @providers.joins(:categories).where(categories: { id: params[:category_id] })
-    elsif params[:category_slug].present?
-      @providers = @providers.joins(:categories).where(categories: { slug: params[:category_slug] })
+    # Filter by category and visible_in_all_categories
+    if params[:category_slug].present?
+      category_slug = params[:category_slug]
+      
+      @providers = @providers.left_joins(:categories)
+                             .where(
+                               Provider.arel_table[:visible_in_all_categories].eq(true)
+                               .or(categories: { slug: category_slug })
+                             ).distinct
+    elsif params[:category_id].present?
+      category_id = params[:category_id]
+      
+      @providers = @providers.left_joins(:categories)
+                             .where(
+                               Provider.arel_table[:visible_in_all_categories].eq(true)
+                               .or(categories: { id: category_id })
+                             ).distinct
     end
     
     # Filter by rating (minimum rating)
@@ -40,121 +55,162 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
   # GET /api/v1/providers/search
   def search
-    Rails.logger.info('API::V1::ProvidersController#search called')
-    @providers = Provider.active.includes(:categories)
+    begin
+      Rails.logger.info('API::V1::ProvidersController#search called')
+      @providers = Provider.active.includes(:categories, :solutions => :reviews)
+                           .with_attached_logo
+                           .with_attached_cover_image
+                           .with_attached_banner_image
 
-    # Search by location (city, state, or address)
-    if params[:location].present?
-      location_query = params[:location].downcase
-      @providers = @providers.where(
-        "LOWER(address) LIKE ? OR LOWER(country) LIKE ? OR EXISTS (
-          SELECT 1 FROM unnest(tags) AS tag
-          WHERE LOWER(tag) LIKE ?
-        )",
-        "%#{location_query}%",
-        "%#{location_query}%",
-        "%#{location_query}%"
-      )
-    end
+      if params[:category_slug].present?
+        normalized_category_slug = params[:category_slug].downcase.strip.parameterize
+        category = Category.find_by(slug: normalized_category_slug)
 
-    # Search by company name or description
-    if params[:query].present?
-      search_query = params[:query].downcase
-      @providers = @providers.where(
-        "LOWER(name) LIKE ? OR LOWER(short_description) LIKE ? OR LOWER(title) LIKE ?",
-        "%#{search_query}%",
-        "%#{search_query}%",
-        "%#{search_query}%"
-      )
-    end
-
-    # Filter by services/specialties
-    if params[:services].present?
-      services = params[:services].split(',').map(&:strip).map(&:downcase)
-      @providers = @providers.where("tags && ARRAY[?]::varchar[]", services)
-    end
-
-    # Filter by minimum rating
-    if params[:rating].present? && params[:rating].to_f > 0
-      min_rating = params[:rating].to_f
-      # Assuming overall_average_rating is a method or column on Provider
-      @providers = @providers.where("overall_average_rating >= ?", min_rating)
-    end
-
-    # Filter by experience (foundation_year)
-    if params[:experience].present?
-      experience_ranges = params[:experience].split(',').map(&:strip)
-      current_year = Date.current.year
-      experience_conditions = []
-
-      experience_ranges.each do |range|
-        case range
-        when '0-2-anos'
-          experience_conditions << "foundation_year >= #{current_year - 2}"
-        when '2-5-anos'
-          experience_conditions << "(foundation_year >= #{current_year - 5} AND foundation_year < #{current_year - 2})"
-        when '5-10-anos'
-          experience_conditions << "(foundation_year >= #{current_year - 10} AND foundation_year < #{current_year - 5})"
-        when '10-anos'
-          experience_conditions << "foundation_year < #{current_year - 10}"
+        unless category
+          render json: { error: 'category_not_found' }, status: :not_found
+          return
         end
+
+        @providers = @providers.left_joins(:categories)
+                               .where(
+                                 Provider.arel_table[:visible_in_all_categories].eq(true)
+                                 .or(categories: { id: category.id })
+                               ).distinct
+      elsif params[:category_id].present?
+        category_id = params[:category_id]
+        category = Category.find_by(id: category_id)
+
+        unless category
+          render json: { error: 'category_not_found' }, status: :not_found
+          return
+        end
+
+        @providers = @providers.left_joins(:categories)
+                               .where(
+                                 Provider.arel_table[:visible_in_all_categories].eq(true)
+                                 .or(categories: { id: category.id })
+                               ).distinct
       end
-      @providers = @providers.where(experience_conditions.join(' OR ')) if experience_conditions.any?
-    end
 
-    # Filter by certifications
-    if params[:certifications].present?
-      certifications = params[:certifications].split(',').map(&:strip).map(&:downcase)
-      @providers = @providers.where("tags && ARRAY[?]::varchar[]", certifications)
-    end
+      # Search by location (city, state, or address)
+      if params[:location].present?
+        location_query = params[:location].downcase
+        @providers = @providers.where(
+          "LOWER(address) LIKE ? OR LOWER(country) LIKE ? OR EXISTS (
+            SELECT 1 FROM unnest(tags) AS tag
+            WHERE LOWER(tag) LIKE ?
+          )",
+          "%#{location_query}%",
+          "%#{location_query}%",
+          "%#{location_query}%"
+        )
+      end
 
-    # Sort results
-    case params[:sort_by]
-    when 'rating'
-      @providers = @providers.order(overall_average_rating: :desc)
-    when 'size'
-      @providers = @providers.order(members_count: :desc)
-    when 'capacity'
-      @providers = @providers.order(members_count: :desc) # Use members as proxy for capacity
-    else
-      @providers = @providers.order(:name)
-    end
+      # Search by company name or description
+      if params[:query].present?
+        search_query = params[:query].downcase
+        @providers = @providers.where(
+          "LOWER(name) LIKE ? OR LOWER(short_description) LIKE ? OR LOWER(title) LIKE ?",
+          "%#{search_query}%",
+          "%#{search_query}%",
+          "%#{search_query}%"
+        )
+      end
 
-    # Pagination
-    page = params[:page]&.to_i || 1
-    per_page = params[:per_page]&.to_i || 20
-    offset = (page - 1) * per_page
+      # Filter by services/specialties
+      if params[:services].present?
+        services = params[:services].split(',').map(&:strip).map(&:downcase)
+        @providers = @providers.where("tags && ARRAY[?]::varchar[]", services)
+      end
 
-    total_count = @providers.count
-    @providers = @providers.offset(offset).limit(per_page)
+      # Filter by minimum rating
+      if params[:rating].present? && params[:rating].to_f > 0
+        min_rating = params[:rating].to_f
+        # Assuming overall_average_rating is a method or column on Provider
+        @providers = @providers.where("overall_average_rating >= ?", min_rating)
+      end
 
-    # Add mock ratings and additional data for frontend
-    results = @providers.map do |provider|
-      provider_data = provider_json(provider)
+      # Filter by experience (foundation_year)
+      if params[:experience].present?
+        experience_ranges = params[:experience].split(',').map(&:strip)
+        current_year = Date.current.year
+        experience_conditions = []
 
-      # Add mock rating based on company characteristics
-      rating = calculate_mock_rating(provider)
-      review_count = calculate_mock_review_count(provider)
+        experience_ranges.each do |range|
+          case range
+          when '0-2-anos'
+            experience_conditions << "foundation_year >= #{current_year - 2}"
+          when '2-5-anos'
+            experience_conditions << "(foundation_year >= #{current_year - 5} AND foundation_year < #{current_year - 2})"
+          when '5-10-anos'
+            experience_conditions << "(foundation_year >= #{current_year - 10} AND foundation_year < #{current_year - 5})"
+          when '10-anos'
+            experience_conditions << "foundation_year < #{current_year - 10}"
+          end
+        end
+        @providers = @providers.where(experience_conditions.join(' OR ')) if experience_conditions.any?
+      end
 
-      provider_data.merge({
-        rating: rating,
-        review_count: review_count,
-        price: calculate_mock_price(provider),
-        experience: "#{Date.current.year - provider.foundation_year} anos",
-        services: extract_services_from_tags(provider.tags),
-        certifications: extract_certifications_from_tags(provider.tags)
-      })
-    end
+      # Filter by certifications
+      if params[:certifications].present?
+        certifications = params[:certifications].split(',').map(&:strip).map(&:downcase)
+        @providers = @providers.where("tags && ARRAY[?]::varchar[]", certifications)
+      end
 
-    render json: {
-      results: results,
-      pagination: {
-        current_page: page,
-        per_page: per_page,
-        total_pages: (total_count.to_f / per_page).ceil,
-        total_count: total_count
+      # Sort results
+      case params[:sort_by]
+      when 'rating'
+        @providers = @providers.order(overall_average_rating: :desc)
+      when 'size'
+        @providers = @providers.order(members_count: :desc)
+      when 'capacity'
+        @providers = @providers.order(members_count: :desc) # Use members as proxy for capacity
+      else
+        @providers = @providers.order(:name)
+      end
+
+      # Pagination
+      page = params[:page]&.to_i || 1
+      per_page = params[:per_page]&.to_i || 20
+      offset = (page - 1) * per_page
+
+      total_count = @providers.count
+      @providers = @providers.offset(offset).limit(per_page)
+
+      # Add mock ratings and additional data for frontend
+      results = @providers.map do |provider|
+        provider_data = provider_json(provider)
+
+        # Add mock rating based on company characteristics
+        rating = calculate_mock_rating(provider)
+        review_count = calculate_mock_review_count(provider)
+
+        tags = provider.tags || []
+
+        provider_data.merge({
+          rating: rating,
+          review_count: review_count,
+          price: calculate_mock_price(provider),
+          experience: "#{Date.current.year - provider.foundation_year} anos",
+          services: extract_services_from_tags(tags),
+          certifications: extract_certifications_from_tags(tags)
+        })
+      end
+
+      render json: {
+        results: results,
+        pagination: {
+          current_page: page,
+          per_page: per_page,
+          total_pages: (total_count.to_f / per_page).ceil,
+          total_count: total_count
+        }
       }
-    }
+    rescue StandardError => e
+      Rails.logger.error("Error in Api::V1::ProvidersController#search: #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      render json: { error: "An unexpected error occurred", details: e.message }, status: :unprocessable_entity
+    end
   end
   
   # GET /api/v1/providers/:id
@@ -169,10 +225,21 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     end
   end
 
+  # GET /api/v1/providers/by_slug/:slug
+  def by_slug
+    @provider = Provider.find_by(slug: params[:slug])
+
+    if @provider
+      render json: provider_json(@provider)
+    else
+      render json: { error: "Provider not found" }, status: :not_found
+    end
+  end
+
   def create
     # Existing params processing
     provider_params_with_tags = provider_params.except(
-      :cnpj, :employee_count, :city, :state, :zip_code, :email, :website,
+      :employee_count, :city, :state, :zip_code, :email, :website,
       :experience_years, :projects_completed, :installed_capacity_mw,
       :business_type, :service_areas, :services_offered, :specialties, :certifications,
       :social_media, :auto_verified
@@ -186,7 +253,6 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
     # Map additional fields to tags
     @provider.tags ||= []
-    @provider.tags << "cnpj:#{provider_params[:cnpj]}" if provider_params[:cnpj].present?
     @provider.tags << "employees:#{provider_params[:employee_count]}" if provider_params[:employee_count].present?
     @provider.tags << "location:#{provider_params[:city]},#{provider_params[:state]},#{provider_params[:zip_code]}" if provider_params[:city].present? || provider_params[:state].present? || provider_params[:zip_code].present?
     @provider.tags << "email:#{provider_params[:email]}" if provider_params[:email].present?
@@ -262,6 +328,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   private
 
   def provider_json(provider)
+    tags = provider.tags || []
     {
       id: provider.id,
       name: provider.name,
@@ -275,7 +342,8 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       members_count: provider.members_count,
       status: provider.status,
       premium: provider.premium?,
-      tags: provider.tags,
+      premium_effect_active: provider.premium_effect_active,
+      tags: tags,
       social_links: provider.social_links,
       categories: provider.categories.map { |cat| { id: cat.id, name: cat.name, slug: cat.slug } },
       logo_url: provider.logo.attached? ? url_for(provider.logo) : nil,
@@ -283,36 +351,41 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       banner_image_url: provider.banner_image.attached? ? url_for(provider.banner_image) : nil,
       rating: provider.overall_average_rating,
       review_count: provider.overall_reviews_count,
-      installed_capacity_mw: extract_capacity_from_tags(provider.tags),
-      location: extract_location_from_tags(provider.tags),
-      specialties: extract_specialties_from_tags(provider.tags)
+      installed_capacity_mw: extract_capacity_from_tags(tags),
+      location: extract_location_from_tags(tags),
+      specialties: extract_specialties_from_tags(tags)
     }
   end
 
   def extract_capacity_from_tags(tags)
+    tags = Array(tags)
     capacity_tag = tags.find { |tag| tag.start_with?('capacity:') }
     return 0 unless capacity_tag
     capacity_tag.gsub('capacity:', '').gsub('MW', '').to_f
   end
 
   def extract_location_from_tags(tags)
+    tags = Array(tags)
     location_tag = tags.find { |tag| tag.start_with?('location:') }
     return '' unless location_tag
     location_tag.gsub('location:', '')
   end
 
   def extract_specialties_from_tags(tags)
+    tags = Array(tags)
     # Filter out system tags and return relevant specialties
-    system_prefixes = ['cnpj:', 'employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
+    system_prefixes = ['employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
     tags.reject { |tag| system_prefixes.any? { |prefix| tag.start_with?(prefix) } }
   end
 
   def extract_services_from_tags(tags)
+    tags = Array(tags)
     service_keywords = ['residencial', 'comercial', 'industrial', 'rural', 'sustentabilidade', 'energia solar', 'fotovoltaica']
     tags.select { |tag| service_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
   end
 
   def extract_certifications_from_tags(tags)
+    tags = Array(tags)
     cert_keywords = ['inmetro', 'aneel', 'iso', 'certificação', 'cresesb']
     tags.select { |tag| cert_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
   end
@@ -328,7 +401,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     size_bonus = [provider.members_count / 500.0, 0.5].min
     
     # Bonus for more tags (more services/specialties)
-    service_bonus = [provider.tags.length * 0.02, 0.3].min
+    service_bonus = [Array(provider.tags).length * 0.02, 0.3].min
     
     rating = base_rating + age_bonus + size_bonus + service_bonus
     [rating, 5.0].min.round(1)
@@ -359,7 +432,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   def provider_params
     params.require(:provider).permit(
       :name, :foundation_year, :short_description, :address, :phone, :country,
-      :cnpj, :employee_count, :city, :state, :zip_code, :email, :website,
+      :employee_count, :city, :state, :zip_code, :email, :website,
       :experience_years, :projects_completed, :installed_capacity_mw, :auto_verified,
       business_type: [], service_areas: [], services_offered: [], specialties: [], certifications: [],
       social_media: [:facebook, :instagram, :linkedin]

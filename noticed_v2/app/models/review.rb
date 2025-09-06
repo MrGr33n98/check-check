@@ -1,13 +1,14 @@
 class Review < ApplicationRecord
   # Enums
   enum status: {
-    pending: 0,
-    approved: 1,
-    rejected: 2,
-    hidden: 3
+    pending: "pending",
+    approved: "approved",
+    rejected: "rejected",
+    hidden: "hidden"
   }
 
   # Associations
+  belongs_to :provider, optional: true
   belongs_to :product, optional: true
   belongs_to :solution, optional: true
   belongs_to :user
@@ -26,11 +27,11 @@ class Review < ApplicationRecord
 
   # Ransack configuration for ActiveAdmin search
   def self.ransackable_associations(auth_object = nil)
-    ["product", "solution", "user"]
+    ["provider", "product", "solution", "user"]
   end
 
   def self.ransackable_attributes(auth_object = nil)
-    ["cliente", "comment", "created_at", "id", "product_id", "solution_id", "rating", "status", "title", "updated_at", "user_id"]
+    ["cliente", "comment", "created_at", "id", "product_id", "solution_id", "rating", "status", "title", "updated_at", "user_id", "featured"]
   end
 
   # Methods

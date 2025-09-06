@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Try backend API first
     try {
-      const response = await fetch('http://localhost:3000/api/v1/users/sign_in', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/users/sign_in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         if (loggedInUser.role === 'empresa') {
           try {
-            const companyResponse = await fetch('http://localhost:3000/api/v1/current_company', {
+            const companyResponse = await fetch(`${import.meta.env.VITE_API_URL}/current_company`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${data.token}`,

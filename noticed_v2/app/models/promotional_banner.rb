@@ -19,6 +19,7 @@ class PromotionalBanner < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:display_order, :created_at) }
   scope :for_homepage, -> { where(position: 'homepage') }
+  scope :by_position, ->(position) { where(position: position) }
 
   # Enums
   enum position: {
@@ -70,10 +71,10 @@ class PromotionalBanner < ApplicationRecord
 
   def icon_url
     return nil unless icon.attached?
-    Rails.application.routes.url_helpers.rails_blob_url(icon, only_path: true)
+    Rails.application.routes.url_helpers.rails_blob_url(icon, only_path: false)
   end
 
-  def to_json_api
+  def api_data
     {
       id: id,
       title: title,

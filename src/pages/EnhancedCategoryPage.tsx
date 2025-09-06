@@ -1,85 +1,190 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Users, BookOpen } from 'lucide-react';
+import { ChevronLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import EducationalContent from '@/components/ui/educational-content';
-import PopularCategories from '@/components/ui/popular-categories';
 import CategoryHero from '@/components/ui/category-hero';
-import apiService, { Category } from '@/services/api';
+import { CompanyCard } from '@/components/company/CompanyCard';
+import AdvancedSearch from '@/components/search/AdvancedSearch';
+import apiService, { Category, Provider } from '@/services/api';
+import { getPlaceholderImage } from '@/utils/imageFallback';
+import { normalizeSlug } from '@/utils/slugUtils';
 
+// Interface para os filtros de busca (copiado de SearchPage.tsx)
+interface SearchFilters {
+  query: string;
+  location: string;
+  radius: number;
+  priceRange: [number, number];
+  rating: number;
+  ratings: number[];
+  certifications: string[];
+  services: string[];
+  experience: string[];
+  availability: string;
+  deviceTarget?: string;
+}
 
-
-
-
-
+// Interface para empresa (formato do frontend, para CompanyCard)
+interface CompanyForCard {
+  id: number;
+  name: string;
+  location: string;
+  rating: number;
+  reviewCount: number;
+  experience: string;
+  services: string[];
+  certifications: string[];
+  phone: string;
+  website: string;
+  description: string;
+  image: string; // This is the logo_url from backend
+  bannerImage?: string; // This is the banner_image_url from backend
+  foundedYear?: number;
+  installed_capacity_mw?: number;
+  specialties?: string[];
+  verified?: boolean;
+  price: number;
+  premium_effect_active?: boolean;
+  slug: string; // Added
+}
 
 function EnhancedCategoryPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | null>(null);
+  const [companies, setCompanies] = useState<CompanyForCard[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentFilters, setCurrentFilters] = useState<SearchFilters | null>(null); // New state for filters
+  const [totalCompanies, setTotalCompanies] = useState(0); // To pass to AdvancedSearch
+
+  // Helper function to map Provider to CompanyForCard
+  const mapProviderToCompany = useCallback((provider: Provider): CompanyForCard => {
+    const currentYear = new Date().getFullYear();
+    const yearsInBusiness = provider.foundation_year ? currentYear - provider.foundation_year : 0;
+    let experience = 'N/A';
+    if (yearsInBusiness >= 10) experience = '10+ anos';
+    else if (yearsInBusiness >= 5) experience = '5-10 anos';
+    else if (yearsInBusiness >= 2) experience = '2-5 anos';
+    else if (yearsInBusiness > 0) experience = '<2 anos';
+
+    const services = provider.tags.filter(tag => tag.startsWith('service:')).map(tag => tag.replace('service:', ''));
+    const certifications = provider.tags.filter(tag => tag.startsWith('cert:')).map(tag => tag.replace('cert:', ''));
+
+    return {
+      id: provider.id,
+      name: provider.name,
+      location: provider.address || provider.country || 'Brasil',
+      rating: provider.rating || 0,
+      reviewCount: provider.review_count || 0,
+      experience: experience,
+      services: services.length > 0 ? services : ['Não especificado'],
+      certifications: certifications.length > 0 ? certifications : ['Não especificado'],
+      phone: provider.phone || 'N/A',
+      website: provider.social_links && provider.social_links.length > 0 ? provider.social_links[0] : 'N/A',
+      description: provider.description || provider.short_description || 'N/A',
+      image: provider.logo_url || getPlaceholderImage(300, 200), // Fallback logo
+      bannerImage: provider.banner_image_url || undefined,
+      foundedYear: provider.foundation_year,
+      installed_capacity_mw: provider.installed_capacity_mw,
+      specialties: provider.specialties,
+      verified: provider.status === 'active' && provider.premium, // Example logic for verified
+      price: provider.price || 0,
+      premium_effect_active: provider.premium_effect_active, // New field
+      slug: provider.slug, // Added
+    };
+  }, []);
+
+  // Handlers for search and filter
+  const handleSearch = useCallback(async (filters: SearchFilters) => {
+    setCurrentFilters(filters);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setCurrentFilters(null);
+  }, []);
+
+  const filtersKey = JSON.stringify(currentFilters);
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
-    const fetchData = async () => {
-      if (!slug) {
-        setLoading(false);
-        return;
+    const run = async () => {
+      setLoading(true);
+      const normalizedSlug = normalizeSlug(slug ?? '');
+
+      const providerParams: Record<string, any> = { category_slug: normalizedSlug };
+      if (currentFilters) {
+        if (currentFilters.query) providerParams.query = currentFilters.query;
+        if (currentFilters.location) providerParams.location = currentFilters.location;
+        if (currentFilters.rating) providerParams.rating = currentFilters.rating;
+        if (currentFilters.services?.length) providerParams.services = currentFilters.services.join(',');
+        if (currentFilters.certifications?.length) providerParams.certifications = currentFilters.certifications.join(',');
+        if (currentFilters.experience?.length) providerParams.experience = currentFilters.experience.join(',');
       }
 
-      setLoading(true);
-      setError(null);
-
       try {
-        // Try to fetch the category from the API
-        const fetchedCategory = await apiService.getCategoryBySlug(slug);
-        
-        if (fetchedCategory) {
-          if (isMounted) {
-            setCategory(fetchedCategory);
-            
-            // SEO: Update document title
-            document.title = `${fetchedCategory.name} | SolarFinder`;
-            
-            // SEO: Update meta description
-            let metaDescription = document.querySelector('meta[name="description"]');
-            if (!metaDescription) {
-              metaDescription = document.createElement('meta');
-              metaDescription.setAttribute('name', 'description');
-              document.head.appendChild(metaDescription);
-            }
-            if (fetchedCategory.description) {
-              metaDescription.setAttribute('content', fetchedCategory.description);
-            }
-          }
-        } else {
-          if (isMounted) {
-            setError('Categoria não encontrada');
-            setCategory(null);
-          }
-        }
-      } catch (error: any) {
-        console.error('Error fetching category:', error);
-        if (isMounted) {
-          setError(error.message);
+        const catRes = await apiService.getCategoryBySlug(normalizedSlug);
+
+        if (cancelled) return;
+
+        if (!catRes || !catRes.ok) {
+          console.debug('Falha ao carregar categoria:', catRes?.error);
+          setError('Categoria não encontrada');
           setCategory(null);
+          setCompanies([]);
+          setTotalCompanies(0);
+          setLoading(false);
+          return;
         }
-      } finally {
-        if (isMounted) {
+
+        setCategory(catRes.data);
+        document.title = `${catRes.data.name} | SolarFinder`;
+        let metaDescription = document.querySelector('meta[name="description"]');
+        if (!metaDescription) {
+          metaDescription = document.createElement('meta');
+          metaDescription.setAttribute('name', 'description');
+          document.head.appendChild(metaDescription);
+        }
+        if (catRes.data.description) {
+          metaDescription.setAttribute('content', catRes.data.description);
+        }
+
+        const provRes = await apiService.getProviders(providerParams);
+
+        if (cancelled) return;
+
+        if (!provRes || !provRes.ok) {
+          console.debug('Falha ao carregar provedores:', provRes?.error);
+          setError('Não foi possível carregar os provedores. Tente novamente.');
+          setCompanies([]);
+          setTotalCompanies(0);
+          setLoading(false);
+          return;
+        }
+
+        setCompanies(provRes.data.providers.map(mapProviderToCompany));
+        setTotalCompanies(provRes.data.total);
+        setError(null);
+        setLoading(false);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.debug('Erro ao carregar categoria/provedores:', err);
+          setError('Não foi possível carregar os provedores. Tente novamente.');
+        }
+        if (!cancelled) {
           setLoading(false);
         }
       }
     };
 
-    fetchData();
+    run();
 
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
-  }, [slug]);
+  }, [slug, filtersKey, mapProviderToCompany]);
 
 
 
@@ -147,82 +252,83 @@ function EnhancedCategoryPage() {
 
       {/* Hero Section */}
       <CategoryHero
-        categoryName={category.name}
-        categoryDescription={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
-        companyCount={0}
+        title={category.name}
+        subtitle={category.description || `Soluções especializadas em ${category.name.toLowerCase()}.`}
+        countBadge={totalCompanies > 0 ? `${totalCompanies} empresas encontradas` : 'Nenhuma empresa encontrada'}
+        backgroundImageUrl={category.banner_image_url}
+        titleColor={category.title_color}
+        subtitleColor={category.subtitle_color}
+        titleFontSize={category.title_font_size}
+        subtitleFontSize={category.subtitle_font_size}
       />
 
-      {/* Status Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <Card className="max-w-4xl mx-auto border-2 border-dashed border-blue-200 bg-blue-50">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <div className="bg-blue-100 p-3 rounded-full">
-                  <Users className="h-8 w-8 text-blue-600" />
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Sidebar com filtros */}
+          <aside className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <AdvancedSearch
+                onSearch={handleSearch}
+                onClear={handleClearFilters}
+                isLoading={loading}
+                resultsCount={totalCompanies}
+              />
+            </div>
+          </aside>
+
+          {/* Lista de resultados */}
+          <main className="lg:col-span-9 space-y-6">
+            {/* Companies Section */}
+            <section>
+              {Array.isArray(companies) && companies.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {companies.map((company) => (
+                    <CompanyCard key={company.id} company={company} />
+                  ))}
                 </div>
-              </div>
-              <CardTitle className="text-2xl text-gray-800">
-                Ainda não há empresas listadas nesta categoria
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="text-gray-600 mb-6">
-                Seja o pioneiro! Cadastre sua empresa e ajude a construir esta comunidade.
-              </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button 
-                  size="lg" 
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => navigate('/empresa/cadastro')}
-                >
-                  Cadastrar empresa
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => navigate('/categorias')}
-                >
-                  Explorar outras categorias
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              ) : (
+                <Card className="max-w-4xl mx-auto border-2 border-dashed border-blue-200 bg-blue-50">
+                  <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-blue-100 p-3 rounded-full">
+                        <Users className="h-8 w-8 text-blue-600" />
+                      </div>
+                    </div>
+                    <CardTitle className="text-2xl text-gray-800">
+                      Ainda não há empresas listadas nesta categoria
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <p className="text-gray-600 mb-6">
+                      Seja o pioneiro! Cadastre sua empresa e ajude a construir esta comunidade.
+                    </p>
+                    <div className="flex flex-col sm:flex-row justify-center gap-4">
+                      <Button 
+                        size="lg" 
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => navigate('/empresa/cadastro')}
+                      >
+                        Cadastrar empresa
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={() => navigate('/categorias')}
+                      >
+                        Explorar outras categorias
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </section>
+          </main>
         </div>
-      </section>
+      </div>
 
-      {/* Educational Content */}
-      <EducationalContent />
 
-      {/* Popular Categories Section */}
-      <PopularCategories />
 
-      {/* CTA Section */}
-      <section className="py-16 bg-blue-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Pronto para fazer parte desta comunidade?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Cadastre sua empresa de {category.name.toLowerCase()} e conecte-se com clientes interessados em soluções sustentáveis.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button 
-              size="lg" 
-              className="bg-white text-blue-700 hover:bg-blue-50"
-              onClick={() => navigate('/empresa/cadastro')}
-            >
-              Cadastrar empresa agora
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              className="border-white text-white hover:bg-blue-600"
-            >
-              <BookOpen className="mr-2 h-5 w-5" />
-              Acessar recursos educacionais
-            </Button>
-          </div>
-        </div>
-      </section>
+
     </div>
   );
 }

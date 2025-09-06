@@ -3,7 +3,7 @@ class Api::V1::ReviewsController < Api::V1::BaseController
   
   # GET /api/v1/reviews
   def index
-    @reviews = Review.includes(:solution, :user)
+    @reviews = Review.includes(:solution, :user).approved
     
     if params[:solution_id].present?
       @reviews = @reviews.where(solution_id: params[:solution_id])
@@ -13,7 +13,7 @@ class Api::V1::ReviewsController < Api::V1::BaseController
       @reviews = @reviews.where(user_id: params[:user_id])
     end
     
-    @reviews = @reviews.order(created_at: :desc)
+    @reviews = @reviews.order(featured: :desc, created_at: :desc)
     
     render json: @reviews, include: [:solution, :user]
   end
@@ -26,6 +26,7 @@ class Api::V1::ReviewsController < Api::V1::BaseController
   # POST /api/v1/reviews
   def create
     @review = Review.new(review_params)
+    @review.status = :pending # Ensure status is pending on creation
     
     if @review.save
       render json: @review, status: :created, include: [:solution, :user]
@@ -56,6 +57,23 @@ class Api::V1::ReviewsController < Api::V1::BaseController
   end
   
   def review_params
-    params.require(:review).permit(:solution_id, :user_id, :rating, :title, :comment)
+    params.require(:review).permit(
+      :provider_id,
+      :solution_id, 
+      :user_id, 
+      :rating, 
+      :title, 
+      :comment, 
+      :overall_score, 
+      :featured, 
+      :status,
+      scores: [
+        :tempo_atuacao, :litigios_historico, :verificacao_licencas_seguros,
+        :lucratividade_instalador, :avaliacoes_consumidores, :transparencia_precos_vendas,
+        :tamanho_localizacao_empresa, :qualidade_marcas_vendidas, :integracao_vertical,
+        :transparencia_reputacao, :competitividade_financiamento,
+        :preco_sustentavel_sistemas, :satisfacao_seguranca_funcionarios
+      ]
+    )
   end
 end

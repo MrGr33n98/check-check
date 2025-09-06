@@ -40,6 +40,7 @@ class Banner < ApplicationRecord
   scope :by_category, ->(category) { joins(:categories).where(categories: { id: category }) }
   scope :ordered, -> { order(priority: :asc, created_at: :desc) }
   scope :current, -> { where('starts_at <= ? AND (ends_at IS NULL OR ends_at >= ?)', Time.current, Time.current) }
+  scope :by_position, ->(position) { where(banner_type: position) }
 
   # Ransack configuration for ActiveAdmin search
   def self.ransackable_associations(auth_object = nil)
@@ -106,6 +107,46 @@ class Banner < ApplicationRecord
     else
       "A partir de #{starts_at.strftime('%d/%m/%Y %H:%M')}"
     end
+  end
+
+  def as_json(options = {})
+    super({
+      only: [:id, :title, :description, :link_url, :banner_type, :status, :device_target,
+             :priority, :starts_at, :ends_at, :show_close_button, :display_frequency,
+             :custom_css, :custom_html, :conversion_tracking_code],
+      methods: [:image_url, :background_color, :text_color, :position]
+    }.merge(options))
+  end
+
+  def image_url
+    # Prioriza desktop_image, mas pode ser ajustado para mobile/tablet se necessário
+    if desktop_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(desktop_image, only_path: false)
+    elsif mobile_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(mobile_image, only_path: false)
+    elsif tablet_image.attached?
+      Rails.application.routes.url_helpers.rails_blob_url(tablet_image, only_path: false)
+    else
+      nil
+    end
+  rescue
+    nil
+  end
+
+  def background_color
+    # Implemente a lógica para obter a cor de fundo do banner
+    # Exemplo: pode ser um atributo no banco de dados ou um valor padrão
+    "#f3f3f3" # Cor padrão, ajuste conforme necessário
+  end
+
+  def text_color
+    # Implemente a lógica para obter a cor do texto do banner
+    # Exemplo: pode ser um atributo no banco de dados ou um valor padrão
+    "#333333" # Cor padrão, ajuste conforme necessário
+  end
+
+  def position
+    banner_type # Mapeia banner_type para position para compatibilidade com o frontend
   end
 
   private

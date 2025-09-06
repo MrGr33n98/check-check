@@ -59,26 +59,26 @@ const PopularCategories: React.FC = () => {
           </p>
         </div>
         
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {categories.map((category, index) => (
             <Card key={index} className="hover:shadow-lg transition-all duration-200 cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 rounded-lg ${category.color} flex items-center justify-center text-2xl`}>
+                  <div className="flex items-center space-x-3 flex-shrink-0">
+                    <div className={`w-12 h-12 rounded-lg ${category.color} flex items-center justify-center text-2xl flex-shrink-0`}>
                       {category.icon}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{category.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-lg truncate">{category.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">
                         {category.count} empresas
                       </p>
                     </div>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                 </div>
                 
-                <p className="text-sm text-muted-foreground mb-4">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                   {category.description}
                 </p>
                 

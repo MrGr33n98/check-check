@@ -8,12 +8,16 @@ puts "Admin user created: #{admin_user.email}" unless admin_user.new_record?
 
 # Create sample users
 5.times do |i|
-  user = User.find_or_create_by(email: "user#{i+1}@example.com") do |u|
-    u.name = "User #{i+1}"
-    u.password = 'password'
-    u.password_confirmation = 'password'
+  email = "user#{i+1}@example.com"
+  unless User.exists?(email: email)
+    user = User.create!(
+      email: email,
+      name: "User #{i+1}",
+      password: 'password',
+      password_confirmation: 'password'
+    )
+    puts "User created: #{user.email}"
   end
-  puts "User created: #{user.email}" unless user.new_record?
 end
 
 # Create sample posts
@@ -43,7 +47,8 @@ categories_data = [
   { name: "Usinas Solares de Grande Porte", description: "Construção, gestão e operação de fazendas solares", featured: true },
   { name: "Armazenamento de Energia", description: "Baterias residenciais, industriais e sistemas híbridos", featured: true },
   { name: "Energia Off-Grid", description: "Soluções isoladas para áreas rurais ou sem acesso à rede elétrica", featured: false },
-  { name: "Eficiência Energética", description: "Tecnologias e softwares para reduzir desperdício e otimizar consumo", featured: false }
+  { name: "Eficiência Energética", description: "Tecnologias e softwares para reduzir desperdício e otimizar consumo", featured: false },
+  { name: "Carros Elétricos", description: "Soluções e infraestrutura para veículos elétricos e mobilidade sustentável", featured: false }
 ]
 
 categories_data.each do |cat_data|
