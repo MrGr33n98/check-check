@@ -38,7 +38,7 @@ type ProviderApi = {
   members_count?: number;
   revenue?: string;
   social_links?: string[];
-  tags?: string[];
+  service_tags?: string[];
   status?: string;
   logo_url?: string;
   banner_image_url?: string;
@@ -83,19 +83,9 @@ const SearchPage: React.FC = () => {
   const convertApiToCompany = useCallback((apiCompany: ProviderApi): Company => {
     const rating = apiCompany.rating || Math.round((4.0 + Math.random() * 1.0) * 10) / 10;
     const reviewCount = apiCompany.review_count || Math.floor(Math.random() * 200) + 20;
-    const serviceSet = new Set<string>();
-    if (apiCompany.tags) {
-      apiCompany.tags.forEach((tag: string) => {
-        const lowerTag = tag.toLowerCase();
-        if (lowerTag.includes('residencial')) serviceSet.add('instalacao-residencial');
-        if (lowerTag.includes('comercial')) serviceSet.add('instalacao-comercial');
-        if (lowerTag.includes('industrial')) serviceSet.add('instalacao-industrial');
-        if (lowerTag.includes('manutenção')) serviceSet.add('manutencao');
-        if (lowerTag.includes('monitoramento')) serviceSet.add('monitoramento');
-      });
-    }
-    const services = Array.from(serviceSet);
-    if (services.length === 0) services.push('consultoria-tecnica');
+    const services = apiCompany.service_tags && apiCompany.service_tags.length > 0
+      ? apiCompany.service_tags
+      : ['consultoria-tecnica'];
     const certifications = ['crea'];
     if (apiCompany.foundation_year && apiCompany.foundation_year <= 2015) certifications.push('inmetro');
     if (apiCompany.members_count && apiCompany.members_count > 100) certifications.push('aneel');
@@ -119,7 +109,7 @@ const SearchPage: React.FC = () => {
       rating,
       reviewCount,
       experience,
-      services: services.length > 0 ? services : ['instalacao-residencial'],
+      services,
       certifications,
       priceRange,
       phone: apiCompany.phone || '(11) 0000-0000',

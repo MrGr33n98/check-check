@@ -4,7 +4,7 @@ ActiveAdmin.register Provider do
   permit_params :name, :seo_url, :title, :short_description, :country, :address, 
                 :phone, :members_count, :foundation_year, :premium_until, :revenue,
                 :status, :approval_notes, :logo, :cover_image, :banner_image, :city, :state,
-                :premium_effect_active, :visible_in_all_categories, social_links: [], tags: [], category_ids: [], subcategory_ids: []
+                :premium_effect_active, :visible_in_all_categories, social_links: [], tags: [], service_tags: [], category_ids: [], subcategory_ids: []
 
   # Scopes for filtering
   scope :all
@@ -138,6 +138,17 @@ ActiveAdmin.register Provider do
     f.inputs "Categorias Principais" do
       f.input :visible_in_all_categories, as: :boolean, label: "Visível em todas as categorias"
       f.input :categories, as: :check_boxes, collection: Category.all.map { |c| [c.name, c.id] }
+    end
+
+    f.inputs "Serviços" do
+      f.input :service_tags, as: :check_boxes, collection: [
+        ['Instalação Residencial', 'instalacao-residencial'],
+        ['Instalação Comercial', 'instalacao-comercial'],
+        ['Manutenção', 'manutencao'],
+        ['Monitoramento', 'monitoramento'],
+        ['Energia Off-Grid', 'energia-off-grid'],
+        ['Consultoria Técnica', 'consultoria-tecnica']
+      ]
     end
 
     f.inputs "Personalização Visual" do

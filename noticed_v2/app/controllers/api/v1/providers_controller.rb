@@ -93,7 +93,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     # Filter by services/specialties
     if params[:services].present?
       services = params[:services].split(',').map(&:strip).map(&:downcase)
-      @providers = @providers.where("tags && ARRAY[?]::varchar[]", services)
+      @providers = @providers.where("service_tags && ARRAY[?]::varchar[]", services)
     end
 
     # Filter by minimum rating
@@ -163,7 +163,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
         review_count: review_count,
         price: calculate_mock_price(provider),
         experience: "#{Date.current.year - provider.foundation_year} anos",
-        services: extract_services_from_tags(provider.tags),
+        services: provider.service_tags || [],
         certifications: extract_certifications_from_tags(provider.tags)
       })
     end
@@ -293,11 +293,6 @@ class Api::V1::ProvidersController < Api::V1::BaseController
 
   private
 
-  def extract_services_from_tags(tags)
-    service_keywords = ['residencial', 'comercial', 'industrial', 'rural', 'sustentabilidade', 'energia solar', 'fotovoltaica']
-    tags.select { |tag| service_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
-  end
-
   def extract_certifications_from_tags(tags)
     cert_keywords = ['inmetro', 'aneel', 'iso', 'certificação', 'cresesb']
     tags.select { |tag| cert_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
@@ -314,7 +309,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     size_bonus = [provider.members_count / 500.0, 0.5].min
     
     # Bonus for more tags (more services/specialties)
-    service_bonus = [provider.tags.length * 0.02, 0.3].min
+    service_bonus = [(provider.service_tags || []).length * 0.02, 0.3].min
     
     rating = base_rating + age_bonus + size_bonus + service_bonus
     [rating, 5.0].min.round(1)

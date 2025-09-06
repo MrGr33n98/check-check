@@ -3,7 +3,7 @@ class Api::V1::ProviderSerializer < ActiveModel::Serializer
 
   attributes :id, :name, :slug, :short_description, :description,
              :country, :address, :phone, :foundation_year, :members_count,
-             :status, :premium, :premium_effect_active, :tags, :social_links,
+             :status, :premium, :premium_effect_active, :tags, :service_tags, :social_links,
              :logo_url, :cover_image_url, :banner_image_url,
              :rating, :review_count, :installed_capacity_mw,
              :location, :specialties
