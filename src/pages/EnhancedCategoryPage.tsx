@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -105,11 +105,9 @@ function EnhancedCategoryPage() {
     setCurrentFilters(null);
   }, []);
 
-  const lastReqId = useRef(0);
   const filtersKey = JSON.stringify(currentFilters);
 
   useEffect(() => {
-    const controller = new AbortController();
     let cancelled = false;
 
     const run = async () => {
@@ -126,40 +124,21 @@ function EnhancedCategoryPage() {
         if (currentFilters.experience?.length) providerParams.experience = currentFilters.experience.join(',');
       }
 
-      let catRes: any;
-      let provRes: any;
-
       try {
-        [catRes, provRes] = await Promise.all([
-          apiService.getCategoryBySlug(normalizedSlug, controller.signal),
-          apiService.getProviders(providerParams, controller.signal),
-        ]);
-      } catch (err: any) {
-        if (err?.name === 'AbortError') {
+        const catRes = await apiService.getCategoryBySlug(normalizedSlug);
+
+        if (cancelled) return;
+
+        if (!catRes || !catRes.ok) {
+          console.debug('Falha ao carregar categoria:', catRes?.error);
+          setError('Categoria não encontrada');
+          setCategory(null);
+          setCompanies([]);
+          setTotalCompanies(0);
+          setLoading(false);
           return;
         }
-        throw err;
-      }
 
-      // Check if the component is still mounted
-      if (cancelled) return;
-
-      // Handle abort signals
-      if ((catRes && catRes.aborted) || (provRes && provRes.aborted)) return;
-
-      // Handle errors
-      if (!catRes || !catRes.ok || !provRes || !provRes.ok) {
-        console.debug('Falha ao carregar categoria/provedores:', catRes?.error || provRes?.error);
-        setError('Não foi possível carregar os provedores. Tente novamente.');
-        setCategory(null);
-        setCompanies([]);
-        setTotalCompanies(0);
-        setLoading(false);
-        return;
-      }
-
-      // Category data handling
-      if (catRes.data) {
         setCategory(catRes.data);
         document.title = `${catRes.data.name} | SolarFinder`;
         let metaDescription = document.querySelector('meta[name="description"]');
@@ -171,35 +150,39 @@ function EnhancedCategoryPage() {
         if (catRes.data.description) {
           metaDescription.setAttribute('content', catRes.data.description);
         }
-      } else {
-        setError('Categoria não encontrada');
-        setCategory(null);
-      }
 
-      // Providers data handling
-      if (provRes.data) {
+        const provRes = await apiService.getProviders(providerParams);
+
+        if (cancelled) return;
+
+        if (!provRes || !provRes.ok) {
+          console.debug('Falha ao carregar provedores:', provRes?.error);
+          setError('Não foi possível carregar os provedores. Tente novamente.');
+          setCompanies([]);
+          setTotalCompanies(0);
+          setLoading(false);
+          return;
+        }
+
         setCompanies(provRes.data.providers.map(mapProviderToCompany));
         setTotalCompanies(provRes.data.total);
-      } else {
-        setCompanies([]);
-        setTotalCompanies(0);
+        setError(null);
+        setLoading(false);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          console.debug('Erro ao carregar categoria/provedores:', err);
+          setError('Não foi possível carregar os provedores. Tente novamente.');
+        }
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-      
-      setError(null);
-      setLoading(false);
     };
 
     run();
 
     return () => {
       cancelled = true;
-      try {
-        if (controller.signal && !controller.signal.aborted) {
-          controller.abort();
-        }
-      } catch (e) {
-        console.debug('Abort controller cleanup failed', e);
-      }
     };
   }, [slug, filtersKey, mapProviderToCompany]);
 
