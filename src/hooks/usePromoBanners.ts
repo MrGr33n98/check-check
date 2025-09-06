@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import BannerService from '@/services/bannerService';
+import { api } from '@/middleware/authMiddleware';
 
 export interface PromoBanner {
   id: number;
@@ -44,13 +45,9 @@ export const usePromoBanners = (position?: string) => {
           throw new Error('VITE_API_URL não configurada');
         }
 
-        const response = await fetch(url);
+        const response = await api.get(url);
 
-        if (!response.ok) {
-          throw new Error('Falha ao carregar banners');
-        }
-
-        const data = await response.json();
+        const data = response.data;
         const mappedBanners = data.data.map((banner: any) => ({
           ...banner,
           background_image_url: banner.image_url,
