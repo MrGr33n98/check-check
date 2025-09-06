@@ -100,11 +100,16 @@ gem 'redis'
 gem 'rails-i18n'
 gem 'country_select'
 
+gem 'rswag-api'
+gem 'rswag-ui'
+
 group :development, :test do
   # Testing framework
   gem 'rspec-rails'
   gem 'factory_bot_rails'
   gem 'faker'
+
+  gem 'rswag-specs'
   
   # Code quality
   gem 'rubocop', require: false
