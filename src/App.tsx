@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { Outlet, RouteObject } from 'react-router-dom';
 import Spinner from '@/components/ui/spinner';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const Layout = lazy(() => import('@/components/layout/Layout'));
 const PageBackground = lazy(() => import('@/components/ui/PageBackground'));
@@ -52,9 +53,11 @@ export const routes: RouteObject[] = [
     element: (
       <Suspense fallback={<Spinner />}>
         <PageBackground />
-        <Layout>
-          <Outlet /> {/* This is where nested routes will render */}
-        </Layout>
+        <ErrorBoundary>
+          <Layout>
+            <Outlet /> {/* This is where nested routes will render */}
+          </Layout>
+        </ErrorBoundary>
       </Suspense>
     ),
     children: [
