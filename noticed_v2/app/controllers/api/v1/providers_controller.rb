@@ -185,13 +185,15 @@ class Api::V1::ProvidersController < Api::V1::BaseController
         rating = calculate_mock_rating(provider)
         review_count = calculate_mock_review_count(provider)
 
+        tags = provider.tags || []
+
         provider_data.merge({
           rating: rating,
           review_count: review_count,
           price: calculate_mock_price(provider),
           experience: "#{Date.current.year - provider.foundation_year} anos",
-          services: extract_services_from_tags(provider.tags),
-          certifications: extract_certifications_from_tags(provider.tags)
+          services: extract_services_from_tags(tags),
+          certifications: extract_certifications_from_tags(tags)
         })
       end
 
@@ -326,6 +328,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
   private
 
   def provider_json(provider)
+    tags = provider.tags || []
     {
       id: provider.id,
       name: provider.name,
@@ -340,7 +343,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       status: provider.status,
       premium: provider.premium?,
       premium_effect_active: provider.premium_effect_active,
-      tags: provider.tags,
+      tags: tags,
       social_links: provider.social_links,
       categories: provider.categories.map { |cat| { id: cat.id, name: cat.name, slug: cat.slug } },
       logo_url: provider.logo.attached? ? url_for(provider.logo) : nil,
@@ -348,36 +351,41 @@ class Api::V1::ProvidersController < Api::V1::BaseController
       banner_image_url: provider.banner_image.attached? ? url_for(provider.banner_image) : nil,
       rating: provider.overall_average_rating,
       review_count: provider.overall_reviews_count,
-      installed_capacity_mw: extract_capacity_from_tags(provider.tags),
-      location: extract_location_from_tags(provider.tags),
-      specialties: extract_specialties_from_tags(provider.tags)
+      installed_capacity_mw: extract_capacity_from_tags(tags),
+      location: extract_location_from_tags(tags),
+      specialties: extract_specialties_from_tags(tags)
     }
   end
 
   def extract_capacity_from_tags(tags)
+    tags = Array(tags)
     capacity_tag = tags.find { |tag| tag.start_with?('capacity:') }
     return 0 unless capacity_tag
     capacity_tag.gsub('capacity:', '').gsub('MW', '').to_f
   end
 
   def extract_location_from_tags(tags)
+    tags = Array(tags)
     location_tag = tags.find { |tag| tag.start_with?('location:') }
     return '' unless location_tag
     location_tag.gsub('location:', '')
   end
 
   def extract_specialties_from_tags(tags)
+    tags = Array(tags)
     # Filter out system tags and return relevant specialties
     system_prefixes = ['employees:', 'location:', 'email:', 'website:', 'experience:', 'projects:', 'capacity:']
     tags.reject { |tag| system_prefixes.any? { |prefix| tag.start_with?(prefix) } }
   end
 
   def extract_services_from_tags(tags)
+    tags = Array(tags)
     service_keywords = ['residencial', 'comercial', 'industrial', 'rural', 'sustentabilidade', 'energia solar', 'fotovoltaica']
     tags.select { |tag| service_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
   end
 
   def extract_certifications_from_tags(tags)
+    tags = Array(tags)
     cert_keywords = ['inmetro', 'aneel', 'iso', 'certificação', 'cresesb']
     tags.select { |tag| cert_keywords.any? { |keyword| tag.downcase.include?(keyword) } }
   end
@@ -393,7 +401,7 @@ class Api::V1::ProvidersController < Api::V1::BaseController
     size_bonus = [provider.members_count / 500.0, 0.5].min
     
     # Bonus for more tags (more services/specialties)
-    service_bonus = [provider.tags.length * 0.02, 0.3].min
+    service_bonus = [Array(provider.tags).length * 0.02, 0.3].min
     
     rating = base_rating + age_bonus + size_bonus + service_bonus
     [rating, 5.0].min.round(1)
