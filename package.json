@@ -3,12 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "workspaces": ["packages/*"],
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
     "build:prod": "tsc && cp index.prod.html dist/index.html && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:noticed": "npx tsc -p noticed_v2/tsconfig.json",
+    "build:ui": "npm run build --workspace @internal/ui"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.10",
