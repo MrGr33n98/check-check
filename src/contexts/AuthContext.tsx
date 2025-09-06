@@ -4,6 +4,8 @@ import { mockCompanies } from '../data/mockData';
 import { User } from '../data/types';
 import { getUserFromLocalStorage, saveUserToLocalStorage, removeUserFromLocalStorage } from '../data/storage';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 // Define the shape of our auth context
 interface AuthContextType {
   user: User | null;
@@ -66,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Try backend API first
     try {
-      const response = await fetch('http://localhost:3000/api/v1/users/sign_in', {
+      const response = await fetch(`${API_URL}/users/sign_in`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,7 +96,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
         if (loggedInUser.role === 'empresa') {
           try {
-            const companyResponse = await fetch('http://localhost:3000/api/v1/current_company', {
+            const companyResponse = await fetch(`${API_URL}/current_company`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${data.token}`,
